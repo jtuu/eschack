@@ -25,7 +25,7 @@ if (!Object.values) {
 	//should these be scopewide?
 
 	var env = "prod",
-	    saveName = "esc_rl_save",
+	    saveName = "eschack_save",
 	    mainCanvas = document.getElementById("canvas-main"),
 	    offscreenCanvas = document.getElementById("canvas-offscreen"),
 	    w = 1040,
@@ -1548,4 +1548,4 @@ if (!Object.values) {
 
 	game.start();
 })(window);
-//# sourceMappingURL=rl-babel.js.map
+//# sourceMappingURL=eschack-babel.js.map
