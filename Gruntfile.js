@@ -98,8 +98,9 @@ module.exports = function(grunt) {
 				max_preserve_newlines: 20,
 				unformatted: ['pre']
 			},
-			files: {
-				'index.html': 'index.html'
+			one: {
+				src: 'index.html',
+				dest: 'index.html'
 			}
 		},
 		watch: {

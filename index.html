@@ -1,4 +1,39 @@
-<!DOCTYPE html><html><title>eschack</title><meta charset="utf-8"><link rel="stylesheet" href="dist/eschack.css" type="text/css"><body><div id="column-left" class="column"><div id="canvas-container"><div id="loader"><div class="loader-block"></div><div class="loader-block"></div><div class="loader-block"></div><div class="loader-block"></div><div class="loader-block"></div><div class="loader-block"></div><div class="loader-block"></div><div class="loader-block"></div><div class="loader-block"></div></div><canvas id="canvas-offscreen"></canvas><canvas id="canvas-main"></canvas></div><div id="logbox"></div></div><div id="column-right" class="column"><div id="info-container"><div id="info-container-player"></div><div id="info-container-other"><div id="info-container-other-life"></div><div id="info-container-other-misc"></div></div></div><div id="settings"><button id="button-save">save</button><button id="button-delete">delete</button><h4>controls</h4><pre> 
+<!DOCTYPE html>
+<html>
+	<title>eschack</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="dist/eschack.css" type="text/css">
+	<body>
+		<div id="column-left" class="column">
+			<div id="canvas-container">
+				<div id="loader">
+					<div class="loader-block"></div>
+					<div class="loader-block"></div>
+					<div class="loader-block"></div>
+					<div class="loader-block"></div>
+					<div class="loader-block"></div>
+					<div class="loader-block"></div>
+					<div class="loader-block"></div>
+					<div class="loader-block"></div>
+					<div class="loader-block"></div>
+				</div>
+				<canvas id="canvas-offscreen"></canvas>
+				<canvas id="canvas-main"></canvas>
+			</div>
+			<div id="logbox"></div>
+		</div>
+		<div id="column-right" class="column">
+			<div id="info-container">
+				<div id="info-container-player"></div>
+				<div id="info-container-other">
+					<div id="info-container-other-life"></div>
+					<div id="info-container-other-misc"></div>
+				</div>
+			</div>
+			<div id="settings">
+				<button id="button-save">save</button>
+				<button id="button-delete">delete</button>
+				<h4>controls</h4><pre> 
 7 8 9
  \|/
 4-5-6
@@ -6,4 +41,25 @@
 1 2 3
 numpad
  
-5 - rest a turn</pre></div><div id="todo"><h3>TODO</h3><ul><li>kys</li><li> <strong>gametime and object speed</strong></li><li>load level data from json?</li><li>items? stats?</li><li>dont show lifebars for enemies outside of fov</li><li>enemies shouldnt attack friendlies (faction system?)</li><li>pathfinding</li></ul></div><a data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon"octicon-eye href="https://github.com/jtuu/eschack/" class="github-button">Watch</a><script id="github-bjs" async defer src="https://buttons.github.io/buttons.js"></script></div><script src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js"></script><script src="dist/eschack.min.js"></script></body></html>
+5 - rest a turn</pre></div>
+			<div id="todo">
+				<h3>TODO</h3>
+				<ul>
+					<li>kys</li>
+					<li>
+						<strong>gametime and object speed</strong>
+					</li>
+					<li>load level data from json?</li>
+					<li>items? stats?</li>
+					<li>dont show lifebars for enemies outside of fov</li>
+					<li>enemies shouldnt attack friendlies (faction system?)</li>
+					<li>pathfinding</li>
+				</ul>
+			</div>
+			<a data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/" class="github-button">Watch</a>
+			<script id="github-bjs" async defer src="https://buttons.github.io/buttons.js"></script>
+		</div>
+		<script src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js"></script>
+		<script src="dist/eschack.min.js"></script>
+	</body>
+</html>
