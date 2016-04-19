@@ -10,10 +10,12 @@ body {
 
 canvas {
   display: block; }
-  canvas#canvas-offscreen {
+  canvas#canvas-second {
     position: absolute;
-    top: -9001px;
-    left: -9001px; }
+    top: 0;
+    left: 0;
+    z-index: -1;
+    opacity: 0.3; }
 
 #canvas-container {
   position: relative;

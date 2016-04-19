@@ -10,18 +10,17 @@ if (!Object.values) {
 	const env = "prod",
 		saveName = "eschack_save",
 		mainCanvas = document.getElementById("canvas-main"),
-		offscreenCanvas = document.getElementById("canvas-offscreen"),
+		secondCanvas = document.getElementById("canvas-second"),
 		w = 1040,
 		h = 520;
 	mainCanvas.width = w;
 	mainCanvas.height = h;
-	offscreenCanvas.width = w;
-	offscreenCanvas.height = h;
+	secondCanvas.width = w;
+	secondCanvas.height = h;
 	const mainCtx = mainCanvas.getContext("2d"),
-		offscreenCtx = offscreenCanvas.getContext("2d");
+		secondCtx = secondCanvas.getContext("2d");
 	mainCtx.font = "20px Consolas";
 	mainCtx.textAlign = "center";
-	offscreenCtx.globalAlpha = 0.985;
 
 	let objectCounter = 0;
 
@@ -800,7 +799,7 @@ if (!Object.values) {
 
 			return new TileGroup(Utils.mergeQuarters(quarters), {
 				origin: new Point(ax - range + 1, ay - range + 1),
-				baseColor: "hsla(244,3%,55%,0.85)",
+				baseColor: "hsla(244,3%,55%,1)",
 				tileSize: 25,
 				spacing: 1
 			});
@@ -1178,14 +1177,23 @@ if (!Object.values) {
 				}
 			});
 
-			offscreenCtx.clearRect(0, 0, w, h);
-			offscreenCtx.drawImage(mainCanvas, 0, 0);
+			/*
+			secondCtx.clearRect(0, 0, w, h);
+			secondCtx.drawImage(mainCanvas, 0, 0);
 			mainCtx.clearRect(0, 0, w, h);
-			mainCtx.drawImage(offscreenCanvas, 0, 0);
+			mainCtx.drawImage(secondCanvas, 0, 0);
 
 			let fov = this.logic.getFov(this.player);
 			this.logic.think(this.player);
 			fov.draw();
+			*/
+			
+			let fov = this.logic.getFov(this.player);
+			this.logic.think(this.player);
+			mainCtx.clearRect(0, 0, w, h);
+			fov.draw();
+			secondCtx.drawImage(mainCanvas, 0, 0);
+
 		}
 
 		start() {
