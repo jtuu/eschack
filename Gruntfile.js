@@ -6,7 +6,7 @@ module.exports = function(grunt) {
 			options: {
 				configFile: 'src/eslint.json'
 			},
-			target: ['src/rl.js']
+			target: ['src/eschack.js']
 		},
 		babel: {
 			options: {
@@ -15,7 +15,7 @@ module.exports = function(grunt) {
 			},
 			dist: {
 				files: {
-					'src/rl-babel.js': 'src/rl.js'
+					'src/eschack-babel.js': 'src/eschack.js'
 				}
 			},
 		},
@@ -44,8 +44,8 @@ module.exports = function(grunt) {
 				}
 			},
 			build: {
-				src: 'src/rl-babel.js',
-				dest: 'dist/rl.min.js'
+				src: 'src/eschack-babel.js',
+				dest: 'dist/eschack.min.js'
 			}
 		},
 		sass: {
@@ -54,7 +54,7 @@ module.exports = function(grunt) {
 			},
 			dist: {
 				files: {
-					'dist/rl.css': 'src/rl.scss'
+					'dist/eschack.css': 'src/eschack.scss'
 				}
 			}
 		},
@@ -63,7 +63,7 @@ module.exports = function(grunt) {
 			},
 			dist: {
 				files: {
-					'dist/rl.css': 'dist/rl.css'
+					'dist/eschack.css': 'dist/eschack.css'
 				}
 			}
 		},
@@ -75,21 +75,21 @@ module.exports = function(grunt) {
 					}
 				},
 				files: {
-					'index.html': ['src/rl.jade']
+					'index.html': ['src/eschack.jade']
 				}
 			}
 		},
 		watch: {
 			html: {
-				files: ['src/rl.jade'],
+				files: ['src/eschack.jade'],
 				tasks: ['html']
 			},
 			sass: {
-				files: ['src/rl.scss'],
+				files: ['src/eschack.scss'],
 				tasks: ['css']
 			},
 			js: {
-				files: ['src/rl.js'],
+				files: ['src/eschack.js'],
 				tasks: ['js']
 			}
 		}

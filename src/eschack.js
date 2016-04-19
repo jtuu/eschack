@@ -8,7 +8,7 @@ if (!Object.values) {
 
 	//should these be scopewide?
 	const env = "prod",
-		saveName = "esc_rl_save",
+		saveName = "eschack_save",
 		mainCanvas = document.getElementById("canvas-main"),
 		offscreenCanvas = document.getElementById("canvas-offscreen"),
 		w = 1040,
