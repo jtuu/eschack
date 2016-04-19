@@ -87,6 +87,21 @@ module.exports = function(grunt) {
 				src: ['src/index.jade']
 			}
 		},
+		prettify: {
+			options: {
+				indent: 1,
+				indent_char: '\t',
+				indent_scripts: 'normal',
+				wrap_line_length: 0,
+				brace_style: 'collapse',
+				preserve_newlines: true,
+				max_preserve_newlines: 20,
+				unformatted: ['pre']
+			},
+			files: {
+				'index.html': 'index.html'
+			}
+		},
 		watch: {
 			html: {
 				files: ['src/eschack.jade'],
@@ -106,6 +121,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-pug');
 	grunt.loadNpmTasks('grunt-puglint');
+	grunt.loadNpmTasks('grunt-prettify');
 	grunt.loadNpmTasks('grunt-sass');
 	grunt.loadNpmTasks('grunt-autoprefixer');
 	grunt.loadNpmTasks('grunt-eslint');
@@ -113,7 +129,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 
 	
-	grunt.registerTask('html', ['puglint', 'pug'])
+	grunt.registerTask('html', ['puglint', 'pug', 'prettify']);
 	grunt.registerTask('css', ['sass', 'autoprefixer']);
 	grunt.registerTask('js', ['eslint', 'babel', 'uglify']);
 
