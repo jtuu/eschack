@@ -79,6 +79,14 @@ module.exports = function(grunt) {
 				}
 			}
 		},
+		puglint: {
+			index: {
+				options: {
+					preset: 'clock'
+				},
+				src: ['src/index.jade']
+			}
+		},
 		watch: {
 			html: {
 				files: ['src/eschack.jade'],
@@ -97,6 +105,7 @@ module.exports = function(grunt) {
 
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-pug');
+	grunt.loadNpmTasks('grunt-puglint');
 	grunt.loadNpmTasks('grunt-sass');
 	grunt.loadNpmTasks('grunt-autoprefixer');
 	grunt.loadNpmTasks('grunt-eslint');
@@ -104,7 +113,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 
 	
-	grunt.registerTask('html', ['pug'])
+	grunt.registerTask('html', ['puglint', 'pug'])
 	grunt.registerTask('css', ['sass', 'autoprefixer']);
 	grunt.registerTask('js', ['eslint', 'babel', 'uglify']);
 
