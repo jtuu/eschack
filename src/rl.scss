@@ -1,0 +1,267 @@
+$base-bg-color: darkgrey;
+$component-bg-color: hsl(0,0%,90%);
+$component-accent-color: hsl(0,0%,85%);
+$base-font: "Courier New", monospace;
+$nbsp: "\a0";
+$canvas-width: 1040px;
+$canvas-height: 520px;
+$basic-border: 1px solid black;
+
+$bar-primary-color: black;
+$bar-secondary-color: white;
+
+$hilight-color: yellow;
+
+@mixin PseudoBlock($p) {
+	&:#{$p}{
+		content: "";
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+	}
+}
+
+@mixin Offscreen(){
+	position: absolute;
+	top: -9001px;
+	left: -9001px;
+}
+
+body {
+	margin: 0;
+	background: $base-bg-color;
+	font-family: $base-font;
+}
+
+.column {
+	display: inline-block;
+	vertical-align: top;
+}
+
+canvas {
+	display: block;
+	
+	&#canvas-offscreen {
+		@include Offscreen();
+	}
+}
+
+#canvas-container{
+	position: relative;
+	width: $canvas-width;
+	height: $canvas-height;
+}
+
+#logbox {
+	box-sizing: border-box;
+	width: $canvas-width;
+	height: 200px;
+	background: $component-bg-color;
+	color: black;
+	
+	& .logbox-row {
+		width: 100%;
+		height: 10%;
+		padding-left: 10px;
+		box-sizing: border-box;
+		
+		&:after {
+			content: $nbsp;
+		}
+		
+		&:nth-child(even) {
+			background: $component-accent-color;
+		}
+		
+		& .logmsg {
+		
+			&.logmsg-default {
+			}
+			
+			&.logmsg-hilight {
+				color: hsl(294, 57%, 43%);
+			}
+			
+			&.logmsg-hit {
+				color: hsl(211, 75%, 40%);
+			}
+			
+			&.logmsg-damage {
+				color: hsl(36, 97%, 28%);
+			}
+			
+			&.logmsg-miss {
+				color: hsl(90, 2%, 33%)
+			}
+			
+			&.logmsg-death {
+				color: hsl(0, 83%, 50%);
+			}
+		}
+	}
+}
+
+#column-right {
+	padding: 10px;
+	box-sizing: border-box;
+	
+	> * {
+		padding: 20px 0 80px 0;
+		border-bottom: $basic-border;
+	}
+}
+
+#info-container {
+	> * {
+		padding: 20px 0 20px 0;
+	}
+	
+	& #info-container-player {
+		height: 50px;
+	}
+	
+	& #info-container-other {
+		height: 300px;
+		width: 250px;
+		border: $basic-border;
+		padding-left: 20px;
+		
+		& #info-container-other-life{
+			height:50%;
+			overflow-y:auto;
+			
+			& .bar{
+				margin-bottom: 20px;
+			}
+		}
+		& #info-container-other-misc{
+			border-top: $basic-border;
+			height: 50%;
+			padding: 10px 0 10px 0;
+			margin: 20px 20px 0 0;
+		}
+	}
+}
+
+label{
+	&.hilighted{
+		color: $hilight-color;
+	}
+}
+
+
+.bar {
+	@include PseudoBlock(after);
+	@include PseudoBlock(before);
+	height: 20px;
+	width: 100px;
+	background: $bar-primary-color;
+	text-align: center;
+	position: relative;
+	overflow: hidden;
+	box-sizing: border-box;
+	
+	&:before {
+		background: $bar-secondary-color;
+	}
+	
+	&:after {
+		content: attr(data-content);
+		mix-blend-mode: difference;
+		filter: invert(1);
+	}
+	
+	&.hilighted{
+		border: 1px solid $hilight-color;
+	}
+	
+	@for $i from 0 through 100 {
+		&.bar-size-#{$i} {
+			&:before {
+				right: #{100 - $i + "%"};
+			}
+		}
+	}
+}
+
+#cursor{
+	position: absolute;
+	top: 0;
+	left: 0;
+	border: 2px solid hsl(227, 95%, 33%);
+	filter: invert(1);
+	mix-blend-mode: difference;
+	box-sizing: border-box;
+}
+
+/*
+loader stolen from here
+codepen.io/Vestride/pen/vHzyk
+*/
+
+$blockCount: 3;
+$blockSize: 2em;
+
+$delay: 0.065s;
+$duration: 0.88s;
+$startingColor: #fdfdfd;
+$endingColor: #dadada;
+
+$blockMargin: $blockSize / $blockCount;
+$loaderSize: $blockSize * $blockCount + $blockMargin * 2;
+
+#loader{
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: $loaderSize;
+	height: $loaderSize;
+	margin-left: -$loaderSize/2;
+	margin-top: -$loaderSize/2;
+	
+	& .loader-block{
+		position: absolute;
+		top: 0;
+		left: 0;
+		display: inline-block;
+		opacity: 0;
+		width: $blockSize;
+		height: $blockSize;
+		background: $startingColor;
+		animation: show $duration step-end infinite alternate, pulse $duration linear infinite alternate;
+		
+		$delay-mults: (1,2,3,5,2,7,6,4,0);
+		
+		@for $i from 1 through $blockCount * $blockCount{
+			&:nth-child(#{$i}){
+				$mult-x: ($i - 1) % $blockCount;
+				$mult-y: floor(($i - 1) / $blockCount);
+				transform: translate(#{($blockSize + $blockMargin) * $mult-x}, #{($blockSize + $blockMargin) * $mult-y});
+				animation-delay: #{nth($delay-mults, $i) * $delay};
+			}
+		}
+	}
+}
+
+@keyframes pulse{
+	from,
+	40% {
+		background: $startingColor;
+	}
+	to {
+		background: $endingColor;
+	}
+}
+
+@keyframes show{
+	from,
+	40% {
+		opacity: 0;
+	}
+	41%,
+	to {
+		opacity: 1;
+	}
+}

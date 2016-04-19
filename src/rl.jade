@@ -1,0 +1,53 @@
+doctype
+html
+	title Roguelike
+	meta(charset="utf-8")
+	link(rel="stylesheet" href="dist/rl.css" type="text/css")
+	
+	body
+		.column#column-left
+			#canvas-container
+				#loader
+					- for(var i = 0; i < 9; i++){
+						.loader-block
+					- }
+				canvas#canvas-offscreen
+				canvas#canvas-main
+			#logbox
+		.column#column-right
+			#info-container
+				#info-container-player
+				#info-container-other
+					#info-container-other-life
+					#info-container-other-misc
+			#settings
+				h4 controls
+				pre 
+					| 7 8 9
+					|  \|/
+					| 4-5-6
+					|  /|\
+					| 1 2 3
+					| numpad
+					| 
+					| 5 - rest a turn
+				
+				button(id="button-save") save
+				button(id="button-delete") delete
+			#todo
+				h3 TODO
+				ul
+					li kys
+					li 
+						strong gametime and object speed
+					li load level data from json?
+					li items? stats?
+					li dont show lifebars for enemies outside of fov
+					li enemies shouldnt attack friendlies (faction system?)
+					li pathfinding
+					
+
+
+
+		script(src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js")
+		script(src="dist/rl.min.js")
