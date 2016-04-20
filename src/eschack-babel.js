@@ -479,7 +479,7 @@ if (!Object.values) {
 		}
 
 		Wall.prototype.update = function update() {
-			return true;
+			return 0;
 		};
 
 		return Wall;
@@ -1510,7 +1510,7 @@ if (!Object.values) {
 						return;
 					}
 					if (obj.isAlive) {
-						_this17.logic.think(obj, _this17.player);
+						//this.logic.think(obj, this.player);
 						if (obj.update(_this17.logger, _this17.time) > 0) {
 							_this17.logic.think(obj, _this17.player);
 						}
@@ -1554,7 +1554,9 @@ if (!Object.values) {
 			});
 
 			var fov = this.logic.getFov(this.player);
-			this.logic.think(this.player);
+			this.objs.forEach(function (obj) {
+				return _this18.logic.think(obj, _this18.player);
+			});
 			fov.draw();
 
 			document.getElementById("loader").remove();

@@ -360,7 +360,7 @@ if (!Object.values) {
 		}
 
 		update() {
-			return true;
+			return 0;
 		}
 	};
 
@@ -1225,7 +1225,7 @@ if (!Object.values) {
 						return;
 					}
 					if(obj.isAlive){
-						this.logic.think(obj, this.player);
+						//this.logic.think(obj, this.player);
 						if(obj.update(this.logger, this.time) > 0){
 							this.logic.think(obj, this.player);
 						}
@@ -1268,7 +1268,7 @@ if (!Object.values) {
 			});
 			
 			let fov = this.logic.getFov(this.player);
-			this.logic.think(this.player);
+			this.objs.forEach(obj => this.logic.think(obj, this.player));
 			fov.draw();
 			
 			document.getElementById("loader").remove();
