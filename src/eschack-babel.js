@@ -1068,6 +1068,20 @@ if (!Object.values) {
 	var Utils = function () {
 		function Utils() {
 			_classCallCheck(this, Utils);
+
+			this.exports = {
+				"instance": game,
+				"Creature": Creature,
+				"Player": Player,
+				"GameObject": GameObject,
+				"Point": Point,
+				"Vector": Vector,
+				"ActionManager": ActionManager,
+				"TileGroup": TileGroup,
+				"Utils": Utils,
+				"Tile": Tile,
+				"Wall": Wall
+			};
 		}
 
 		Utils.rotate = function rotate(arr, angle) {
@@ -1273,6 +1287,12 @@ if (!Object.values) {
 
 		Utils.gameToScreen = function gameToScreen(point, tileSize, spacing) {};
 
+		Utils.exportObjs = function exportObjs(exports) {
+			for (var key in exports) {
+				global[key] = exports[key];
+			}
+		};
+
 		return Utils;
 	}();
 
@@ -1297,7 +1317,7 @@ if (!Object.values) {
 		}
 
 		//this handles inserting new messages and moving old etc
-		//type is the css style used
+		//type is the css class used
 
 
 		LogboxManager.prototype.log = function log(text) {
@@ -1386,6 +1406,8 @@ if (!Object.values) {
 			_classCallCheck(this, Game);
 
 			this.logger = new LogboxManager(document.getElementById("logbox"), 10);
+
+			this.time = 0;
 
 			this.board = board;
 			this.player = objs[0];
@@ -1517,27 +1539,8 @@ if (!Object.values) {
 		h: 20
 	}), [new Player(new Point(18, 9)), new Wall(new Point(3, 0)), new Wall(new Point(7, 0)), new Wall(new Point(8, 0)), new Wall(new Point(9, 0)), new Wall(new Point(10, 0)), new Wall(new Point(11, 0)), new Wall(new Point(12, 0)), new Wall(new Point(13, 0)), new Wall(new Point(14, 0)), new Wall(new Point(15, 0)), new Wall(new Point(16, 0)), new Wall(new Point(17, 0)), new Enemy(new Point(18, 0)), new Wall(new Point(22, 0)), new Wall(new Point(23, 0)), new Wall(new Point(27, 0)), new Wall(new Point(28, 0)), new Wall(new Point(29, 0)), new Wall(new Point(30, 0)), new Wall(new Point(31, 0)), new Wall(new Point(32, 0)), new Wall(new Point(33, 0)), new Wall(new Point(34, 0)), new Wall(new Point(35, 0)), new Enemy(new Point(39, 0)), new Wall(new Point(1, 1)), new Wall(new Point(5, 1)), new Wall(new Point(7, 1)), new Wall(new Point(9, 1)), new Wall(new Point(14, 1)), new Wall(new Point(15, 1)), new Wall(new Point(16, 1)), new Wall(new Point(17, 1)), new Wall(new Point(19, 1)), new Wall(new Point(20, 1)), new Wall(new Point(22, 1)), new Wall(new Point(23, 1)), new Wall(new Point(25, 1)), new Wall(new Point(32, 1)), new Wall(new Point(33, 1)), new Enemy(new Point(1, 2)), new Wall(new Point(3, 2)), new Enemy(new Point(5, 2)), new Wall(new Point(7, 2)), new Wall(new Point(11, 2)), new Wall(new Point(12, 2)), new Enemy(new Point(24, 2)), new Wall(new Point(25, 2)), new Wall(new Point(27, 2)), new Wall(new Point(28, 2)), new Wall(new Point(30, 2)), new Wall(new Point(35, 2)), new Enemy(new Point(39, 2)), new Wall(new Point(1, 3)), new Wall(new Point(5, 3)), new Wall(new Point(7, 3)), new Wall(new Point(9, 3)), new Wall(new Point(12, 3)), new Wall(new Point(13, 3)), new Wall(new Point(14, 3)), new Wall(new Point(15, 3)), new Wall(new Point(16, 3)), new Wall(new Point(17, 3)), new Wall(new Point(18, 3)), new Wall(new Point(19, 3)), new Wall(new Point(20, 3)), new Wall(new Point(21, 3)), new Wall(new Point(22, 3)), new Wall(new Point(23, 3)), new Wall(new Point(24, 3)), new Wall(new Point(25, 3)), new Wall(new Point(28, 3)), new Wall(new Point(30, 3)), new Wall(new Point(31, 3)), new Wall(new Point(32, 3)), new Wall(new Point(33, 3)), new Wall(new Point(34, 3)), new Wall(new Point(35, 3)), new Wall(new Point(36, 3)), new Wall(new Point(37, 3)), new Wall(new Point(38, 3)), new Wall(new Point(39, 3)), new Wall(new Point(3, 4)), new Wall(new Point(7, 4)), new Wall(new Point(9, 4)), new Wall(new Point(10, 4)), new Wall(new Point(12, 4)), new Wall(new Point(13, 4)), new Wall(new Point(17, 4)), new Enemy(new Point(22, 4)), new Wall(new Point(24, 4)), new Wall(new Point(25, 4)), new Wall(new Point(26, 4)), new Wall(new Point(28, 4)), new Wall(new Point(33, 4)), new Wall(new Point(1, 5)), new Wall(new Point(5, 5)), new Wall(new Point(13, 5)), new Wall(new Point(15, 5)), new Wall(new Point(17, 5)), new Wall(new Point(19, 5)), new Wall(new Point(21, 5)), new Wall(new Point(22, 5)), new Wall(new Point(24, 5)), new Wall(new Point(25, 5)), new Wall(new Point(30, 5)), new Wall(new Point(31, 5)), new Wall(new Point(33, 5)), new Wall(new Point(35, 5)), new Wall(new Point(37, 5)), new Wall(new Point(38, 5)), new Wall(new Point(7, 6)), new Wall(new Point(8, 6)), new Wall(new Point(9, 6)), new Wall(new Point(10, 6)), new Wall(new Point(11, 6)), new Wall(new Point(13, 6)), new Wall(new Point(15, 6)), new Wall(new Point(17, 6)), new Wall(new Point(19, 6)), new Wall(new Point(21, 6)), new Wall(new Point(22, 6)), new Wall(new Point(24, 6)), new Wall(new Point(27, 6)), new Wall(new Point(28, 6)), new Wall(new Point(33, 6)), new Wall(new Point(38, 6)), new Wall(new Point(0, 7)), new Wall(new Point(1, 7)), new Wall(new Point(2, 7)), new Wall(new Point(3, 7)), new Wall(new Point(4, 7)), new Enemy(new Point(14, 7)), new Wall(new Point(15, 7)), new Wall(new Point(21, 7)), new Wall(new Point(22, 7)), new Wall(new Point(26, 7)), new Wall(new Point(27, 7)), new Wall(new Point(28, 7)), new Wall(new Point(29, 7)), new Wall(new Point(30, 7)), new Wall(new Point(31, 7)), new Wall(new Point(33, 7)), new Wall(new Point(34, 7)), new Wall(new Point(35, 7)), new Wall(new Point(36, 7)), new Wall(new Point(38, 7)), new Wall(new Point(4, 8)), new Wall(new Point(5, 8)), new Wall(new Point(7, 8)), new Wall(new Point(8, 8)), new Wall(new Point(9, 8)), new Wall(new Point(11, 8)), new Wall(new Point(12, 8)), new Wall(new Point(13, 8)), new Wall(new Point(14, 8)), new Wall(new Point(15, 8)), new Wall(new Point(21, 8)), new Wall(new Point(22, 8)), new Wall(new Point(24, 8)), new Wall(new Point(25, 8)), new Wall(new Point(26, 8)), new Wall(new Point(27, 8)), new Wall(new Point(28, 8)), new Wall(new Point(29, 8)), new Wall(new Point(30, 8)), new Wall(new Point(31, 8)), new Enemy(new Point(33, 8)), new Wall(new Point(36, 8)), new Wall(new Point(38, 8)), new Enemy(new Point(2, 9)), new Wall(new Point(5, 9)), new Wall(new Point(31, 9)), new Wall(new Point(33, 9)), new Wall(new Point(34, 9)), new Wall(new Point(36, 9)), new Wall(new Point(38, 9)), new Wall(new Point(4, 10)), new Wall(new Point(5, 10)), new Wall(new Point(7, 10)), new Wall(new Point(8, 10)), new Wall(new Point(9, 10)), new Wall(new Point(10, 10)), new Wall(new Point(11, 10)), new Wall(new Point(12, 10)), new Wall(new Point(13, 10)), new Wall(new Point(15, 10)), new Wall(new Point(21, 10)), new Wall(new Point(22, 10)), new Wall(new Point(24, 10)), new Wall(new Point(26, 10)), new Wall(new Point(27, 10)), new Wall(new Point(29, 10)), new Wall(new Point(33, 10)), new Wall(new Point(34, 10)), new Wall(new Point(36, 10)), new Wall(new Point(38, 10)), new Wall(new Point(1, 11)), new Wall(new Point(2, 11)), new Wall(new Point(3, 11)), new Wall(new Point(4, 11)), new Wall(new Point(7, 11)), new Enemy(new Point(10, 11)), new Wall(new Point(11, 11)), new Wall(new Point(12, 11)), new Wall(new Point(15, 11)), new Wall(new Point(21, 11)), new Wall(new Point(24, 11)), new Wall(new Point(26, 11)), new Wall(new Point(27, 11)), new Wall(new Point(29, 11)), new Wall(new Point(31, 11)), new Wall(new Point(32, 11)), new Wall(new Point(33, 11)), new Wall(new Point(34, 11)), new Wall(new Point(38, 11)), new Wall(new Point(1, 12)), new Wall(new Point(6, 12)), new Wall(new Point(7, 12)), new Wall(new Point(8, 12)), new Wall(new Point(10, 12)), new Wall(new Point(11, 12)), new Wall(new Point(14, 12)), new Wall(new Point(15, 12)), new Wall(new Point(16, 12)), new Wall(new Point(17, 12)), new Wall(new Point(19, 12)), new Wall(new Point(20, 12)), new Wall(new Point(21, 12)), new Wall(new Point(23, 12)), new Wall(new Point(24, 12)), new Wall(new Point(26, 12)), new Wall(new Point(29, 12)), new Wall(new Point(36, 12)), new Wall(new Point(37, 12)), new Wall(new Point(38, 12)), new Wall(new Point(1, 13)), new Wall(new Point(2, 13)), new Wall(new Point(3, 13)), new Wall(new Point(4, 13)), new Wall(new Point(5, 13)), new Wall(new Point(6, 13)), new Wall(new Point(13, 13)), new Wall(new Point(14, 13)), new Wall(new Point(15, 13)), new Wall(new Point(16, 13)), new Wall(new Point(17, 13)), new Wall(new Point(19, 13)), new Wall(new Point(23, 13)), new Wall(new Point(24, 13)), new Enemy(new Point(25, 13)), new Wall(new Point(28, 13)), new Wall(new Point(29, 13)), new Wall(new Point(31, 13)), new Wall(new Point(32, 13)), new Wall(new Point(33, 13)), new Wall(new Point(34, 13)), new Wall(new Point(36, 13)), new Wall(new Point(2, 14)), new Wall(new Point(3, 14)), new Wall(new Point(5, 14)), new Wall(new Point(6, 14)), new Wall(new Point(8, 14)), new Wall(new Point(10, 14)), new Wall(new Point(11, 14)), new Wall(new Point(13, 14)), new Wall(new Point(14, 14)), new Wall(new Point(15, 14)), new Wall(new Point(16, 14)), new Wall(new Point(19, 14)), new Wall(new Point(21, 14)), new Wall(new Point(22, 14)), new Wall(new Point(23, 14)), new Wall(new Point(24, 14)), new Wall(new Point(25, 14)), new Wall(new Point(27, 14)), new Wall(new Point(28, 14)), new Wall(new Point(29, 14)), new Wall(new Point(31, 14)), new Wall(new Point(32, 14)), new Wall(new Point(33, 14)), new Wall(new Point(34, 14)), new Wall(new Point(38, 14)), new Wall(new Point(0, 15)), new Wall(new Point(3, 15)), new Wall(new Point(10, 15)), new Wall(new Point(11, 15)), new Wall(new Point(13, 15)), new Wall(new Point(14, 15)), new Wall(new Point(15, 15)), new Wall(new Point(18, 15)), new Wall(new Point(19, 15)), new Wall(new Point(27, 15)), new Wall(new Point(34, 15)), new Wall(new Point(36, 15)), new Wall(new Point(37, 15)), new Wall(new Point(38, 15)), new Wall(new Point(0, 16)), new Wall(new Point(1, 16)), new Wall(new Point(3, 16)), new Wall(new Point(5, 16)), new Wall(new Point(6, 16)), new Wall(new Point(8, 16)), new Wall(new Point(10, 16)), new Wall(new Point(11, 16)), new Wall(new Point(17, 16)), new Wall(new Point(18, 16)), new Wall(new Point(19, 16)), new Wall(new Point(21, 16)), new Wall(new Point(22, 16)), new Wall(new Point(23, 16)), new Wall(new Point(24, 16)), new Wall(new Point(25, 16)), new Wall(new Point(29, 16)), new Wall(new Point(30, 16)), new Wall(new Point(31, 16)), new Wall(new Point(32, 16)), new Wall(new Point(34, 16)), new Wall(new Point(36, 16)), new Wall(new Point(37, 16)), new Wall(new Point(38, 16)), new Wall(new Point(3, 17)), new Enemy(new Point(4, 17)), new Wall(new Point(8, 17)), new Wall(new Point(10, 17)), new Wall(new Point(11, 17)), new Wall(new Point(13, 17)), new Wall(new Point(14, 17)), new Wall(new Point(15, 17)), new Wall(new Point(16, 17)), new Wall(new Point(17, 17)), new Wall(new Point(18, 17)), new Wall(new Point(19, 17)), new Wall(new Point(21, 17)), new Wall(new Point(25, 17)), new Wall(new Point(27, 17)), new Wall(new Point(28, 17)), new Wall(new Point(29, 17)), new Wall(new Point(32, 17)), new Wall(new Point(34, 17)), new Enemy(new Point(39, 17)), new Wall(new Point(1, 18)), new Wall(new Point(2, 18)), new Wall(new Point(3, 18)), new Wall(new Point(5, 18)), new Wall(new Point(6, 18)), new Wall(new Point(8, 18)), new Enemy(new Point(9, 18)), new Wall(new Point(10, 18)), new Wall(new Point(11, 18)), new Wall(new Point(18, 18)), new Wall(new Point(19, 18)), new Wall(new Point(21, 18)), new Wall(new Point(23, 18)), new Wall(new Point(27, 18)), new Wall(new Point(29, 18)), new Wall(new Point(31, 18)), new Wall(new Point(32, 18)), new Wall(new Point(34, 18)), new Wall(new Point(5, 19)), new Wall(new Point(6, 19)), new Wall(new Point(8, 19)), new Wall(new Point(13, 19)), new Wall(new Point(14, 19)), new Wall(new Point(15, 19)), new Wall(new Point(16, 19)), new Enemy(new Point(19, 19)), new Wall(new Point(23, 19)), new Wall(new Point(24, 19)), new Wall(new Point(25, 19)), new Wall(new Point(26, 19)), new Wall(new Point(27, 19)), new Enemy(new Point(29, 19)), new Wall(new Point(34, 19)), new Enemy(new Point(36, 19))]);
 
-	var exports = {
-		"instance": game,
-		"Creature": Creature,
-		"Player": Player,
-		"GameObject": GameObject,
-		"Point": Point,
-		"Vector": Vector,
-		"ActionManager": ActionManager,
-		"TileGroup": TileGroup,
-		"Utils": Utils,
-		"Tile": Tile,
-		"Wall": Wall
-	};
-
-	function exportObjs(exports) {
-		for (var key in exports) {
-			global[key] = exports[key];
-		}
-	}
 	if (env === "dev") {
-		exportObjs(exports);
+		Utils.exportObjs(Utils.exports);
 	} else if (env === "prod") {} else {
 		throw new TypeError("Invalid environment");
 	}

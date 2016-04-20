@@ -826,7 +826,21 @@ if (!Object.values) {
 	};
 
 	const Utils = class Utils {
-		constructor() {}
+		constructor() {
+			this.exports = {
+				"instance": game,
+				"Creature": Creature,
+				"Player": Player,
+				"GameObject": GameObject,
+				"Point": Point,
+				"Vector": Vector,
+				"ActionManager": ActionManager,
+				"TileGroup": TileGroup,
+				"Utils": Utils,
+				"Tile": Tile,
+				"Wall": Wall
+			};
+		}
 
 		static rotate(arr, angle) {
 			if (angle === 90) {
@@ -1020,6 +1034,13 @@ if (!Object.values) {
 		static gameToScreen(point, tileSize, spacing){
 			
 		}
+
+		static exportObjs(exports) {
+			for (let key in exports) {
+				global[key] = exports[key];
+			}
+		}
+		
 	};
 
 	//manages logging
@@ -1041,7 +1062,7 @@ if (!Object.values) {
 		}
 
 		//this handles inserting new messages and moving old etc
-		//type is the css style used
+		//type is the css class used
 		log(text, type = "default") {
 			text = text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -1107,6 +1128,8 @@ if (!Object.values) {
 		constructor(board, objs) {
 			this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
+			this.time = 0;
+			
 			this.board = board;
 			this.player = objs[0];
 			this.objs = [];
@@ -1609,28 +1632,9 @@ if (!Object.values) {
 			new Enemy(new Point(36,19))
 		]
 	);
-
-	const exports = {
-		"instance": game,
-		"Creature": Creature,
-		"Player": Player,
-		"GameObject": GameObject,
-		"Point": Point,
-		"Vector": Vector,
-		"ActionManager": ActionManager,
-		"TileGroup": TileGroup,
-		"Utils": Utils,
-		"Tile": Tile,
-		"Wall": Wall
-	};
-
-	function exportObjs(exports) {
-		for (let key in exports) {
-			global[key] = exports[key];
-		}
-	}
+	
 	if (env === "dev") {
-		exportObjs(exports);
+		Utils.exportObjs(Utils.exports);
 	} else if (env === "prod") {
 
 	} else {
