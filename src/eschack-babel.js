@@ -25,6 +25,7 @@ if (!Object.values) {
 	//should these be scopewide?
 
 	var env = "prod",
+	    TICK = 1,
 	    saveName = "eschack_save",
 	    mainCanvas = document.getElementById("canvas-main"),
 	    secondCanvas = document.getElementById("canvas-second"),
@@ -397,10 +398,11 @@ if (!Object.values) {
 	var Weapon =
 	//todo: basespeed (weight?), special properties (cleave, reach)
 	//stuff
-	function Weapon(damage) {
+	function Weapon(damage, speed) {
 		_classCallCheck(this, Weapon);
 
 		this.damage = damage || 1;
+		this.speed = speed || 10;
 	};
 
 	//basically any gameobject that takes up a whole tile is a GameObject
@@ -501,7 +503,8 @@ if (!Object.values) {
 			_this5.stats = stats || {
 				"maxHP": 3,
 				"HP": 3,
-				"viewDistance": 5
+				"viewDistance": 5,
+				"moveSpeed": 10
 			};
 
 			_this5.weapon = new Weapon();
@@ -516,6 +519,12 @@ if (!Object.values) {
 		Creature.prototype.update = function update(logger) {
 			var _this6 = this;
 
+			var time = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+
+
+			var updateCount = 0,
+			    elapsedTime = 0;
+
 			//go through all the possible actions given by actionmanager and
 			//test their logic in the gameobjects context
 			//they should already be in prioritized order so
@@ -523,22 +532,30 @@ if (!Object.values) {
 			this.actions.forEach(function (proposals) {
 				//actually they contain functions that create the action instances so yeah
 				try {
-					var chosen = proposals.find(function (p) {
+					var chosen = void 0;
+
+					proposals.some(function (p) {
 						var action = p();
-						return action.try(_this6);
+						if (action.try(_this6, time)) {
+							chosen = action;
+							return true;
+						} else {
+							return false;
+						}
 					});
-					chosen = chosen();
-					chosen.do(_this6);
+					elapsedTime += chosen.do(_this6);
+					updateCount++;
 				} catch (err) {
-					console.warn("None of the proposed actions were suitable for " + _this6.constructor.name);
-					console.log(err);
+					//console.warn("None of the proposed actions were suitable for " + this.constructor.name);
+					//console.log(err);
 				}
 			});
-			//delete old actions
-			this.actions = [];
 
-			//lets the caller know if we need to be called again in the future
-			return this.stats.HP > 0;
+			for (var i = 0; i < updateCount; i++) {
+				this.actions.shift();
+			}
+
+			return elapsedTime;
 		};
 
 		Creature.prototype.takeDamage = function takeDamage(damage, logger) {
@@ -579,11 +596,12 @@ if (!Object.values) {
 			_this7.glyph = "@";
 			_this7.color = "black";
 
-			_this7.stats = stats || {
-				"maxHP": 50,
-				"HP": 50,
-				"viewDistance": 8
-			};
+			_this7.stats.maxHP = 50;
+			_this7.stats.HP = 50;
+			_this7.stats.viewDistance = 8;
+			_this7.stats.moveSpeed = 10;
+
+			_this7.stats = stats || _this7.stats;
 
 			_this7.lifebar = new Lifebar(_this7.id, "Hero", document.getElementById("info-container-player"), _this7.stats.maxHP, _this7.stats.HP);
 			_this7.flavorName = "you";
@@ -609,11 +627,12 @@ if (!Object.values) {
 			_this8.glyph = "E";
 			_this8.color = "white";
 
-			_this8.stats = stats || {
-				"maxHP": 3,
-				"HP": 3,
-				"viewDistance": 7
-			};
+			_this8.stats.maxHP = 3;
+			_this8.stats.HP = 3;
+			_this8.stats.viewDistance = 7;
+			_this8.stats.moveSpeed = 10;
+
+			_this8.stats = stats || _this8.stats;
 
 			_this8.lifebar = new Lifebar(_this8.id, "Enemy", document.getElementById("info-container-other-life"), _this8.stats.maxHP, _this8.stats.HP);
 			_this8.flavorName = "the enemy";
@@ -676,12 +695,12 @@ if (!Object.values) {
 			return _possibleConstructorReturn(this, _Action.call(this, context, logger));
 		}
 
-		NullAction.prototype.try = function _try(actor) {
-			return true;
+		NullAction.prototype.try = function _try(actor, time) {
+			return time % 10 === 0;
 		};
 
 		NullAction.prototype.do = function _do(actor) {
-			return null;
+			return 10;
 		};
 
 		return NullAction;
@@ -701,7 +720,11 @@ if (!Object.values) {
 			return _this10;
 		}
 
-		MoveAction.prototype.try = function _try(actor) {
+		MoveAction.prototype.try = function _try(actor, time) {
+			this.duration = actor.stats.moveSpeed;
+			if (time % this.duration !== 0) {
+				return false;
+			}
 			//check if the point we're trying to move to is empty
 			var target = new (Function.prototype.bind.apply(Point, [null].concat(actor.position.get)))();
 			target.moveBy(this.movement);
@@ -711,6 +734,7 @@ if (!Object.values) {
 		MoveAction.prototype.do = function _do(actor) {
 			actor.position.moveBy(this.movement);
 			this.context.update(); //this is kinda important, should this even be here
+			return this.duration;
 		};
 
 		return MoveAction;
@@ -728,7 +752,11 @@ if (!Object.values) {
 			return _this11;
 		}
 
-		AttackAction.prototype.try = function _try(actor) {
+		AttackAction.prototype.try = function _try(actor, time) {
+			this.duration = actor.weapon.speed;
+			if (time % this.duration !== 0) {
+				return false;
+			}
 			var target = new (Function.prototype.bind.apply(Point, [null].concat(actor.position.get)))();
 			target.moveBy(this.direction);
 			//if some kind of Hittable interface is added this should be changed --------V
@@ -746,6 +774,7 @@ if (!Object.values) {
 				this.context.remove(target.top);
 			}
 			this.context.update();
+			return this.duration;
 		};
 
 		return AttackAction;
@@ -1470,28 +1499,32 @@ if (!Object.values) {
 		Game.prototype.update = function update() {
 			var _this17 = this;
 
-			this.objs.forEach(function (obj, index) {
-				if (obj.isAlive) {
-					_this17.logic.think(obj, _this17.player);
-					if (!obj.update(_this17.logger)) {
+			var duration = this.player.update(this.logger);
+			var tickCount = duration / TICK;
+
+			for (var i = 0; i < tickCount; i++) {
+				this.time += TICK;
+
+				this.objs.forEach(function (obj, index) {
+					if (index === 0) {
+						return;
+					}
+					if (obj.isAlive) {
+						_this17.logic.think(obj, _this17.player);
+						if (obj.update(_this17.logger, _this17.time) > 0) {
+							_this17.logic.think(obj, _this17.player);
+						}
+
+						if (!obj.isAlive) {
+							_this17.board.remove(obj);
+							delete _this17.objs[obj.id];
+						}
+					} else {
 						_this17.board.remove(obj);
 						delete _this17.objs[obj.id];
 					}
-				} else {
-					_this17.board.remove(obj);
-					delete _this17.objs[obj.id];
-				}
-			});
-
-			/*
-   secondCtx.clearRect(0, 0, w, h);
-   secondCtx.drawImage(mainCanvas, 0, 0);
-   mainCtx.clearRect(0, 0, w, h);
-   mainCtx.drawImage(secondCanvas, 0, 0);
-   	let fov = this.logic.getFov(this.player);
-   this.logic.think(this.player);
-   fov.draw();
-   */
+				});
+			}
 
 			var fov = this.logic.getFov(this.player);
 			this.logic.think(this.player);

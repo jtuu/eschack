@@ -8,6 +8,7 @@ if (!Object.values) {
 
 	//should these be scopewide?
 	const env = "prod",
+		TICK = 1,
 		saveName = "eschack_save",
 		mainCanvas = document.getElementById("canvas-main"),
 		secondCanvas = document.getElementById("canvas-second"),
@@ -293,8 +294,9 @@ if (!Object.values) {
 	const Weapon = class Weapon {
 		//todo: basespeed (weight?), special properties (cleave, reach)
 		//stuff
-		constructor(damage) {
+		constructor(damage, speed) {
 			this.damage = damage || 1;
+			this.speed = speed || 10;
 		}
 	};
 
@@ -375,7 +377,8 @@ if (!Object.values) {
 			this.stats = stats || {
 				"maxHP": 3,
 				"HP": 3,
-				"viewDistance": 5
+				"viewDistance": 5,
+				"moveSpeed": 10
 			};
 
 			this.weapon = new Weapon();
@@ -384,8 +387,11 @@ if (!Object.values) {
 		}
 
 		//oh boy
-		update(logger) {
+		update(logger, time = 0) {
 
+			let updateCount = 0,
+				elapsedTime = 0;
+		
 			//go through all the possible actions given by actionmanager and
 			//test their logic in the gameobjects context
 			//they should already be in prioritized order so
@@ -393,22 +399,30 @@ if (!Object.values) {
 			this.actions.forEach(proposals => {
 				//actually they contain functions that create the action instances so yeah
 				try {
-					let chosen = proposals.find(p => {
+					let chosen;
+					
+					proposals.some(p => {
 						let action = p();
-						return action.try(this);
+						if(action.try(this, time)){
+							chosen = action;
+							return true;
+						}else{
+							return false;
+						}
 					});
-					chosen = chosen();
-					chosen.do(this);
+					elapsedTime += chosen.do(this);
+					updateCount++;
 				} catch (err) {
-					console.warn("None of the proposed actions were suitable for " + this.constructor.name);
-					console.log(err);
+					//console.warn("None of the proposed actions were suitable for " + this.constructor.name);
+					//console.log(err);
 				}
 			});
-			//delete old actions
-			this.actions = [];
+			
+			for(let i = 0; i < updateCount; i++){
+				this.actions.shift();
+			}
 
-			//lets the caller know if we need to be called again in the future
-			return this.stats.HP > 0;
+			return elapsedTime;
 		}
 
 		takeDamage(damage, logger) {
@@ -440,11 +454,12 @@ if (!Object.values) {
 			this.glyph = "@";
 			this.color = "black";
 
-			this.stats = stats || {
-				"maxHP": 50,
-				"HP": 50,
-				"viewDistance": 8
-			};
+			this.stats.maxHP = 50;
+			this.stats.HP = 50;
+			this.stats.viewDistance = 8;
+			this.stats.moveSpeed = 10;
+			
+			this.stats = stats || this.stats;
 
 			this.lifebar = new Lifebar(this.id, "Hero", document.getElementById("info-container-player"), this.stats.maxHP, this.stats.HP);
 			this.flavorName = "you";
@@ -462,11 +477,12 @@ if (!Object.values) {
 			this.glyph = "E";
 			this.color = "white";
 
-			this.stats = stats || {
-				"maxHP": 3,
-				"HP": 3,
-				"viewDistance": 7
-			};
+			this.stats.maxHP = 3;
+			this.stats.HP = 3;
+			this.stats.viewDistance = 7;
+			this.stats.moveSpeed = 10;
+			
+			this.stats = stats || this.stats;
 
 			this.lifebar = new Lifebar(this.id, "Enemy", document.getElementById("info-container-other-life"), this.stats.maxHP, this.stats.HP);
 			this.flavorName = "the enemy";
@@ -515,12 +531,12 @@ if (!Object.values) {
 			super(context, logger);
 		}
 
-		try (actor) {
-			return true;
+		try (actor, time) {
+			return time % 10 === 0;
 		}
 
 		do(actor) {
-			return null;
+			return 10;
 		}
 	};
 
@@ -532,7 +548,11 @@ if (!Object.values) {
 			this.movement = movement;
 		}
 
-		try (actor) {
+		try (actor, time) {
+			this.duration = actor.stats.moveSpeed;
+			if(time % this.duration !== 0){
+				return false;
+			}
 			//check if the point we're trying to move to is empty
 			let target = new Point(...actor.position.get);
 			target.moveBy(this.movement);
@@ -542,6 +562,7 @@ if (!Object.values) {
 		do(actor) {
 			actor.position.moveBy(this.movement);
 			this.context.update(); //this is kinda important, should this even be here
+			return this.duration;
 		}
 	};
 
@@ -551,7 +572,11 @@ if (!Object.values) {
 			this.direction = direction;
 		}
 
-		try (actor) {
+		try (actor, time) {
+			this.duration = actor.weapon.speed;
+			if(time % this.duration !== 0){
+				return false;
+			}
 			let target = new Point(...actor.position.get);
 			target.moveBy(this.direction);
 			//if some kind of Hittable interface is added this should be changed --------V
@@ -569,6 +594,7 @@ if (!Object.values) {
 				this.context.remove(target.top);
 			}
 			this.context.update();
+			return this.duration;
 		}
 	};
 
@@ -1126,6 +1152,7 @@ if (!Object.values) {
 	//the game
 	const Game = class Game {
 		constructor(board, objs) {
+			
 			this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
 			this.time = 0;
@@ -1187,30 +1214,33 @@ if (!Object.values) {
 		}
 
 		update() {
-			this.objs.forEach((obj, index) => {
-				if (obj.isAlive) {
-					this.logic.think(obj, this.player);
-					if (!obj.update(this.logger)) {
+			let duration = this.player.update(this.logger);
+			let tickCount = duration / TICK;
+			
+			for(let i = 0; i < tickCount; i++){
+				this.time += TICK;
+				
+				this.objs.forEach((obj, index) => {
+					if(index === 0){
+						return;
+					}
+					if(obj.isAlive){
+						this.logic.think(obj, this.player);
+						if(obj.update(this.logger, this.time) > 0){
+							this.logic.think(obj, this.player);
+						}
+						
+						if(!obj.isAlive){
+							this.board.remove(obj);
+							delete this.objs[obj.id];
+						}
+					}else{
 						this.board.remove(obj);
 						delete this.objs[obj.id];
 					}
-				} else {
-					this.board.remove(obj);
-					delete this.objs[obj.id];
-				}
-			});
+				});
+			}
 
-			/*
-			secondCtx.clearRect(0, 0, w, h);
-			secondCtx.drawImage(mainCanvas, 0, 0);
-			mainCtx.clearRect(0, 0, w, h);
-			mainCtx.drawImage(secondCanvas, 0, 0);
-
-			let fov = this.logic.getFov(this.player);
-			this.logic.think(this.player);
-			fov.draw();
-			*/
-			
 			let fov = this.logic.getFov(this.player);
 			this.logic.think(this.player);
 			mainCtx.clearRect(0, 0, w, h);
