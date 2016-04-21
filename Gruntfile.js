@@ -54,7 +54,8 @@ module.exports = function(grunt) {
 			},
 			dist: {
 				files: {
-					'dist/eschack.css': 'src/eschack.scss'
+					'dist/eschack.css': 'src/eschack.scss',
+					'dist/ui.css': 'src/ui.scss'
 				}
 			}
 		},
@@ -63,7 +64,8 @@ module.exports = function(grunt) {
 			},
 			dist: {
 				files: {
-					'dist/eschack.css': 'dist/eschack.css'
+					'dist/eschack.css': 'dist/eschack.css',
+					'dist/ui.css': 'dist/ui.css'
 				}
 			}
 		},
@@ -109,7 +111,7 @@ module.exports = function(grunt) {
 				tasks: ['html']
 			},
 			sass: {
-				files: ['src/eschack.scss'],
+				files: ['src/eschack.scss', 'src/ui.scss'],
 				tasks: ['css']
 			},
 			js: {

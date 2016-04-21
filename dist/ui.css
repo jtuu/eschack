@@ -1,0 +1,29 @@
+.moveable {
+  position: absolute;
+  cursor: move; }
+
+.resizeable {
+  position: absolute; }
+
+.edge {
+  position: absolute;
+  background: black;
+  box-sizing: border-box;
+  border-right: dashed 1px darkgrey;
+  border-bottom: dashed 1px darkgrey; }
+  .edge.edge-right {
+    top: 0;
+    right: -5px;
+    left: 100%;
+    bottom: 0;
+    width: 5px;
+    height: 100%;
+    cursor: e-resize; }
+  .edge.edge-bottom {
+    top: 100%;
+    left: 0;
+    right: 0;
+    bottom: -5px;
+    height: 5px;
+    width: 100%;
+    cursor: n-resize; }

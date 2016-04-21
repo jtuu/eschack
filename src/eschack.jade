@@ -4,6 +4,7 @@ html
 	title eschack
 	meta(charset="utf-8")
 	link(rel="stylesheet" href="dist/eschack.css" type="text/css")
+	link(rel="stylesheet" href="dist/ui.css" type="text/css")
 	
 	body
 		.column#column-left
@@ -15,33 +16,26 @@ html
 				canvas#canvas-second
 				canvas#canvas-main
 			#logbox
+			#bottom-row
+				#settings
+					button#button-save save
+					button#button-delete delete
+					h4 Controls
+					p Use numpad or wasd to move.
+					p num5 rests a turn.
+						
+					a.github-button(data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/") Watch
+					script#github-bjs(async defer src="https://buttons.github.io/buttons.js")
+				#todo
+					h3 TODO
+					ul
+						each val in todo
+							li=	 val
 		.column#column-right
-			#info-container
-				#info-container-player
-				#info-container-other
-					#info-container-other-life
-					#info-container-other-misc
-			#settings
-				button#button-save save
-				button#button-delete delete
-				h4 controls
-				pre 
-					| 7 8 9
-					|  \|/
-					| 4-5-6
-					|  /|\
-					| 1 2 3
-					| numpad
-					| 
-					| 5 - rest a turn
-			#todo
-				h3 TODO
-				ul
-					each val in todo
-						li=	 val
-					
-			a.github-button(data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/") Watch
-			script#github-bjs(async defer src="https://buttons.github.io/buttons.js")
+			.info-container.moveable.resizeable#info-container-player
+			#info-container-other-life-wrap.moveable.resizeable
+				.info-container#info-container-other-life
+			.info-container.moveable.resizeable#info-container-other-misc
 
 
 		script(src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js")
@@ -49,3 +43,4 @@ html
 			script(src="src/eschack.js")
 		else
 			script(src="dist/eschack.min.js")
+		script(src="dist/ui.js")
