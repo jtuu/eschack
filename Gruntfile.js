@@ -116,6 +116,25 @@ module.exports = function(grunt) {
 				files: ['src/eschack.js'],
 				tasks: ['js']
 			}
+		},
+		copy: {
+			index: {
+				src: 'index.html',
+				dest: 'build/index.html'
+			},
+			dist: {
+				expand: true,
+				src: 'dist/*',
+				dest: 'build/'
+			}
+		},
+		surge: {
+			'eschack': {
+				options: {
+					project: 'build/',
+					domain: 'eschack.surge.sh'
+				}
+			}
 		}
 	});
 
@@ -128,12 +147,15 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-eslint');
 	grunt.loadNpmTasks('grunt-babel');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-
+	grunt.loadNpmTasks('grunt-contrib-copy');
+	grunt.loadNpmTasks('grunt-surge');
 	
 	grunt.registerTask('html', ['puglint', 'pug', 'prettify']);
 	grunt.registerTask('css', ['sass', 'autoprefixer']);
 	grunt.registerTask('js', ['eslint', 'babel', 'uglify']);
 	
 	grunt.registerTask('default', ['html', 'css', 'js']);
-
+	
+	grunt.registerTask('predeploy', ['default', 'copy:index', 'copy:dist']);
+	grunt.registerTask('deploy', ['predeploy', 'surge']);
 };
