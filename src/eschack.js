@@ -1146,7 +1146,11 @@ if (!Object.values) {
 				}
 			});
 
-			this.miscOtherInfoContainer = document.getElementById("info-container-other-misc");
+			let miscOtherInfoContainer = document.getElementById("info-container-other-misc");
+			
+			this.examineContainer = document.createElement("div");
+			
+			miscOtherInfoContainer.appendChild(this.examineContainer);
 
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
@@ -1174,17 +1178,17 @@ if (!Object.values) {
 							});
 							
 							//set examine text
-							this.miscOtherInfoContainer.innerHTML = targetTile.top;
+							this.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							this.miscOtherInfoContainer.innerHTML = targetTile;
+							this.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						this.miscOtherInfoContainer.innerHTML = "You can't see that";
+						this.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
@@ -1200,7 +1204,7 @@ if (!Object.values) {
 					//set cursor to lifebars owner
 					if (target) {
 						this.mouseHandler.cursorFromGame(target.position);
-						this.miscOtherInfoContainer.innerHTML = target;
+						this.examineContainer.innerHTML = target;
 						target.lifebar.setStyle("hilight");
 					}
 				}
