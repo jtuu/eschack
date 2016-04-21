@@ -133,5 +133,7 @@ module.exports = function(grunt) {
 	grunt.registerTask('html', ['puglint', 'pug', 'prettify']);
 	grunt.registerTask('css', ['sass', 'autoprefixer']);
 	grunt.registerTask('js', ['eslint', 'babel', 'uglify']);
+	
+	grunt.registerTask('default', ['html', 'css', 'js']);
 
 };
