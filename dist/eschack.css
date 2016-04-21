@@ -322,7 +322,8 @@ label.hilighted {
   -webkit-filter: invert(1);
           filter: invert(1);
   mix-blend-mode: difference;
-  box-sizing: border-box; }
+  box-sizing: border-box;
+  box-shadow: 0 0 5px #0427a4; }
 
 /*
 loader stolen from here
