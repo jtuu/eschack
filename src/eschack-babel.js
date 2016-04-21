@@ -88,6 +88,13 @@ if (!Object.values) {
 			return point1.x === point2.x && point1.y === point2.y;
 		};
 
+		//check if point is inside given bounds
+
+
+		Point.prototype.in = function _in(bounds) {
+			return this.x >= bounds.x && this.x <= bounds.x + bounds.w && this.y >= bounds.y && this.y <= bounds.y + bounds.h;
+		};
+
 		_createClass(Point, [{
 			key: "get",
 			get: function get() {
@@ -630,7 +637,7 @@ if (!Object.values) {
 			_this8.stats.maxHP = 3;
 			_this8.stats.HP = 3;
 			_this8.stats.viewDistance = 7;
-			_this8.stats.moveSpeed = 10;
+			_this8.stats.moveSpeed = 9;
 
 			_this8.stats = stats || _this8.stats;
 
@@ -964,23 +971,20 @@ if (!Object.values) {
 						//cant find target, move randomly
 						instruction = new Vector();
 						actor.noticed = false;
-						//console.log("cant find target")
 					} else if (Point.equal(actor.position, actor.target.position)) {
-							//reached target, stopping
-							//console.log("reached target")
-							actor.target = undefined;
-							return {
-								v: void 0
-							};
-						} else {
-							//moving towards target
-							var vector = Point.distance(actor.position, actor.target.position);
-							vector.reduce();
-							instruction = vector;
-							if (!actor.noticed) _this13.logger.log(actor.flavorName + " noticed " + player.flavorName);
-							actor.noticed = true;
-							//console.log("moving towards target")
-						}
+						//reached target, stopping
+						actor.target = undefined;
+						return {
+							v: void 0
+						};
+					} else {
+						//moving towards target
+						var vector = Point.distance(actor.position, actor.target.position);
+						vector.reduce();
+						instruction = vector;
+						if (!actor.noticed) _this13.logger.log(actor.flavorName + " noticed " + player.flavorName);
+						actor.noticed = true;
+					}
 
 					var proposals = _this13.proposalMap[instruction.constructor];
 					if (proposals) {
@@ -996,31 +1000,6 @@ if (!Object.values) {
 				if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;
 			}
 		};
-
-		//old fov stuff without beamcasting
-		/*
-  //get TileGroup representing the fov of a creature
-  getFov(actor){
-  	let length = actor.viewDistance * 2 + 1;
-  	
-  	let fov = [];
-  	let radius = actor.viewDistance;
-  	let [ax, ay] = actor.position.get;
-  	for(let y = 0, length = radius * 2 + 1; y < length; y++){
-  		fov[y] = [];
-  		for(let x = 0; x < length; x++){
-  			fov[y][x] = this.board.get(new Point(ax - radius + x, ay - radius + y));
-  		}
-  	}
-  	return new TileGroup(fov, {
-  			origin: new Point(ax - radius, ay - actor.viewDistance),
-  			baseColor: "hsla(244,3%,55%,0.7)",
-  			tileSize: 25,
-  			spacing: 1
-  		});
-  		
-  }
-  */
 
 		ActionManager.prototype.getFov = function getFov(actor) {
 			var _actor$position$get = actor.position.get;
@@ -1310,11 +1289,25 @@ if (!Object.values) {
 			console.log("Savedata deleted");
 		};
 
+		//convert screen coordinates to game coordinates
+
 		Utils.screenToGame = function screenToGame(point, tileSize, spacing) {
 			return new Point(Math.floor(point.x / (tileSize + spacing)), Math.floor(point.y / (tileSize + spacing)));
 		};
 
-		Utils.gameToScreen = function gameToScreen(point, tileSize, spacing) {};
+		//convert game coordinates to screen coordinates
+
+
+		Utils.gameToScreen = function gameToScreen(point, tileSize, spacing) {
+			return new Point(point.x * (tileSize + spacing), point.y * (tileSize + spacing));
+		};
+
+		//convert screen coordinates to conform to tiles
+
+
+		Utils.screenToTiles = function screenToTiles(point, tileSize, spacing) {
+			return Utils.gameToScreen(Utils.screenToGame(point, tileSize, spacing), tileSize, spacing);
+		};
 
 		Utils.exportObjs = function exportObjs(exports) {
 			for (var key in exports) {
@@ -1398,30 +1391,25 @@ if (!Object.values) {
 		//input screen coordinates
 
 
-		MouseHandler.prototype.setCursorToScreen = function setCursorToScreen(x, y) {
-			x = Math.floor(x / (this.board.tileSize + this.board.spacing));
-			y = Math.floor(y / (this.board.tileSize + this.board.spacing));
+		MouseHandler.prototype.cursorFromScreen = function cursorFromScreen(point) {
+			var _Utils$screenToTiles$ = Utils.screenToTiles(point, this.board.tileSize, this.board.spacing).get;
+			var x = _Utils$screenToTiles$[0];
+			var y = _Utils$screenToTiles$[1];
 
-			this.cursor.style.top = y * (this.board.tileSize + this.board.spacing) + "px";
-			this.cursor.style.left = x * (this.board.tileSize + this.board.spacing) + "px";
+			this.cursor.style.top = y + "px";
+			this.cursor.style.left = x + "px";
 		};
 
 		//input game coordinates
 
 
-		MouseHandler.prototype.setCursorToGame = function setCursorToGame(x, y) {
-			this.cursor.style.top = y * (this.board.tileSize + this.board.spacing) + "px";
-			this.cursor.style.left = x * (this.board.tileSize + this.board.spacing) + "px";
-		};
+		MouseHandler.prototype.cursorFromGame = function cursorFromGame(point) {
+			var _Utils$gameToScreen$g = Utils.gameToScreen(point, this.board.tileSize, this.board.spacing).get;
+			var x = _Utils$gameToScreen$g[0];
+			var y = _Utils$gameToScreen$g[1];
 
-		//get tile in mouse position
-
-
-		MouseHandler.prototype.get = function get(x, y) {
-			x = Math.floor(x / (this.board.tileSize + this.board.spacing));
-			y = Math.floor(y / (this.board.tileSize + this.board.spacing));
-
-			return this.board.get(new Point(x, y));
+			this.cursor.style.top = y + "px";
+			this.cursor.style.left = x + "px";
 		};
 
 		return MouseHandler;
@@ -1456,43 +1444,62 @@ if (!Object.values) {
 
 			this.miscOtherInfoContainer = document.getElementById("info-container-other-misc");
 
-			//tf is going on here
+			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
 				var bounds = _this16.board.bounds;
-				if (e.pageX >= bounds.x && e.pageX <= bounds.x + bounds.w && e.pageY >= bounds.y && e.pageY <= bounds.y + bounds.h) {
-					_this16.mouseHandler.setCursorToScreen(e.pageX, e.pageY);
-					var fov = _this16.logic.getFov(_this16.player);
-					var point = Utils.screenToGame(new Point(e.pageX, e.pageY), _this16.board.tileSize, _this16.board.spacing);
-					if (fov.has(point)) {
-						var target = _this16.mouseHandler.get(e.pageX, e.pageY);
-						if (target && target.top) {
+				var screenPoint = new Point(e.pageX, e.pageY);
+
+				//mouse is inside game screen
+				if (screenPoint.in(bounds)) {
+					var fov = _this16.logic.getFov(_this16.player),
+					    gamePoint = Utils.screenToGame(screenPoint, _this16.board.tileSize, _this16.board.spacing);
+
+					//set cursor position
+					_this16.mouseHandler.cursorFromScreen(screenPoint);
+
+					//if hovering over a tile that is seen
+					if (fov.has(gamePoint)) {
+						var targetTile = _this16.board.get(gamePoint);
+
+						//if tile is not empty
+						if (targetTile && targetTile.top) {
+							//reset all lifebars styles
 							_this16.objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
-							_this16.miscOtherInfoContainer.innerHTML = target.top;
-							if (target.top instanceof Creature) {
-								target.top.lifebar.setStyle("hilight");
+
+							//set examine text
+							_this16.miscOtherInfoContainer.innerHTML = targetTile.top;
+							//highlight lifebar
+							if (targetTile.top instanceof Creature) {
+								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this16.miscOtherInfoContainer.innerHTML = target;
+							_this16.miscOtherInfoContainer.innerHTML = targetTile;
 						}
 					} else {
+						//tile is not in fov
 						_this16.miscOtherInfoContainer.innerHTML = "You can't see that";
 					}
+					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
-					_this16.objs.forEach(function (obj) {
-						if (obj.lifebar) obj.lifebar.setStyle("default");
-					});
-					var id = e.target.id.match(/[0-9]+$/);
-					var _target = _this16.objs[Number(id)];
+						//reset all lifebars styles
+						_this16.objs.forEach(function (obj) {
+							if (obj.lifebar) obj.lifebar.setStyle("default");
+						});
 
-					if (_target) {
-						_this16.mouseHandler.setCursorToGame(_target.position.x, _target.position.y);
-						_this16.miscOtherInfoContainer.innerHTML = _target;
-						_target.lifebar.setStyle("hilight");
+						//get lifebars owner
+						var id = e.target.id.match(/[0-9]+$/);
+						var target = _this16.objs[Number(id)];
+
+						//set cursor to lifebars owner
+						if (target) {
+							_this16.mouseHandler.cursorFromGame(target.position);
+							_this16.miscOtherInfoContainer.innerHTML = target;
+							target.lifebar.setStyle("hilight");
+						}
 					}
-				}
 			});
 		}
 
@@ -1510,7 +1517,6 @@ if (!Object.values) {
 						return;
 					}
 					if (obj.isAlive) {
-						//this.logic.think(obj, this.player);
 						if (obj.update(_this17.logger, _this17.time) > 0) {
 							_this17.logic.think(obj, _this17.player);
 						}

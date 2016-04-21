@@ -63,6 +63,11 @@ if (!Object.values) {
 		static equal(point1, point2) {
 			return point1.x === point2.x && point1.y === point2.y;
 		}
+		
+		//check if point is inside given bounds
+		in(bounds){
+			return this.x >= bounds.x && this.x <= bounds.x + bounds.w && this.y >= bounds.y && this.y <= bounds.y + bounds.h;
+		}
 	};
 
 	const Vector = class Vector {
@@ -480,7 +485,7 @@ if (!Object.values) {
 			this.stats.maxHP = 3;
 			this.stats.HP = 3;
 			this.stats.viewDistance = 7;
-			this.stats.moveSpeed = 10;
+			this.stats.moveSpeed = 9;
 			
 			this.stats = stats || this.stats;
 
@@ -744,10 +749,8 @@ if (!Object.values) {
 					//cant find target, move randomly
 					instruction = new Vector();
 					actor.noticed = false;
-					//console.log("cant find target")
 				} else if (Point.equal(actor.position, actor.target.position)) {
 					//reached target, stopping
-					//console.log("reached target")
 					actor.target = undefined;
 					return;
 				} else {
@@ -757,7 +760,6 @@ if (!Object.values) {
 					instruction = vector;
 					if (!actor.noticed) this.logger.log(actor.flavorName + " noticed " + player.flavorName);
 					actor.noticed = true;
-					//console.log("moving towards target")
 				}
 
 				let proposals = this.proposalMap[instruction.constructor];
@@ -767,31 +769,6 @@ if (!Object.values) {
 				}
 			}
 		}
-
-		//old fov stuff without beamcasting
-		/*
-		//get TileGroup representing the fov of a creature
-		getFov(actor){
-			let length = actor.viewDistance * 2 + 1;
-			
-			let fov = [];
-			let radius = actor.viewDistance;
-			let [ax, ay] = actor.position.get;
-			for(let y = 0, length = radius * 2 + 1; y < length; y++){
-				fov[y] = [];
-				for(let x = 0; x < length; x++){
-					fov[y][x] = this.board.get(new Point(ax - radius + x, ay - radius + y));
-				}
-			}
-			return new TileGroup(fov, {
-					origin: new Point(ax - radius, ay - actor.viewDistance),
-					baseColor: "hsla(244,3%,55%,0.7)",
-					tileSize: 25,
-					spacing: 1
-				});
-				
-		}
-		*/
 
 		getFov(actor) {
 			let [ax, ay] = actor.position.get,
@@ -1053,12 +1030,19 @@ if (!Object.values) {
 			console.log("Savedata deleted");
 		};
 		
+		//convert screen coordinates to game coordinates
 		static screenToGame(point, tileSize, spacing){
 			return new Point(Math.floor(point.x / (tileSize + spacing)), Math.floor(point.y / (tileSize + spacing)));
 		}
 		
+		//convert game coordinates to screen coordinates
 		static gameToScreen(point, tileSize, spacing){
-			
+			return new Point(point.x * (tileSize + spacing), point.y * (tileSize + spacing));
+		}
+		
+		//convert screen coordinates to conform to tiles
+		static screenToTiles(point, tileSize, spacing){
+			return Utils.gameToScreen(Utils.screenToGame(point, tileSize, spacing), tileSize, spacing);
 		}
 
 		static exportObjs(exports) {
@@ -1126,26 +1110,17 @@ if (!Object.values) {
 
 		//set cursor position
 		//input screen coordinates
-		setCursorToScreen(x, y) {
-			x = Math.floor(x / (this.board.tileSize + this.board.spacing));
-			y = Math.floor(y / (this.board.tileSize + this.board.spacing));
-
-			this.cursor.style.top = y * (this.board.tileSize + this.board.spacing) + "px";
-			this.cursor.style.left = x * (this.board.tileSize + this.board.spacing) + "px";
+		cursorFromScreen(point) {
+			let [x, y] = Utils.screenToTiles(point, this.board.tileSize, this.board.spacing).get;
+			this.cursor.style.top = y + "px";
+			this.cursor.style.left = x + "px";
 		}
 
 		//input game coordinates
-		setCursorToGame(x, y) {
-			this.cursor.style.top = y * (this.board.tileSize + this.board.spacing) + "px";
-			this.cursor.style.left = x * (this.board.tileSize + this.board.spacing) + "px";
-		}
-
-		//get tile in mouse position
-		get(x, y) {
-			x = Math.floor(x / (this.board.tileSize + this.board.spacing));
-			y = Math.floor(y / (this.board.tileSize + this.board.spacing));
-
-			return this.board.get(new Point(x, y));
+		cursorFromGame(point) {
+			let [x, y] = Utils.gameToScreen(point, this.board.tileSize, this.board.spacing).get;
+			this.cursor.style.top = y + "px";
+			this.cursor.style.left = x  + "px";
 		}
 	};
 
@@ -1173,39 +1148,58 @@ if (!Object.values) {
 
 			this.miscOtherInfoContainer = document.getElementById("info-container-other-misc");
 
-			//tf is going on here
+			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", e => {
 				let bounds = this.board.bounds;
-				if (e.pageX >= bounds.x && e.pageX <= bounds.x + bounds.w && e.pageY >= bounds.y && e.pageY <= bounds.y + bounds.h) {
-					this.mouseHandler.setCursorToScreen(e.pageX, e.pageY);
-					let fov = this.logic.getFov(this.player);
-					let point = Utils.screenToGame(new Point(e.pageX, e.pageY), this.board.tileSize, this.board.spacing);
-					if(fov.has(point)){
-						let target = this.mouseHandler.get(e.pageX, e.pageY);
-						if (target && target.top) {
+				let screenPoint = new Point(e.pageX, e.pageY);
+				
+				//mouse is inside game screen
+				if (screenPoint.in(bounds)) {
+					let fov = this.logic.getFov(this.player),
+						gamePoint = Utils.screenToGame(screenPoint, this.board.tileSize, this.board.spacing);
+						
+					//set cursor position
+					this.mouseHandler.cursorFromScreen(screenPoint);
+						
+					//if hovering over a tile that is seen
+					if(fov.has(gamePoint)){
+						let targetTile = this.board.get(gamePoint);
+						
+						//if tile is not empty
+						if (targetTile && targetTile.top) {
+							//reset all lifebars styles
 							this.objs.forEach(obj => {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
-							this.miscOtherInfoContainer.innerHTML = target.top;
-							if (target.top instanceof Creature) {
-								target.top.lifebar.setStyle("hilight");
+							
+							//set examine text
+							this.miscOtherInfoContainer.innerHTML = targetTile.top;
+							//highlight lifebar
+							if (targetTile.top instanceof Creature) {
+								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							this.miscOtherInfoContainer.innerHTML = target;
+							this.miscOtherInfoContainer.innerHTML = targetTile;
 						}
 					} else {
+						//tile is not in fov
 						this.miscOtherInfoContainer.innerHTML = "You can't see that";
 					}
+					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
+					//reset all lifebars styles
 					this.objs.forEach(obj => {
 						if (obj.lifebar) obj.lifebar.setStyle("default");
 					});
+					
+					//get lifebars owner
 					let id = e.target.id.match(/[0-9]+$/);
 					let target = this.objs[Number(id)];
 
+					//set cursor to lifebars owner
 					if (target) {
-						this.mouseHandler.setCursorToGame(target.position.x, target.position.y);
+						this.mouseHandler.cursorFromGame(target.position);
 						this.miscOtherInfoContainer.innerHTML = target;
 						target.lifebar.setStyle("hilight");
 					}
@@ -1225,7 +1219,6 @@ if (!Object.values) {
 						return;
 					}
 					if(obj.isAlive){
-						//this.logic.think(obj, this.player);
 						if(obj.update(this.logger, this.time) > 0){
 							this.logic.think(obj, this.player);
 						}
