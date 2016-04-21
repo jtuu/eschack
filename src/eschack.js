@@ -625,7 +625,7 @@ if (!Object.values) {
 			this.set();
 
 			this.container.appendChild(label);
-			this.container.appendChild(this.bar);
+			this.label.appendChild(bar);
 		}
 
 		set(value) {

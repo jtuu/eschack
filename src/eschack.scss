@@ -136,10 +136,6 @@ canvas {
 		& #info-container-other-life{
 			height:50%;
 			overflow-y:auto;
-			
-			& .bar{
-				margin-bottom: 20px;
-			}
 		}
 		& #info-container-other-misc{
 			border-top: $basic-border;
@@ -151,6 +147,8 @@ canvas {
 }
 
 label{
+	display: inline-block;
+	margin: 5px;
 	&.hilighted{
 		color: $hilight-color;
 	}
