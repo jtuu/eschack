@@ -25,6 +25,7 @@ if (!Object.values) {
 	//should these be scopewide?
 
 	var env = "prod",
+	    TICK = 1,
 	    saveName = "eschack_save",
 	    mainCanvas = document.getElementById("canvas-main"),
 	    secondCanvas = document.getElementById("canvas-second"),
@@ -397,10 +398,11 @@ if (!Object.values) {
 	var Weapon =
 	//todo: basespeed (weight?), special properties (cleave, reach)
 	//stuff
-	function Weapon(damage) {
+	function Weapon(damage, speed) {
 		_classCallCheck(this, Weapon);
 
 		this.damage = damage || 1;
+		this.speed = speed || 10;
 	};
 
 	//basically any gameobject that takes up a whole tile is a GameObject
@@ -477,7 +479,7 @@ if (!Object.values) {
 		}
 
 		Wall.prototype.update = function update() {
-			return true;
+			return 0;
 		};
 
 		return Wall;
@@ -501,7 +503,8 @@ if (!Object.values) {
 			_this5.stats = stats || {
 				"maxHP": 3,
 				"HP": 3,
-				"viewDistance": 5
+				"viewDistance": 5,
+				"moveSpeed": 10
 			};
 
 			_this5.weapon = new Weapon();
@@ -516,6 +519,12 @@ if (!Object.values) {
 		Creature.prototype.update = function update(logger) {
 			var _this6 = this;
 
+			var time = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+
+
+			var updateCount = 0,
+			    elapsedTime = 0;
+
 			//go through all the possible actions given by actionmanager and
 			//test their logic in the gameobjects context
 			//they should already be in prioritized order so
@@ -523,22 +532,30 @@ if (!Object.values) {
 			this.actions.forEach(function (proposals) {
 				//actually they contain functions that create the action instances so yeah
 				try {
-					var chosen = proposals.find(function (p) {
+					var chosen = void 0;
+
+					proposals.some(function (p) {
 						var action = p();
-						return action.try(_this6);
+						if (action.try(_this6, time)) {
+							chosen = action;
+							return true;
+						} else {
+							return false;
+						}
 					});
-					chosen = chosen();
-					chosen.do(_this6);
+					elapsedTime += chosen.do(_this6);
+					updateCount++;
 				} catch (err) {
-					console.warn("None of the proposed actions were suitable for " + _this6.constructor.name);
-					console.log(err);
+					//console.warn("None of the proposed actions were suitable for " + this.constructor.name);
+					//console.log(err);
 				}
 			});
-			//delete old actions
-			this.actions = [];
 
-			//lets the caller know if we need to be called again in the future
-			return this.stats.HP > 0;
+			for (var i = 0; i < updateCount; i++) {
+				this.actions.shift();
+			}
+
+			return elapsedTime;
 		};
 
 		Creature.prototype.takeDamage = function takeDamage(damage, logger) {
@@ -579,11 +596,12 @@ if (!Object.values) {
 			_this7.glyph = "@";
 			_this7.color = "black";
 
-			_this7.stats = stats || {
-				"maxHP": 50,
-				"HP": 50,
-				"viewDistance": 8
-			};
+			_this7.stats.maxHP = 50;
+			_this7.stats.HP = 50;
+			_this7.stats.viewDistance = 8;
+			_this7.stats.moveSpeed = 10;
+
+			_this7.stats = stats || _this7.stats;
 
 			_this7.lifebar = new Lifebar(_this7.id, "Hero", document.getElementById("info-container-player"), _this7.stats.maxHP, _this7.stats.HP);
 			_this7.flavorName = "you";
@@ -609,11 +627,12 @@ if (!Object.values) {
 			_this8.glyph = "E";
 			_this8.color = "white";
 
-			_this8.stats = stats || {
-				"maxHP": 3,
-				"HP": 3,
-				"viewDistance": 7
-			};
+			_this8.stats.maxHP = 3;
+			_this8.stats.HP = 3;
+			_this8.stats.viewDistance = 7;
+			_this8.stats.moveSpeed = 10;
+
+			_this8.stats = stats || _this8.stats;
 
 			_this8.lifebar = new Lifebar(_this8.id, "Enemy", document.getElementById("info-container-other-life"), _this8.stats.maxHP, _this8.stats.HP);
 			_this8.flavorName = "the enemy";
@@ -676,12 +695,12 @@ if (!Object.values) {
 			return _possibleConstructorReturn(this, _Action.call(this, context, logger));
 		}
 
-		NullAction.prototype.try = function _try(actor) {
-			return true;
+		NullAction.prototype.try = function _try(actor, time) {
+			return time % 10 === 0;
 		};
 
 		NullAction.prototype.do = function _do(actor) {
-			return null;
+			return 10;
 		};
 
 		return NullAction;
@@ -701,7 +720,11 @@ if (!Object.values) {
 			return _this10;
 		}
 
-		MoveAction.prototype.try = function _try(actor) {
+		MoveAction.prototype.try = function _try(actor, time) {
+			this.duration = actor.stats.moveSpeed;
+			if (time % this.duration !== 0) {
+				return false;
+			}
 			//check if the point we're trying to move to is empty
 			var target = new (Function.prototype.bind.apply(Point, [null].concat(actor.position.get)))();
 			target.moveBy(this.movement);
@@ -711,6 +734,7 @@ if (!Object.values) {
 		MoveAction.prototype.do = function _do(actor) {
 			actor.position.moveBy(this.movement);
 			this.context.update(); //this is kinda important, should this even be here
+			return this.duration;
 		};
 
 		return MoveAction;
@@ -728,7 +752,11 @@ if (!Object.values) {
 			return _this11;
 		}
 
-		AttackAction.prototype.try = function _try(actor) {
+		AttackAction.prototype.try = function _try(actor, time) {
+			this.duration = actor.weapon.speed;
+			if (time % this.duration !== 0) {
+				return false;
+			}
 			var target = new (Function.prototype.bind.apply(Point, [null].concat(actor.position.get)))();
 			target.moveBy(this.direction);
 			//if some kind of Hittable interface is added this should be changed --------V
@@ -746,6 +774,7 @@ if (!Object.values) {
 				this.context.remove(target.top);
 			}
 			this.context.update();
+			return this.duration;
 		};
 
 		return AttackAction;
@@ -1068,6 +1097,20 @@ if (!Object.values) {
 	var Utils = function () {
 		function Utils() {
 			_classCallCheck(this, Utils);
+
+			this.exports = {
+				"instance": game,
+				"Creature": Creature,
+				"Player": Player,
+				"GameObject": GameObject,
+				"Point": Point,
+				"Vector": Vector,
+				"ActionManager": ActionManager,
+				"TileGroup": TileGroup,
+				"Utils": Utils,
+				"Tile": Tile,
+				"Wall": Wall
+			};
 		}
 
 		Utils.rotate = function rotate(arr, angle) {
@@ -1273,6 +1316,12 @@ if (!Object.values) {
 
 		Utils.gameToScreen = function gameToScreen(point, tileSize, spacing) {};
 
+		Utils.exportObjs = function exportObjs(exports) {
+			for (var key in exports) {
+				global[key] = exports[key];
+			}
+		};
+
 		return Utils;
 	}();
 
@@ -1297,7 +1346,7 @@ if (!Object.values) {
 		}
 
 		//this handles inserting new messages and moving old etc
-		//type is the css style used
+		//type is the css class used
 
 
 		LogboxManager.prototype.log = function log(text) {
@@ -1387,6 +1436,8 @@ if (!Object.values) {
 
 			this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
+			this.time = 0;
+
 			this.board = board;
 			this.player = objs[0];
 			this.objs = [];
@@ -1448,28 +1499,32 @@ if (!Object.values) {
 		Game.prototype.update = function update() {
 			var _this17 = this;
 
-			this.objs.forEach(function (obj, index) {
-				if (obj.isAlive) {
-					_this17.logic.think(obj, _this17.player);
-					if (!obj.update(_this17.logger)) {
+			var duration = this.player.update(this.logger);
+			var tickCount = duration / TICK;
+
+			for (var i = 0; i < tickCount; i++) {
+				this.time += TICK;
+
+				this.objs.forEach(function (obj, index) {
+					if (index === 0) {
+						return;
+					}
+					if (obj.isAlive) {
+						//this.logic.think(obj, this.player);
+						if (obj.update(_this17.logger, _this17.time) > 0) {
+							_this17.logic.think(obj, _this17.player);
+						}
+
+						if (!obj.isAlive) {
+							_this17.board.remove(obj);
+							delete _this17.objs[obj.id];
+						}
+					} else {
 						_this17.board.remove(obj);
 						delete _this17.objs[obj.id];
 					}
-				} else {
-					_this17.board.remove(obj);
-					delete _this17.objs[obj.id];
-				}
-			});
-
-			/*
-   secondCtx.clearRect(0, 0, w, h);
-   secondCtx.drawImage(mainCanvas, 0, 0);
-   mainCtx.clearRect(0, 0, w, h);
-   mainCtx.drawImage(secondCanvas, 0, 0);
-   	let fov = this.logic.getFov(this.player);
-   this.logic.think(this.player);
-   fov.draw();
-   */
+				});
+			}
 
 			var fov = this.logic.getFov(this.player);
 			this.logic.think(this.player);
@@ -1499,7 +1554,9 @@ if (!Object.values) {
 			});
 
 			var fov = this.logic.getFov(this.player);
-			this.logic.think(this.player);
+			this.objs.forEach(function (obj) {
+				return _this18.logic.think(obj, _this18.player);
+			});
 			fov.draw();
 
 			document.getElementById("loader").remove();
@@ -1517,27 +1574,8 @@ if (!Object.values) {
 		h: 20
 	}), [new Player(new Point(18, 9)), new Wall(new Point(3, 0)), new Wall(new Point(7, 0)), new Wall(new Point(8, 0)), new Wall(new Point(9, 0)), new Wall(new Point(10, 0)), new Wall(new Point(11, 0)), new Wall(new Point(12, 0)), new Wall(new Point(13, 0)), new Wall(new Point(14, 0)), new Wall(new Point(15, 0)), new Wall(new Point(16, 0)), new Wall(new Point(17, 0)), new Enemy(new Point(18, 0)), new Wall(new Point(22, 0)), new Wall(new Point(23, 0)), new Wall(new Point(27, 0)), new Wall(new Point(28, 0)), new Wall(new Point(29, 0)), new Wall(new Point(30, 0)), new Wall(new Point(31, 0)), new Wall(new Point(32, 0)), new Wall(new Point(33, 0)), new Wall(new Point(34, 0)), new Wall(new Point(35, 0)), new Enemy(new Point(39, 0)), new Wall(new Point(1, 1)), new Wall(new Point(5, 1)), new Wall(new Point(7, 1)), new Wall(new Point(9, 1)), new Wall(new Point(14, 1)), new Wall(new Point(15, 1)), new Wall(new Point(16, 1)), new Wall(new Point(17, 1)), new Wall(new Point(19, 1)), new Wall(new Point(20, 1)), new Wall(new Point(22, 1)), new Wall(new Point(23, 1)), new Wall(new Point(25, 1)), new Wall(new Point(32, 1)), new Wall(new Point(33, 1)), new Enemy(new Point(1, 2)), new Wall(new Point(3, 2)), new Enemy(new Point(5, 2)), new Wall(new Point(7, 2)), new Wall(new Point(11, 2)), new Wall(new Point(12, 2)), new Enemy(new Point(24, 2)), new Wall(new Point(25, 2)), new Wall(new Point(27, 2)), new Wall(new Point(28, 2)), new Wall(new Point(30, 2)), new Wall(new Point(35, 2)), new Enemy(new Point(39, 2)), new Wall(new Point(1, 3)), new Wall(new Point(5, 3)), new Wall(new Point(7, 3)), new Wall(new Point(9, 3)), new Wall(new Point(12, 3)), new Wall(new Point(13, 3)), new Wall(new Point(14, 3)), new Wall(new Point(15, 3)), new Wall(new Point(16, 3)), new Wall(new Point(17, 3)), new Wall(new Point(18, 3)), new Wall(new Point(19, 3)), new Wall(new Point(20, 3)), new Wall(new Point(21, 3)), new Wall(new Point(22, 3)), new Wall(new Point(23, 3)), new Wall(new Point(24, 3)), new Wall(new Point(25, 3)), new Wall(new Point(28, 3)), new Wall(new Point(30, 3)), new Wall(new Point(31, 3)), new Wall(new Point(32, 3)), new Wall(new Point(33, 3)), new Wall(new Point(34, 3)), new Wall(new Point(35, 3)), new Wall(new Point(36, 3)), new Wall(new Point(37, 3)), new Wall(new Point(38, 3)), new Wall(new Point(39, 3)), new Wall(new Point(3, 4)), new Wall(new Point(7, 4)), new Wall(new Point(9, 4)), new Wall(new Point(10, 4)), new Wall(new Point(12, 4)), new Wall(new Point(13, 4)), new Wall(new Point(17, 4)), new Enemy(new Point(22, 4)), new Wall(new Point(24, 4)), new Wall(new Point(25, 4)), new Wall(new Point(26, 4)), new Wall(new Point(28, 4)), new Wall(new Point(33, 4)), new Wall(new Point(1, 5)), new Wall(new Point(5, 5)), new Wall(new Point(13, 5)), new Wall(new Point(15, 5)), new Wall(new Point(17, 5)), new Wall(new Point(19, 5)), new Wall(new Point(21, 5)), new Wall(new Point(22, 5)), new Wall(new Point(24, 5)), new Wall(new Point(25, 5)), new Wall(new Point(30, 5)), new Wall(new Point(31, 5)), new Wall(new Point(33, 5)), new Wall(new Point(35, 5)), new Wall(new Point(37, 5)), new Wall(new Point(38, 5)), new Wall(new Point(7, 6)), new Wall(new Point(8, 6)), new Wall(new Point(9, 6)), new Wall(new Point(10, 6)), new Wall(new Point(11, 6)), new Wall(new Point(13, 6)), new Wall(new Point(15, 6)), new Wall(new Point(17, 6)), new Wall(new Point(19, 6)), new Wall(new Point(21, 6)), new Wall(new Point(22, 6)), new Wall(new Point(24, 6)), new Wall(new Point(27, 6)), new Wall(new Point(28, 6)), new Wall(new Point(33, 6)), new Wall(new Point(38, 6)), new Wall(new Point(0, 7)), new Wall(new Point(1, 7)), new Wall(new Point(2, 7)), new Wall(new Point(3, 7)), new Wall(new Point(4, 7)), new Enemy(new Point(14, 7)), new Wall(new Point(15, 7)), new Wall(new Point(21, 7)), new Wall(new Point(22, 7)), new Wall(new Point(26, 7)), new Wall(new Point(27, 7)), new Wall(new Point(28, 7)), new Wall(new Point(29, 7)), new Wall(new Point(30, 7)), new Wall(new Point(31, 7)), new Wall(new Point(33, 7)), new Wall(new Point(34, 7)), new Wall(new Point(35, 7)), new Wall(new Point(36, 7)), new Wall(new Point(38, 7)), new Wall(new Point(4, 8)), new Wall(new Point(5, 8)), new Wall(new Point(7, 8)), new Wall(new Point(8, 8)), new Wall(new Point(9, 8)), new Wall(new Point(11, 8)), new Wall(new Point(12, 8)), new Wall(new Point(13, 8)), new Wall(new Point(14, 8)), new Wall(new Point(15, 8)), new Wall(new Point(21, 8)), new Wall(new Point(22, 8)), new Wall(new Point(24, 8)), new Wall(new Point(25, 8)), new Wall(new Point(26, 8)), new Wall(new Point(27, 8)), new Wall(new Point(28, 8)), new Wall(new Point(29, 8)), new Wall(new Point(30, 8)), new Wall(new Point(31, 8)), new Enemy(new Point(33, 8)), new Wall(new Point(36, 8)), new Wall(new Point(38, 8)), new Enemy(new Point(2, 9)), new Wall(new Point(5, 9)), new Wall(new Point(31, 9)), new Wall(new Point(33, 9)), new Wall(new Point(34, 9)), new Wall(new Point(36, 9)), new Wall(new Point(38, 9)), new Wall(new Point(4, 10)), new Wall(new Point(5, 10)), new Wall(new Point(7, 10)), new Wall(new Point(8, 10)), new Wall(new Point(9, 10)), new Wall(new Point(10, 10)), new Wall(new Point(11, 10)), new Wall(new Point(12, 10)), new Wall(new Point(13, 10)), new Wall(new Point(15, 10)), new Wall(new Point(21, 10)), new Wall(new Point(22, 10)), new Wall(new Point(24, 10)), new Wall(new Point(26, 10)), new Wall(new Point(27, 10)), new Wall(new Point(29, 10)), new Wall(new Point(33, 10)), new Wall(new Point(34, 10)), new Wall(new Point(36, 10)), new Wall(new Point(38, 10)), new Wall(new Point(1, 11)), new Wall(new Point(2, 11)), new Wall(new Point(3, 11)), new Wall(new Point(4, 11)), new Wall(new Point(7, 11)), new Enemy(new Point(10, 11)), new Wall(new Point(11, 11)), new Wall(new Point(12, 11)), new Wall(new Point(15, 11)), new Wall(new Point(21, 11)), new Wall(new Point(24, 11)), new Wall(new Point(26, 11)), new Wall(new Point(27, 11)), new Wall(new Point(29, 11)), new Wall(new Point(31, 11)), new Wall(new Point(32, 11)), new Wall(new Point(33, 11)), new Wall(new Point(34, 11)), new Wall(new Point(38, 11)), new Wall(new Point(1, 12)), new Wall(new Point(6, 12)), new Wall(new Point(7, 12)), new Wall(new Point(8, 12)), new Wall(new Point(10, 12)), new Wall(new Point(11, 12)), new Wall(new Point(14, 12)), new Wall(new Point(15, 12)), new Wall(new Point(16, 12)), new Wall(new Point(17, 12)), new Wall(new Point(19, 12)), new Wall(new Point(20, 12)), new Wall(new Point(21, 12)), new Wall(new Point(23, 12)), new Wall(new Point(24, 12)), new Wall(new Point(26, 12)), new Wall(new Point(29, 12)), new Wall(new Point(36, 12)), new Wall(new Point(37, 12)), new Wall(new Point(38, 12)), new Wall(new Point(1, 13)), new Wall(new Point(2, 13)), new Wall(new Point(3, 13)), new Wall(new Point(4, 13)), new Wall(new Point(5, 13)), new Wall(new Point(6, 13)), new Wall(new Point(13, 13)), new Wall(new Point(14, 13)), new Wall(new Point(15, 13)), new Wall(new Point(16, 13)), new Wall(new Point(17, 13)), new Wall(new Point(19, 13)), new Wall(new Point(23, 13)), new Wall(new Point(24, 13)), new Enemy(new Point(25, 13)), new Wall(new Point(28, 13)), new Wall(new Point(29, 13)), new Wall(new Point(31, 13)), new Wall(new Point(32, 13)), new Wall(new Point(33, 13)), new Wall(new Point(34, 13)), new Wall(new Point(36, 13)), new Wall(new Point(2, 14)), new Wall(new Point(3, 14)), new Wall(new Point(5, 14)), new Wall(new Point(6, 14)), new Wall(new Point(8, 14)), new Wall(new Point(10, 14)), new Wall(new Point(11, 14)), new Wall(new Point(13, 14)), new Wall(new Point(14, 14)), new Wall(new Point(15, 14)), new Wall(new Point(16, 14)), new Wall(new Point(19, 14)), new Wall(new Point(21, 14)), new Wall(new Point(22, 14)), new Wall(new Point(23, 14)), new Wall(new Point(24, 14)), new Wall(new Point(25, 14)), new Wall(new Point(27, 14)), new Wall(new Point(28, 14)), new Wall(new Point(29, 14)), new Wall(new Point(31, 14)), new Wall(new Point(32, 14)), new Wall(new Point(33, 14)), new Wall(new Point(34, 14)), new Wall(new Point(38, 14)), new Wall(new Point(0, 15)), new Wall(new Point(3, 15)), new Wall(new Point(10, 15)), new Wall(new Point(11, 15)), new Wall(new Point(13, 15)), new Wall(new Point(14, 15)), new Wall(new Point(15, 15)), new Wall(new Point(18, 15)), new Wall(new Point(19, 15)), new Wall(new Point(27, 15)), new Wall(new Point(34, 15)), new Wall(new Point(36, 15)), new Wall(new Point(37, 15)), new Wall(new Point(38, 15)), new Wall(new Point(0, 16)), new Wall(new Point(1, 16)), new Wall(new Point(3, 16)), new Wall(new Point(5, 16)), new Wall(new Point(6, 16)), new Wall(new Point(8, 16)), new Wall(new Point(10, 16)), new Wall(new Point(11, 16)), new Wall(new Point(17, 16)), new Wall(new Point(18, 16)), new Wall(new Point(19, 16)), new Wall(new Point(21, 16)), new Wall(new Point(22, 16)), new Wall(new Point(23, 16)), new Wall(new Point(24, 16)), new Wall(new Point(25, 16)), new Wall(new Point(29, 16)), new Wall(new Point(30, 16)), new Wall(new Point(31, 16)), new Wall(new Point(32, 16)), new Wall(new Point(34, 16)), new Wall(new Point(36, 16)), new Wall(new Point(37, 16)), new Wall(new Point(38, 16)), new Wall(new Point(3, 17)), new Enemy(new Point(4, 17)), new Wall(new Point(8, 17)), new Wall(new Point(10, 17)), new Wall(new Point(11, 17)), new Wall(new Point(13, 17)), new Wall(new Point(14, 17)), new Wall(new Point(15, 17)), new Wall(new Point(16, 17)), new Wall(new Point(17, 17)), new Wall(new Point(18, 17)), new Wall(new Point(19, 17)), new Wall(new Point(21, 17)), new Wall(new Point(25, 17)), new Wall(new Point(27, 17)), new Wall(new Point(28, 17)), new Wall(new Point(29, 17)), new Wall(new Point(32, 17)), new Wall(new Point(34, 17)), new Enemy(new Point(39, 17)), new Wall(new Point(1, 18)), new Wall(new Point(2, 18)), new Wall(new Point(3, 18)), new Wall(new Point(5, 18)), new Wall(new Point(6, 18)), new Wall(new Point(8, 18)), new Enemy(new Point(9, 18)), new Wall(new Point(10, 18)), new Wall(new Point(11, 18)), new Wall(new Point(18, 18)), new Wall(new Point(19, 18)), new Wall(new Point(21, 18)), new Wall(new Point(23, 18)), new Wall(new Point(27, 18)), new Wall(new Point(29, 18)), new Wall(new Point(31, 18)), new Wall(new Point(32, 18)), new Wall(new Point(34, 18)), new Wall(new Point(5, 19)), new Wall(new Point(6, 19)), new Wall(new Point(8, 19)), new Wall(new Point(13, 19)), new Wall(new Point(14, 19)), new Wall(new Point(15, 19)), new Wall(new Point(16, 19)), new Enemy(new Point(19, 19)), new Wall(new Point(23, 19)), new Wall(new Point(24, 19)), new Wall(new Point(25, 19)), new Wall(new Point(26, 19)), new Wall(new Point(27, 19)), new Enemy(new Point(29, 19)), new Wall(new Point(34, 19)), new Enemy(new Point(36, 19))]);
 
-	var exports = {
-		"instance": game,
-		"Creature": Creature,
-		"Player": Player,
-		"GameObject": GameObject,
-		"Point": Point,
-		"Vector": Vector,
-		"ActionManager": ActionManager,
-		"TileGroup": TileGroup,
-		"Utils": Utils,
-		"Tile": Tile,
-		"Wall": Wall
-	};
-
-	function exportObjs(exports) {
-		for (var key in exports) {
-			global[key] = exports[key];
-		}
-	}
 	if (env === "dev") {
-		exportObjs(exports);
+		Utils.exportObjs(Utils.exports);
 	} else if (env === "prod") {} else {
 		throw new TypeError("Invalid environment");
 	}

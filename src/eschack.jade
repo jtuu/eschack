@@ -1,3 +1,4 @@
+- var env = "dev"
 doctype
 html
 	title eschack
@@ -50,4 +51,7 @@ html
 
 
 		script(src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js")
-		script(src="dist/eschack.min.js")
+		if(env === "dev")
+			script(src="src/eschack.js")
+		else
+			script(src="dist/eschack.min.js")
