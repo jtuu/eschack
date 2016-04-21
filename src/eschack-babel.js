@@ -1513,6 +1513,8 @@ if (!Object.values) {
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
 
+			//contains the total durations of each objs actions for this turn
+			var objDurations = [];
 			for (var i = 0; i < tickCount; i++) {
 				this.time += TICK;
 
@@ -1521,8 +1523,12 @@ if (!Object.values) {
 						return;
 					}
 					if (obj.isAlive) {
-						if (obj.update(_this17.logger, _this17.time) > 0) {
+						var _duration = obj.update(_this17.logger, _this17.time + (objDurations[obj.id] || 0));
+						if (_duration > 0) {
+							//if action was excecuted we generate new ones and
+							//forward the time for this obj
 							_this17.logic.think(obj, _this17.player);
+							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						if (!obj.isAlive) {
