@@ -37,14 +37,8 @@ html
 			#todo
 				h3 TODO
 				ul
-					li kys
-					li 
-						strong gametime and object speed
-					li load level data from json?
-					li items? stats?
-					li dont show lifebars for enemies outside of fov
-					li enemies shouldnt attack friendlies (faction system?)
-					li pathfinding
+					each val in todo
+						li=	 val
 					
 			a.github-button(data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/") Watch
 			script#github-bjs(async defer src="https://buttons.github.io/buttons.js")

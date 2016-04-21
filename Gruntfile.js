@@ -70,8 +70,8 @@ module.exports = function(grunt) {
 		pug: {
 			compile: {
 				options: {
-					data: {
-						debug: false
+					data: function(dest, src){
+						return require('./todo.json')
 					}
 				},
 				files: {
