@@ -1093,6 +1093,7 @@ if (!Object.values) {
 		};
 
 		ActionManager.prototype.getFov = function getFov(actor) {
+			if (!actor) return;
 			var _actor$position$get = actor.position.get;
 			var ax = _actor$position$get[0];
 			var ay = _actor$position$get[1];
@@ -1138,6 +1139,9 @@ if (!Object.values) {
 		ActionManager.prototype.delegateAction = function delegateAction(actor, instruction) {
 			var _this18 = this;
 
+			if (!actor) {
+				return;
+			}
 			if (instruction && typeof instruction === "function") {
 				instruction = instruction();
 				var proposals = this.proposalMap[instruction.constructor];
@@ -1555,7 +1559,7 @@ if (!Object.values) {
 					_this20.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
-					if (fov.has(gamePoint)) {
+					if (fov && fov.has(gamePoint)) {
 						var targetTile = _this20.board.get(gamePoint);
 
 						//if tile is not empty
@@ -1634,21 +1638,27 @@ if (!Object.values) {
 				});
 			}
 
+			if (!this.player.isAlive) {
+				this.board.remove(this.player);
+				delete this.player;
+			}
+
 			var fov = this.logic.getFov(this.player);
 
-			this.objs.forEach(function (obj) {
-				if (obj.type === "Enemy") {
-					if (fov.has(obj.position)) {
-						obj.lifebar.show();
-					} else {
-						obj.lifebar.hide();
+			if (fov) {
+				this.objs.forEach(function (obj) {
+					if (obj.type === "Enemy") {
+						if (fov.has(obj.position)) {
+							obj.lifebar.show();
+						} else {
+							obj.lifebar.hide();
+						}
 					}
-				}
-			});
-
-			mainCtx.clearRect(0, 0, w, h);
-			fov.draw();
-			secondCtx.drawImage(mainCanvas, 0, 0);
+				});
+				mainCtx.clearRect(0, 0, w, h);
+				fov.draw();
+				secondCtx.drawImage(mainCanvas, 0, 0);
+			}
 		};
 
 		Game.prototype.start = function start() {

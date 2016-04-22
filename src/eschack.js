@@ -810,6 +810,7 @@ if (!Object.values) {
 		}
 
 		getFov(actor) {
+			if(!actor)return;
 			let [ax, ay] = actor.position.get,
 				range = actor.stats.viewDistance,
 				quarters = {
@@ -849,6 +850,9 @@ if (!Object.values) {
 
 		//what does this do again? give actions to actors? or just the player?
 		delegateAction(actor, instruction) {
+			if(!actor){
+				return;
+			}
 			if (instruction && typeof instruction === "function") {
 				instruction = instruction();
 				let proposals = this.proposalMap[instruction.constructor];
@@ -1207,7 +1211,7 @@ if (!Object.values) {
 					this.mouseHandler.cursorFromScreen(screenPoint);
 						
 					//if hovering over a tile that is seen
-					if(fov.has(gamePoint)){
+					if(fov && fov.has(gamePoint)){
 						let targetTile = this.board.get(gamePoint);
 						
 						//if tile is not empty
@@ -1283,22 +1287,28 @@ if (!Object.values) {
 					}
 				});
 			}
+			
+			if(!this.player.isAlive){
+				this.board.remove(this.player);
+				delete this.player;
+			}
 
 			let fov = this.logic.getFov(this.player);
 			
-			this.objs.forEach(obj => {
-				if(obj.type === "Enemy"){
-					if(fov.has(obj.position)){
-						obj.lifebar.show();
-					}else{
-						obj.lifebar.hide();
+			if(fov){
+				this.objs.forEach(obj => {
+					if(obj.type === "Enemy"){
+						if(fov.has(obj.position)){
+							obj.lifebar.show();
+						}else{
+							obj.lifebar.hide();
+						}
 					}
-				}
-			});
-
-			mainCtx.clearRect(0, 0, w, h);
-			fov.draw();
-			secondCtx.drawImage(mainCanvas, 0, 0);
+				});
+				mainCtx.clearRect(0, 0, w, h);
+				fov.draw();
+				secondCtx.drawImage(mainCanvas, 0, 0);
+			}
 
 		}
 
