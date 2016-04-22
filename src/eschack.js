@@ -112,7 +112,7 @@ if (!Object.values) {
 		//add object to tiles container
 		add(obj) {
 			if (!obj instanceof GameObject) throw new TypeError("Added object must be of type GameObject.");
-			if(obj.isBlocking){
+			if(obj.isMoveBlocking){
 				this.contents.unshift(obj);
 			}else{
 				this.contents.push(obj);
@@ -366,14 +366,40 @@ if (!Object.values) {
 		}
 	};
 	
-	const Blocking = Base => class extends Base{
-		get isBlocking(){
+	const MoveBlocking = Base => class extends Base{
+		get isMoveBlocking(){
+			return true;
+		}
+	};
+	const VisionBlocking = Base => class extends Base{
+		get isVisionBlocking(){
+			return true;
+		}
+	};
+	
+	const Hittable = Base => class extends Base{
+		takeDamage(damage, logger) {
+			this.stats.HP -= damage;
+			if (this.lifebar) this.lifebar.set(this.stats.HP);
+			if (this.stats.HP <= 0) {
+				this.die(logger);
+				return true;
+			}
+			return false;
+		}
+		
+		die(logger) {
+			logger.log(this.flavorName + " died", "death");
+			if(this.lifebar)this.lifebar.remove();
+		}
+		
+		get isHittable(){
 			return true;
 		}
 	};
 
 	//todo: create base class Inanimate or something
-	const Wall = class Wall extends Blocking(GameObject) {
+	const Wall = class Wall extends VisionBlocking(MoveBlocking(GameObject)) {
 		constructor(position) {
 			super(position);
 			this.bgColor = "hsl(0,0%,15%)";
@@ -389,9 +415,7 @@ if (!Object.values) {
 
 
 	//any living dead undead whatever creature
-	//perhaps there should be a Hittable mixin or something so the same methods
-	//could be used for inanimate objects as well
-	const Creature = class Creature extends Blocking(GameObject) {
+	const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 		constructor(position, stats, weapon) {
 			super(position);
 			//actions actually contains arrays of actions
@@ -447,22 +471,6 @@ if (!Object.values) {
 			}
 
 			return elapsedTime;
-		}
-
-		takeDamage(damage, logger) {
-			this.stats.HP -= damage;
-			if (this.lifebar) this.lifebar.set(this.stats.HP);
-			if (this.stats.HP <= 0) {
-				this.die(logger);
-				return true;
-			}
-			return false;
-		}
-
-		//can we remove anything else to free up memory?
-		die(logger) {
-			logger.log(this.flavorName + " died", "death");
-			this.lifebar.remove();
 		}
 
 		toString() {
@@ -588,7 +596,7 @@ if (!Object.values) {
 			let target = new Point(...actor.position.get);
 			target.moveBy(this.movement);
 			let tile = this.context.get(target);
-			return tile.isEmpty || (tile && tile.top && !tile.top.isBlocking);
+			return tile.isEmpty || (tile && tile.top && !tile.top.isMoveBlocking);
 		}
 
 		do(actor) {
@@ -611,8 +619,9 @@ if (!Object.values) {
 			}
 			let target = new Point(...actor.position.get);
 			target.moveBy(this.direction);
-			//if some kind of Hittable interface is added this should be changed --------V
-			return this.context.get(target) && this.context.get(target).top instanceof Creature;
+			
+			let tile = this.context.get(target);
+			return tile && tile.top && tile.top.isHittable;
 		}
 
 		do(actor) {
@@ -920,7 +929,7 @@ if (!Object.values) {
 			let ox = 0;
 			while (matrix[ox] && matrix[ox][0]) {
 				visible[ox][0] = matrix[ox][0];
-				if (matrix[ox][0].top && (matrix[ox][0].top instanceof Wall)) {
+				if (matrix[ox][0].top && matrix[ox][0].top.isVisionBlocking) {
 					break;
 				}
 				ox++;
@@ -928,7 +937,7 @@ if (!Object.values) {
 			let oy = 0;
 			while (matrix[0] && matrix[0][oy]) {
 				visible[0][oy] = matrix[0][oy];
-				if (matrix[0][oy].top ^ (matrix[0][oy].top instanceof Wall)) {
+				if (matrix[0][oy].top && matrix[0][oy].top.isVisionBlocking) {
 					break;
 				}
 				oy++;
@@ -948,7 +957,7 @@ if (!Object.values) {
 					if (min < cor) {
 						if (matrix[x] && matrix[x][y]) {
 							visible[x][y] = matrix[x][y];
-							if (matrix[x][y].top && (matrix[x][y].top instanceof Wall)) {
+							if (matrix[x][y].top && matrix[x][y].top.isVisionBlocking) {
 								min = cor;
 								needBreak = true;
 							}
@@ -960,7 +969,7 @@ if (!Object.values) {
 					if (max < cor) {
 						if (matrix[x] && matrix[x][y]) {
 							visible[x][y] = matrix[x][y];
-							if (matrix[x][y].top && (matrix[x][y].top instanceof Wall)) {
+							if (matrix[x][y].top && matrix[x][y].top.isVisionBlocking) {
 								max = cor;
 								needBreak = true;
 							}
