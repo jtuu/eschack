@@ -148,7 +148,7 @@ if (!Object.values) {
 			_classCallCheck(this, Tile);
 
 			this.position = point;
-			this.contents = new Set();
+			this.contents = [];
 		}
 
 		//check if tile has anything in it
@@ -158,14 +158,21 @@ if (!Object.values) {
 
 		Tile.prototype.add = function add(obj) {
 			if (!obj instanceof GameObject) throw new TypeError("Added object must be of type GameObject.");
-			this.contents.add(obj);
+			if (obj.isBlocking) {
+				this.contents.unshift(obj);
+			} else {
+				this.contents.push(obj);
+			}
 		};
 
 		//remove from tiles container
 
 
 		Tile.prototype.remove = function remove(obj) {
-			this.contents.delete(obj);
+			var index = this.contents.indexOf(obj);
+			if (index > -1) {
+				this.contents.splice(index, 1);
+			}
 		};
 
 		//get the first object in container
@@ -174,7 +181,7 @@ if (!Object.values) {
 		//remove everything from container
 
 		Tile.prototype.empty = function empty() {
-			this.contents.clear();
+			this.contents = [];
 		};
 
 		//get all contents
@@ -187,17 +194,17 @@ if (!Object.values) {
 		_createClass(Tile, [{
 			key: "isEmpty",
 			get: function get() {
-				return this.contents.size === 0;
+				return this.contents.length === 0;
 			}
 		}, {
 			key: "top",
 			get: function get() {
-				return this.contents.values().next().value;
+				return this.contents[0];
 			}
 		}, {
 			key: "get",
 			get: function get() {
-				return Array.from(this.contents);
+				return this.contents;
 			}
 		}]);
 
@@ -279,7 +286,7 @@ if (!Object.values) {
 				return row.forEach(function (tile, x) {
 					if (tile && !tile.isEmpty) {
 						var temp = tile.top;
-						tile.empty();
+						tile.contents.shift();
 						_this2.insert(temp);
 					}
 				});
@@ -402,15 +409,24 @@ if (!Object.values) {
 		return TileGroup;
 	}();
 
-	var Weapon =
-	//todo: basespeed (weight?), special properties (cleave, reach)
-	//stuff
-	function Weapon(damage, speed) {
-		_classCallCheck(this, Weapon);
+	var Weapon = function () {
+		//todo: basespeed (weight?), special properties (cleave, reach)
+		//stuff
 
-		this.damage = damage || 1;
-		this.speed = speed || 10;
-	};
+		function Weapon(name, damage, speed) {
+			_classCallCheck(this, Weapon);
+
+			this.damage = damage || 1;
+			this.speed = speed || 10;
+			this.name = name;
+		}
+
+		Weapon.prototype.toString = function toString() {
+			return this.name + " (" + this.damage + ", " + this.speed + ")";
+		};
+
+		return Weapon;
+	}();
 
 	//basically any gameobject that takes up a whole tile is a GameObject
 	//this is the base class so uhhh let's not allow instantiation
@@ -469,20 +485,41 @@ if (!Object.values) {
 		return GameObject;
 	}();
 
+	var Blocking = function Blocking(Base) {
+		return function (_Base) {
+			_inherits(_class, _Base);
+
+			function _class() {
+				_classCallCheck(this, _class);
+
+				return _possibleConstructorReturn(this, _Base.apply(this, arguments));
+			}
+
+			_createClass(_class, [{
+				key: "isBlocking",
+				get: function get() {
+					return true;
+				}
+			}]);
+
+			return _class;
+		}(Base);
+	};
+
 	//todo: create base class Inanimate or something
-	var Wall = function (_GameObject) {
-		_inherits(Wall, _GameObject);
+	var Wall = function (_Blocking) {
+		_inherits(Wall, _Blocking);
 
 		function Wall(position) {
 			_classCallCheck(this, Wall);
 
-			var _this4 = _possibleConstructorReturn(this, _GameObject.call(this, position));
+			var _this5 = _possibleConstructorReturn(this, _Blocking.call(this, position));
 
-			_this4.bgColor = "hsl(0,0%,15%)";
-			_this4.glyph = "▉"; //some block character
-			_this4.color = "hsl(0,0%,25%)";
-			_this4.flavorName = "wall";
-			return _this4;
+			_this5.bgColor = "hsl(0,0%,15%)";
+			_this5.glyph = "▉"; //some block character
+			_this5.color = "hsl(0,0%,25%)";
+			_this5.flavorName = "wall";
+			return _this5;
 		}
 
 		Wall.prototype.update = function update() {
@@ -490,41 +527,42 @@ if (!Object.values) {
 		};
 
 		return Wall;
-	}(GameObject);
+	}(Blocking(GameObject));
 
 	//any living dead undead whatever creature
 	//perhaps there should be a Hittable mixin or something so the same methods
 	//could be used for inanimate objects as well
-	var Creature = function (_GameObject2) {
-		_inherits(Creature, _GameObject2);
+	var Creature = function (_Blocking2) {
+		_inherits(Creature, _Blocking2);
 
-		function Creature(position, stats) {
+		function Creature(position, stats, weapon) {
 			_classCallCheck(this, Creature);
 
 			//actions actually contains arrays of actions
 
-			var _this5 = _possibleConstructorReturn(this, _GameObject2.call(this, position));
+			var _this6 = _possibleConstructorReturn(this, _Blocking2.call(this, position));
 
-			_this5.actions = [];
+			_this6.actions = [];
 
-			_this5.stats = stats || {
+			_this6.stats = stats || {
 				"maxHP": 3,
 				"HP": 3,
 				"viewDistance": 5,
 				"moveSpeed": 10
 			};
+			_this6.weapon = weapon || new Weapon("Claws");
+			_this6.inventory = [_this6.weapon];
 
-			_this5.weapon = new Weapon();
-			_this5.flavorName = "creature";
-			_this5.flavor = "It is mundane."; //flavor text used in examine
-			return _this5;
+			_this6.flavorName = "creature";
+			_this6.flavor = "It is mundane."; //flavor text used in examine
+			return _this6;
 		}
 
 		//oh boy
 
 
 		Creature.prototype.update = function update(logger) {
-			var _this6 = this;
+			var _this7 = this;
 
 			var time = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 
@@ -543,14 +581,14 @@ if (!Object.values) {
 
 					proposals.some(function (p) {
 						var action = p();
-						if (action.try(_this6, time)) {
+						if (action.try(_this7, time)) {
 							chosen = action;
 							return true;
 						} else {
 							return false;
 						}
 					});
-					elapsedTime += chosen.do(_this6);
+					elapsedTime += chosen.do(_this7);
 					updateCount++;
 				} catch (err) {
 					//console.warn("None of the proposed actions were suitable for " + this.constructor.name);
@@ -588,7 +626,7 @@ if (!Object.values) {
 		};
 
 		return Creature;
-	}(GameObject);
+	}(Blocking(GameObject));
 
 	var Player = function (_Creature) {
 		_inherits(Player, _Creature);
@@ -596,25 +634,25 @@ if (!Object.values) {
 		function Player(position, stats) {
 			_classCallCheck(this, Player);
 
-			var _this7 = _possibleConstructorReturn(this, _Creature.call(this, position, stats));
+			var _this8 = _possibleConstructorReturn(this, _Creature.call(this, position, stats, new Weapon("Dagger", 1, 5)));
 
-			_this7.actions = [];
-			_this7.bgColor = "white";
-			_this7.glyph = "@";
-			_this7.color = "black";
+			_this8.actions = [];
+			_this8.bgColor = "white";
+			_this8.glyph = "@";
+			_this8.color = "black";
 
-			_this7.stats.maxHP = 50;
-			_this7.stats.HP = 50;
-			_this7.stats.viewDistance = 8;
-			_this7.stats.moveSpeed = 10;
+			_this8.stats.maxHP = 50;
+			_this8.stats.HP = 50;
+			_this8.stats.viewDistance = 8;
+			_this8.stats.moveSpeed = 10;
 
-			_this7.stats = stats || _this7.stats;
+			_this8.stats = stats || _this8.stats;
 
-			_this7.lifebar = new Lifebar(_this7.id, "Hero", document.getElementById("info-container-player"), _this7.stats.maxHP, _this7.stats.HP);
-			_this7.flavorName = "you";
-			_this7.flavor = "Hi mom!";
+			_this8.lifebar = new Lifebar(_this8.id, "Hero", document.getElementById("info-container-player"), _this8.stats.maxHP, _this8.stats.HP);
+			_this8.flavorName = "you";
+			_this8.flavor = "Hi mom!";
 			//todo: store username here?
-			return _this7;
+			return _this8;
 		}
 
 		return Player;
@@ -627,24 +665,24 @@ if (!Object.values) {
 		function Enemy(position, stats) {
 			_classCallCheck(this, Enemy);
 
-			var _this8 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
+			var _this9 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats, new Weapon("Claws", 2, 10)));
 
-			_this8.actions = [];
-			_this8.bgColor = "hsl(30, 30%, 45%)";
-			_this8.glyph = "E";
-			_this8.color = "white";
+			_this9.actions = [];
+			_this9.bgColor = "hsl(30, 30%, 45%)";
+			_this9.glyph = "E";
+			_this9.color = "white";
 
-			_this8.stats.maxHP = 3;
-			_this8.stats.HP = 3;
-			_this8.stats.viewDistance = 7;
-			_this8.stats.moveSpeed = 9;
+			_this9.stats.maxHP = 3;
+			_this9.stats.HP = 3;
+			_this9.stats.viewDistance = 7;
+			_this9.stats.moveSpeed = 9;
 
-			_this8.stats = stats || _this8.stats;
+			_this9.stats = stats || _this9.stats;
 
-			_this8.lifebar = new Lifebar(_this8.id, "Enemy", document.getElementById("info-container-other-life"), _this8.stats.maxHP, _this8.stats.HP);
-			_this8.flavorName = "the enemy";
-			_this8.flavor = "It has a fearsome visage.";
-			return _this8;
+			_this9.lifebar = new Lifebar(_this9.id, "Enemy", document.getElementById("info-container-other-life"), _this9.stats.maxHP, _this9.stats.HP);
+			_this9.flavorName = "the enemy";
+			_this9.flavor = "It has a fearsome visage.";
+			return _this9;
 		}
 
 		Enemy.prototype.toString = function toString() {
@@ -653,6 +691,18 @@ if (!Object.values) {
 
 		return Enemy;
 	}(Creature);
+
+	var Item = function (_GameObject) {
+		_inherits(Item, _GameObject);
+
+		function Item(position) {
+			_classCallCheck(this, Item);
+
+			return _possibleConstructorReturn(this, _GameObject.call(this, position));
+		}
+
+		return Item;
+	}(GameObject);
 
 	//these contain the logic for actions but they will be used on the actor
 	//the context shouldnt be changed but the action can be reused
@@ -721,10 +771,10 @@ if (!Object.values) {
 		function MoveAction(context, logger, movement) {
 			_classCallCheck(this, MoveAction);
 
-			var _this10 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
+			var _this12 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
 
-			_this10.movement = movement;
-			return _this10;
+			_this12.movement = movement;
+			return _this12;
 		}
 
 		MoveAction.prototype.try = function _try(actor, time) {
@@ -735,7 +785,8 @@ if (!Object.values) {
 			//check if the point we're trying to move to is empty
 			var target = new (Function.prototype.bind.apply(Point, [null].concat(actor.position.get)))();
 			target.moveBy(this.movement);
-			return this.context.get(target) && this.context.get(target).isEmpty;
+			var tile = this.context.get(target);
+			return tile.isEmpty || tile && tile.top && !tile.top.isBlocking;
 		};
 
 		MoveAction.prototype.do = function _do(actor) {
@@ -753,10 +804,10 @@ if (!Object.values) {
 		function AttackAction(context, logger, direction) {
 			_classCallCheck(this, AttackAction);
 
-			var _this11 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
+			var _this13 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
 
-			_this11.direction = direction;
-			return _this11;
+			_this13.direction = direction;
+			return _this13;
 		}
 
 		AttackAction.prototype.try = function _try(actor, time) {
@@ -775,7 +826,7 @@ if (!Object.values) {
 			target.moveBy(this.direction);
 			target = this.context.get(target);
 
-			this.logger.log(actor.flavorName + " hit " + target.top.flavorName + " for " + actor.weapon.damage + " damage", actor.constructor === Player ? "hit" : "damage");
+			this.logger.log(actor.flavorName + " hit " + target.top.flavorName + " for " + actor.weapon.damage + " damage with " + actor.weapon, actor.constructor === Player ? "hit" : "damage");
 			var died = target.top.takeDamage(actor.weapon.damage, this.logger);
 			if (died) {
 				this.context.remove(target.top);
@@ -831,7 +882,7 @@ if (!Object.values) {
 		};
 
 		Lifebar.prototype.setStyle = function setStyle(style) {
-			var _this12 = this;
+			var _this14 = this;
 
 			var styles = {
 				"hilight": "hilighted",
@@ -843,8 +894,8 @@ if (!Object.values) {
 				Object.values(styles).filter(function (v) {
 					return v !== style;
 				}).forEach(function (f) {
-					_this12.bar.classList.remove(f);
-					_this12.label.classList.remove(f);
+					_this14.bar.classList.remove(f);
+					_this14.label.classList.remove(f);
 				});
 
 				this.bar.classList.add(style);
@@ -959,11 +1010,11 @@ if (!Object.values) {
 
 
 		ActionManager.prototype.think = function think(actor, player) {
-			var _this13 = this;
+			var _this15 = this;
 
 			if (actor instanceof Enemy) {
 				var _ret = function () {
-					var fov = _this13.getFov(actor);
+					var fov = _this15.getFov(actor);
 					actor.target = fov.get(player.position);
 					var instruction = null;
 
@@ -982,15 +1033,15 @@ if (!Object.values) {
 						var vector = Point.distance(actor.position, actor.target.position);
 						vector.reduce();
 						instruction = vector;
-						if (!actor.noticed) _this13.logger.log(actor.flavorName + " noticed " + player.flavorName);
+						if (!actor.noticed) _this15.logger.log(actor.flavorName + " noticed " + player.flavorName);
 						actor.noticed = true;
 					}
 
-					var proposals = _this13.proposalMap[instruction.constructor];
+					var proposals = _this15.proposalMap[instruction.constructor];
 					if (proposals) {
 						var methods = proposals.map(function (action) {
 							return function () {
-								return new action(_this13.board, _this13.logger, instruction);
+								return new action(_this15.board, _this15.logger, instruction);
 							};
 						});
 						actor.actions.push(methods);
@@ -1045,7 +1096,7 @@ if (!Object.values) {
 
 
 		ActionManager.prototype.delegateAction = function delegateAction(actor, instruction) {
-			var _this14 = this;
+			var _this16 = this;
 
 			if (instruction && typeof instruction === "function") {
 				instruction = instruction();
@@ -1053,7 +1104,7 @@ if (!Object.values) {
 				if (proposals) {
 					var methods = proposals.map(function (action) {
 						return function () {
-							return new action(_this14.board, _this14.logger, instruction);
+							return new action(_this16.board, _this16.logger, instruction);
 						};
 					});
 					actor.actions.push(methods);
@@ -1063,7 +1114,7 @@ if (!Object.values) {
 				}
 			} else if (instruction === null) {
 				actor.actions.push([function () {
-					return new NullAction(null, _this14.logger);
+					return new NullAction(null, _this16.logger);
 				}]);
 				return true;
 			}
@@ -1343,7 +1394,7 @@ if (!Object.values) {
 
 
 		LogboxManager.prototype.log = function log(text) {
-			var _this15 = this;
+			var _this17 = this;
 
 			var type = arguments.length <= 1 || arguments[1] === undefined ? "default" : arguments[1];
 
@@ -1364,7 +1415,7 @@ if (!Object.values) {
 			} else {
 				this.rows[0].children[0].remove();
 				this.rows.forEach(function (row, index) {
-					row.appendChild(_this15.messages[_this15.messages.length - (_this15.rowCount - index)]);
+					row.appendChild(_this17.messages[_this17.messages.length - (_this17.rowCount - index)]);
 				});
 			}
 		};
@@ -1418,7 +1469,7 @@ if (!Object.values) {
 	//the game
 	var Game = function () {
 		function Game(board, objs) {
-			var _this16 = this;
+			var _this18 = this;
 
 			_classCallCheck(this, Game);
 
@@ -1430,15 +1481,15 @@ if (!Object.values) {
 			this.player = objs[0];
 			this.objs = [];
 			objs.forEach(function (obj) {
-				return _this16.objs[obj.id] = obj;
+				return _this18.objs[obj.id] = obj;
 			});
 
 			this.logic = new ActionManager(this.board, this.logger);
 
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this16.logic.delegateAction(_this16.player, _this16.keyHandler.get(e.keyCode))) {
-					_this16.update();
+				if (_this18.logic.delegateAction(_this18.player, _this18.keyHandler.get(e.keyCode))) {
+					_this18.update();
 				}
 			});
 
@@ -1452,56 +1503,56 @@ if (!Object.values) {
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this16.board.bounds;
+				var bounds = _this18.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this16.logic.getFov(_this16.player),
-					    gamePoint = Utils.screenToGame(screenPoint, _this16.board.tileSize, _this16.board.spacing);
+					var fov = _this18.logic.getFov(_this18.player),
+					    gamePoint = Utils.screenToGame(screenPoint, _this18.board.tileSize, _this18.board.spacing);
 
 					//set cursor position
-					_this16.mouseHandler.cursorFromScreen(screenPoint);
+					_this18.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov.has(gamePoint)) {
-						var targetTile = _this16.board.get(gamePoint);
+						var targetTile = _this18.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this16.objs.forEach(function (obj) {
+							_this18.objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this16.examineContainer.innerHTML = targetTile.top;
+							_this18.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this16.examineContainer.innerHTML = targetTile;
+							_this18.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this16.examineContainer.innerHTML = "You can't see that";
+						_this18.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this16.objs.forEach(function (obj) {
+						_this18.objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this16.objs[Number(id)];
+						var target = _this18.objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this16.mouseHandler.cursorFromGame(target.position);
-							_this16.examineContainer.innerHTML = target;
+							_this18.mouseHandler.cursorFromGame(target.position);
+							_this18.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
@@ -1509,7 +1560,7 @@ if (!Object.values) {
 		}
 
 		Game.prototype.update = function update() {
-			var _this17 = this;
+			var _this19 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
@@ -1524,21 +1575,21 @@ if (!Object.values) {
 						return;
 					}
 					if (obj.isAlive) {
-						var _duration = obj.update(_this17.logger, _this17.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this19.logger, _this19.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this17.logic.think(obj, _this17.player);
+							_this19.logic.think(obj, _this19.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						if (!obj.isAlive) {
-							_this17.board.remove(obj);
-							delete _this17.objs[obj.id];
+							_this19.board.remove(obj);
+							delete _this19.objs[obj.id];
 						}
 					} else {
-						_this17.board.remove(obj);
-						delete _this17.objs[obj.id];
+						_this19.board.remove(obj);
+						delete _this19.objs[obj.id];
 					}
 				});
 			}
@@ -1561,11 +1612,11 @@ if (!Object.values) {
 		};
 
 		Game.prototype.start = function start() {
-			var _this18 = this;
+			var _this20 = this;
 
 			document.getElementById("button-save").addEventListener("click", function (e) {
 				e.stopPropagation();
-				Utils.saveGame(_this18);
+				Utils.saveGame(_this20);
 			});
 
 			document.getElementById("button-delete").addEventListener("click", function (e) {
@@ -1576,14 +1627,14 @@ if (!Object.values) {
 			this.logger.log("Hello and welcome", "hilight");
 			this.objs.forEach(function (obj) {
 				if (obj) {
-					_this18.board.insert(obj);
+					_this20.board.insert(obj);
 				}
 			});
 
 			var fov = this.logic.getFov(this.player);
 
 			this.objs.forEach(function (obj) {
-				_this18.logic.think(obj, _this18.player);
+				_this20.logic.think(obj, _this20.player);
 				if (obj.type === "Enemy") {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
@@ -1607,7 +1658,7 @@ if (!Object.values) {
 		spacing: 1,
 		w: 40,
 		h: 20
-	}), [new Player(new Point(18, 9)), new Wall(new Point(3, 0)), new Wall(new Point(7, 0)), new Wall(new Point(8, 0)), new Wall(new Point(9, 0)), new Wall(new Point(10, 0)), new Wall(new Point(11, 0)), new Wall(new Point(12, 0)), new Wall(new Point(13, 0)), new Wall(new Point(14, 0)), new Wall(new Point(15, 0)), new Wall(new Point(16, 0)), new Wall(new Point(17, 0)), new Enemy(new Point(18, 0)), new Wall(new Point(22, 0)), new Wall(new Point(23, 0)), new Wall(new Point(27, 0)), new Wall(new Point(28, 0)), new Wall(new Point(29, 0)), new Wall(new Point(30, 0)), new Wall(new Point(31, 0)), new Wall(new Point(32, 0)), new Wall(new Point(33, 0)), new Wall(new Point(34, 0)), new Wall(new Point(35, 0)), new Enemy(new Point(39, 0)), new Wall(new Point(1, 1)), new Wall(new Point(5, 1)), new Wall(new Point(7, 1)), new Wall(new Point(9, 1)), new Wall(new Point(14, 1)), new Wall(new Point(15, 1)), new Wall(new Point(16, 1)), new Wall(new Point(17, 1)), new Wall(new Point(19, 1)), new Wall(new Point(20, 1)), new Wall(new Point(22, 1)), new Wall(new Point(23, 1)), new Wall(new Point(25, 1)), new Wall(new Point(32, 1)), new Wall(new Point(33, 1)), new Enemy(new Point(1, 2)), new Wall(new Point(3, 2)), new Enemy(new Point(5, 2)), new Wall(new Point(7, 2)), new Wall(new Point(11, 2)), new Wall(new Point(12, 2)), new Enemy(new Point(24, 2)), new Wall(new Point(25, 2)), new Wall(new Point(27, 2)), new Wall(new Point(28, 2)), new Wall(new Point(30, 2)), new Wall(new Point(35, 2)), new Enemy(new Point(39, 2)), new Wall(new Point(1, 3)), new Wall(new Point(5, 3)), new Wall(new Point(7, 3)), new Wall(new Point(9, 3)), new Wall(new Point(12, 3)), new Wall(new Point(13, 3)), new Wall(new Point(14, 3)), new Wall(new Point(15, 3)), new Wall(new Point(16, 3)), new Wall(new Point(17, 3)), new Wall(new Point(18, 3)), new Wall(new Point(19, 3)), new Wall(new Point(20, 3)), new Wall(new Point(21, 3)), new Wall(new Point(22, 3)), new Wall(new Point(23, 3)), new Wall(new Point(24, 3)), new Wall(new Point(25, 3)), new Wall(new Point(28, 3)), new Wall(new Point(30, 3)), new Wall(new Point(31, 3)), new Wall(new Point(32, 3)), new Wall(new Point(33, 3)), new Wall(new Point(34, 3)), new Wall(new Point(35, 3)), new Wall(new Point(36, 3)), new Wall(new Point(37, 3)), new Wall(new Point(38, 3)), new Wall(new Point(39, 3)), new Wall(new Point(3, 4)), new Wall(new Point(7, 4)), new Wall(new Point(9, 4)), new Wall(new Point(10, 4)), new Wall(new Point(12, 4)), new Wall(new Point(13, 4)), new Wall(new Point(17, 4)), new Enemy(new Point(22, 4)), new Wall(new Point(24, 4)), new Wall(new Point(25, 4)), new Wall(new Point(26, 4)), new Wall(new Point(28, 4)), new Wall(new Point(33, 4)), new Wall(new Point(1, 5)), new Wall(new Point(5, 5)), new Wall(new Point(13, 5)), new Wall(new Point(15, 5)), new Wall(new Point(17, 5)), new Wall(new Point(19, 5)), new Wall(new Point(21, 5)), new Wall(new Point(22, 5)), new Wall(new Point(24, 5)), new Wall(new Point(25, 5)), new Wall(new Point(30, 5)), new Wall(new Point(31, 5)), new Wall(new Point(33, 5)), new Wall(new Point(35, 5)), new Wall(new Point(37, 5)), new Wall(new Point(38, 5)), new Wall(new Point(7, 6)), new Wall(new Point(8, 6)), new Wall(new Point(9, 6)), new Wall(new Point(10, 6)), new Wall(new Point(11, 6)), new Wall(new Point(13, 6)), new Wall(new Point(15, 6)), new Wall(new Point(17, 6)), new Wall(new Point(19, 6)), new Wall(new Point(21, 6)), new Wall(new Point(22, 6)), new Wall(new Point(24, 6)), new Wall(new Point(27, 6)), new Wall(new Point(28, 6)), new Wall(new Point(33, 6)), new Wall(new Point(38, 6)), new Wall(new Point(0, 7)), new Wall(new Point(1, 7)), new Wall(new Point(2, 7)), new Wall(new Point(3, 7)), new Wall(new Point(4, 7)), new Enemy(new Point(14, 7)), new Wall(new Point(15, 7)), new Wall(new Point(21, 7)), new Wall(new Point(22, 7)), new Wall(new Point(26, 7)), new Wall(new Point(27, 7)), new Wall(new Point(28, 7)), new Wall(new Point(29, 7)), new Wall(new Point(30, 7)), new Wall(new Point(31, 7)), new Wall(new Point(33, 7)), new Wall(new Point(34, 7)), new Wall(new Point(35, 7)), new Wall(new Point(36, 7)), new Wall(new Point(38, 7)), new Wall(new Point(4, 8)), new Wall(new Point(5, 8)), new Wall(new Point(7, 8)), new Wall(new Point(8, 8)), new Wall(new Point(9, 8)), new Wall(new Point(11, 8)), new Wall(new Point(12, 8)), new Wall(new Point(13, 8)), new Wall(new Point(14, 8)), new Wall(new Point(15, 8)), new Wall(new Point(21, 8)), new Wall(new Point(22, 8)), new Wall(new Point(24, 8)), new Wall(new Point(25, 8)), new Wall(new Point(26, 8)), new Wall(new Point(27, 8)), new Wall(new Point(28, 8)), new Wall(new Point(29, 8)), new Wall(new Point(30, 8)), new Wall(new Point(31, 8)), new Enemy(new Point(33, 8)), new Wall(new Point(36, 8)), new Wall(new Point(38, 8)), new Enemy(new Point(2, 9)), new Wall(new Point(5, 9)), new Wall(new Point(31, 9)), new Wall(new Point(33, 9)), new Wall(new Point(34, 9)), new Wall(new Point(36, 9)), new Wall(new Point(38, 9)), new Wall(new Point(4, 10)), new Wall(new Point(5, 10)), new Wall(new Point(7, 10)), new Wall(new Point(8, 10)), new Wall(new Point(9, 10)), new Wall(new Point(10, 10)), new Wall(new Point(11, 10)), new Wall(new Point(12, 10)), new Wall(new Point(13, 10)), new Wall(new Point(15, 10)), new Wall(new Point(21, 10)), new Wall(new Point(22, 10)), new Wall(new Point(24, 10)), new Wall(new Point(26, 10)), new Wall(new Point(27, 10)), new Wall(new Point(29, 10)), new Wall(new Point(33, 10)), new Wall(new Point(34, 10)), new Wall(new Point(36, 10)), new Wall(new Point(38, 10)), new Wall(new Point(1, 11)), new Wall(new Point(2, 11)), new Wall(new Point(3, 11)), new Wall(new Point(4, 11)), new Wall(new Point(7, 11)), new Enemy(new Point(10, 11)), new Wall(new Point(11, 11)), new Wall(new Point(12, 11)), new Wall(new Point(15, 11)), new Wall(new Point(21, 11)), new Wall(new Point(24, 11)), new Wall(new Point(26, 11)), new Wall(new Point(27, 11)), new Wall(new Point(29, 11)), new Wall(new Point(31, 11)), new Wall(new Point(32, 11)), new Wall(new Point(33, 11)), new Wall(new Point(34, 11)), new Wall(new Point(38, 11)), new Wall(new Point(1, 12)), new Wall(new Point(6, 12)), new Wall(new Point(7, 12)), new Wall(new Point(8, 12)), new Wall(new Point(10, 12)), new Wall(new Point(11, 12)), new Wall(new Point(14, 12)), new Wall(new Point(15, 12)), new Wall(new Point(16, 12)), new Wall(new Point(17, 12)), new Wall(new Point(19, 12)), new Wall(new Point(20, 12)), new Wall(new Point(21, 12)), new Wall(new Point(23, 12)), new Wall(new Point(24, 12)), new Wall(new Point(26, 12)), new Wall(new Point(29, 12)), new Wall(new Point(36, 12)), new Wall(new Point(37, 12)), new Wall(new Point(38, 12)), new Wall(new Point(1, 13)), new Wall(new Point(2, 13)), new Wall(new Point(3, 13)), new Wall(new Point(4, 13)), new Wall(new Point(5, 13)), new Wall(new Point(6, 13)), new Wall(new Point(13, 13)), new Wall(new Point(14, 13)), new Wall(new Point(15, 13)), new Wall(new Point(16, 13)), new Wall(new Point(17, 13)), new Wall(new Point(19, 13)), new Wall(new Point(23, 13)), new Wall(new Point(24, 13)), new Enemy(new Point(25, 13)), new Wall(new Point(28, 13)), new Wall(new Point(29, 13)), new Wall(new Point(31, 13)), new Wall(new Point(32, 13)), new Wall(new Point(33, 13)), new Wall(new Point(34, 13)), new Wall(new Point(36, 13)), new Wall(new Point(2, 14)), new Wall(new Point(3, 14)), new Wall(new Point(5, 14)), new Wall(new Point(6, 14)), new Wall(new Point(8, 14)), new Wall(new Point(10, 14)), new Wall(new Point(11, 14)), new Wall(new Point(13, 14)), new Wall(new Point(14, 14)), new Wall(new Point(15, 14)), new Wall(new Point(16, 14)), new Wall(new Point(19, 14)), new Wall(new Point(21, 14)), new Wall(new Point(22, 14)), new Wall(new Point(23, 14)), new Wall(new Point(24, 14)), new Wall(new Point(25, 14)), new Wall(new Point(27, 14)), new Wall(new Point(28, 14)), new Wall(new Point(29, 14)), new Wall(new Point(31, 14)), new Wall(new Point(32, 14)), new Wall(new Point(33, 14)), new Wall(new Point(34, 14)), new Wall(new Point(38, 14)), new Wall(new Point(0, 15)), new Wall(new Point(3, 15)), new Wall(new Point(10, 15)), new Wall(new Point(11, 15)), new Wall(new Point(13, 15)), new Wall(new Point(14, 15)), new Wall(new Point(15, 15)), new Wall(new Point(18, 15)), new Wall(new Point(19, 15)), new Wall(new Point(27, 15)), new Wall(new Point(34, 15)), new Wall(new Point(36, 15)), new Wall(new Point(37, 15)), new Wall(new Point(38, 15)), new Wall(new Point(0, 16)), new Wall(new Point(1, 16)), new Wall(new Point(3, 16)), new Wall(new Point(5, 16)), new Wall(new Point(6, 16)), new Wall(new Point(8, 16)), new Wall(new Point(10, 16)), new Wall(new Point(11, 16)), new Wall(new Point(17, 16)), new Wall(new Point(18, 16)), new Wall(new Point(19, 16)), new Wall(new Point(21, 16)), new Wall(new Point(22, 16)), new Wall(new Point(23, 16)), new Wall(new Point(24, 16)), new Wall(new Point(25, 16)), new Wall(new Point(29, 16)), new Wall(new Point(30, 16)), new Wall(new Point(31, 16)), new Wall(new Point(32, 16)), new Wall(new Point(34, 16)), new Wall(new Point(36, 16)), new Wall(new Point(37, 16)), new Wall(new Point(38, 16)), new Wall(new Point(3, 17)), new Enemy(new Point(4, 17)), new Wall(new Point(8, 17)), new Wall(new Point(10, 17)), new Wall(new Point(11, 17)), new Wall(new Point(13, 17)), new Wall(new Point(14, 17)), new Wall(new Point(15, 17)), new Wall(new Point(16, 17)), new Wall(new Point(17, 17)), new Wall(new Point(18, 17)), new Wall(new Point(19, 17)), new Wall(new Point(21, 17)), new Wall(new Point(25, 17)), new Wall(new Point(27, 17)), new Wall(new Point(28, 17)), new Wall(new Point(29, 17)), new Wall(new Point(32, 17)), new Wall(new Point(34, 17)), new Enemy(new Point(39, 17)), new Wall(new Point(1, 18)), new Wall(new Point(2, 18)), new Wall(new Point(3, 18)), new Wall(new Point(5, 18)), new Wall(new Point(6, 18)), new Wall(new Point(8, 18)), new Enemy(new Point(9, 18)), new Wall(new Point(10, 18)), new Wall(new Point(11, 18)), new Wall(new Point(18, 18)), new Wall(new Point(19, 18)), new Wall(new Point(21, 18)), new Wall(new Point(23, 18)), new Wall(new Point(27, 18)), new Wall(new Point(29, 18)), new Wall(new Point(31, 18)), new Wall(new Point(32, 18)), new Wall(new Point(34, 18)), new Wall(new Point(5, 19)), new Wall(new Point(6, 19)), new Wall(new Point(8, 19)), new Wall(new Point(13, 19)), new Wall(new Point(14, 19)), new Wall(new Point(15, 19)), new Wall(new Point(16, 19)), new Enemy(new Point(19, 19)), new Wall(new Point(23, 19)), new Wall(new Point(24, 19)), new Wall(new Point(25, 19)), new Wall(new Point(26, 19)), new Wall(new Point(27, 19)), new Enemy(new Point(29, 19)), new Wall(new Point(34, 19)), new Enemy(new Point(36, 19))]);
+	}), [new Player(new Point(18, 9)), new Item(new Point(18, 10)), new Wall(new Point(3, 0)), new Wall(new Point(7, 0)), new Wall(new Point(8, 0)), new Wall(new Point(9, 0)), new Wall(new Point(10, 0)), new Wall(new Point(11, 0)), new Wall(new Point(12, 0)), new Wall(new Point(13, 0)), new Wall(new Point(14, 0)), new Wall(new Point(15, 0)), new Wall(new Point(16, 0)), new Wall(new Point(17, 0)), new Enemy(new Point(18, 0)), new Wall(new Point(22, 0)), new Wall(new Point(23, 0)), new Wall(new Point(27, 0)), new Wall(new Point(28, 0)), new Wall(new Point(29, 0)), new Wall(new Point(30, 0)), new Wall(new Point(31, 0)), new Wall(new Point(32, 0)), new Wall(new Point(33, 0)), new Wall(new Point(34, 0)), new Wall(new Point(35, 0)), new Enemy(new Point(39, 0)), new Wall(new Point(1, 1)), new Wall(new Point(5, 1)), new Wall(new Point(7, 1)), new Wall(new Point(9, 1)), new Wall(new Point(14, 1)), new Wall(new Point(15, 1)), new Wall(new Point(16, 1)), new Wall(new Point(17, 1)), new Wall(new Point(19, 1)), new Wall(new Point(20, 1)), new Wall(new Point(22, 1)), new Wall(new Point(23, 1)), new Wall(new Point(25, 1)), new Wall(new Point(32, 1)), new Wall(new Point(33, 1)), new Enemy(new Point(1, 2)), new Wall(new Point(3, 2)), new Enemy(new Point(5, 2)), new Wall(new Point(7, 2)), new Wall(new Point(11, 2)), new Wall(new Point(12, 2)), new Enemy(new Point(24, 2)), new Wall(new Point(25, 2)), new Wall(new Point(27, 2)), new Wall(new Point(28, 2)), new Wall(new Point(30, 2)), new Wall(new Point(35, 2)), new Enemy(new Point(39, 2)), new Wall(new Point(1, 3)), new Wall(new Point(5, 3)), new Wall(new Point(7, 3)), new Wall(new Point(9, 3)), new Wall(new Point(12, 3)), new Wall(new Point(13, 3)), new Wall(new Point(14, 3)), new Wall(new Point(15, 3)), new Wall(new Point(16, 3)), new Wall(new Point(17, 3)), new Wall(new Point(18, 3)), new Wall(new Point(19, 3)), new Wall(new Point(20, 3)), new Wall(new Point(21, 3)), new Wall(new Point(22, 3)), new Wall(new Point(23, 3)), new Wall(new Point(24, 3)), new Wall(new Point(25, 3)), new Wall(new Point(28, 3)), new Wall(new Point(30, 3)), new Wall(new Point(31, 3)), new Wall(new Point(32, 3)), new Wall(new Point(33, 3)), new Wall(new Point(34, 3)), new Wall(new Point(35, 3)), new Wall(new Point(36, 3)), new Wall(new Point(37, 3)), new Wall(new Point(38, 3)), new Wall(new Point(39, 3)), new Wall(new Point(3, 4)), new Wall(new Point(7, 4)), new Wall(new Point(9, 4)), new Wall(new Point(10, 4)), new Wall(new Point(12, 4)), new Wall(new Point(13, 4)), new Wall(new Point(17, 4)), new Enemy(new Point(22, 4)), new Wall(new Point(24, 4)), new Wall(new Point(25, 4)), new Wall(new Point(26, 4)), new Wall(new Point(28, 4)), new Wall(new Point(33, 4)), new Wall(new Point(1, 5)), new Wall(new Point(5, 5)), new Wall(new Point(13, 5)), new Wall(new Point(15, 5)), new Wall(new Point(17, 5)), new Wall(new Point(19, 5)), new Wall(new Point(21, 5)), new Wall(new Point(22, 5)), new Wall(new Point(24, 5)), new Wall(new Point(25, 5)), new Wall(new Point(30, 5)), new Wall(new Point(31, 5)), new Wall(new Point(33, 5)), new Wall(new Point(35, 5)), new Wall(new Point(37, 5)), new Wall(new Point(38, 5)), new Wall(new Point(7, 6)), new Wall(new Point(8, 6)), new Wall(new Point(9, 6)), new Wall(new Point(10, 6)), new Wall(new Point(11, 6)), new Wall(new Point(13, 6)), new Wall(new Point(15, 6)), new Wall(new Point(17, 6)), new Wall(new Point(19, 6)), new Wall(new Point(21, 6)), new Wall(new Point(22, 6)), new Wall(new Point(24, 6)), new Wall(new Point(27, 6)), new Wall(new Point(28, 6)), new Wall(new Point(33, 6)), new Wall(new Point(38, 6)), new Wall(new Point(0, 7)), new Wall(new Point(1, 7)), new Wall(new Point(2, 7)), new Wall(new Point(3, 7)), new Wall(new Point(4, 7)), new Enemy(new Point(14, 7)), new Wall(new Point(15, 7)), new Wall(new Point(21, 7)), new Wall(new Point(22, 7)), new Wall(new Point(26, 7)), new Wall(new Point(27, 7)), new Wall(new Point(28, 7)), new Wall(new Point(29, 7)), new Wall(new Point(30, 7)), new Wall(new Point(31, 7)), new Wall(new Point(33, 7)), new Wall(new Point(34, 7)), new Wall(new Point(35, 7)), new Wall(new Point(36, 7)), new Wall(new Point(38, 7)), new Wall(new Point(4, 8)), new Wall(new Point(5, 8)), new Wall(new Point(7, 8)), new Wall(new Point(8, 8)), new Wall(new Point(9, 8)), new Wall(new Point(11, 8)), new Wall(new Point(12, 8)), new Wall(new Point(13, 8)), new Wall(new Point(14, 8)), new Wall(new Point(15, 8)), new Wall(new Point(21, 8)), new Wall(new Point(22, 8)), new Wall(new Point(24, 8)), new Wall(new Point(25, 8)), new Wall(new Point(26, 8)), new Wall(new Point(27, 8)), new Wall(new Point(28, 8)), new Wall(new Point(29, 8)), new Wall(new Point(30, 8)), new Wall(new Point(31, 8)), new Enemy(new Point(33, 8)), new Wall(new Point(36, 8)), new Wall(new Point(38, 8)), new Enemy(new Point(2, 9)), new Wall(new Point(5, 9)), new Wall(new Point(31, 9)), new Wall(new Point(33, 9)), new Wall(new Point(34, 9)), new Wall(new Point(36, 9)), new Wall(new Point(38, 9)), new Wall(new Point(4, 10)), new Wall(new Point(5, 10)), new Wall(new Point(7, 10)), new Wall(new Point(8, 10)), new Wall(new Point(9, 10)), new Wall(new Point(10, 10)), new Wall(new Point(11, 10)), new Wall(new Point(12, 10)), new Wall(new Point(13, 10)), new Wall(new Point(15, 10)), new Wall(new Point(21, 10)), new Wall(new Point(22, 10)), new Wall(new Point(24, 10)), new Wall(new Point(26, 10)), new Wall(new Point(27, 10)), new Wall(new Point(29, 10)), new Wall(new Point(33, 10)), new Wall(new Point(34, 10)), new Wall(new Point(36, 10)), new Wall(new Point(38, 10)), new Wall(new Point(1, 11)), new Wall(new Point(2, 11)), new Wall(new Point(3, 11)), new Wall(new Point(4, 11)), new Wall(new Point(7, 11)), new Enemy(new Point(10, 11)), new Wall(new Point(11, 11)), new Wall(new Point(12, 11)), new Wall(new Point(15, 11)), new Wall(new Point(21, 11)), new Wall(new Point(24, 11)), new Wall(new Point(26, 11)), new Wall(new Point(27, 11)), new Wall(new Point(29, 11)), new Wall(new Point(31, 11)), new Wall(new Point(32, 11)), new Wall(new Point(33, 11)), new Wall(new Point(34, 11)), new Wall(new Point(38, 11)), new Wall(new Point(1, 12)), new Wall(new Point(6, 12)), new Wall(new Point(7, 12)), new Wall(new Point(8, 12)), new Wall(new Point(10, 12)), new Wall(new Point(11, 12)), new Wall(new Point(14, 12)), new Wall(new Point(15, 12)), new Wall(new Point(16, 12)), new Wall(new Point(17, 12)), new Wall(new Point(19, 12)), new Wall(new Point(20, 12)), new Wall(new Point(21, 12)), new Wall(new Point(23, 12)), new Wall(new Point(24, 12)), new Wall(new Point(26, 12)), new Wall(new Point(29, 12)), new Wall(new Point(36, 12)), new Wall(new Point(37, 12)), new Wall(new Point(38, 12)), new Wall(new Point(1, 13)), new Wall(new Point(2, 13)), new Wall(new Point(3, 13)), new Wall(new Point(4, 13)), new Wall(new Point(5, 13)), new Wall(new Point(6, 13)), new Wall(new Point(13, 13)), new Wall(new Point(14, 13)), new Wall(new Point(15, 13)), new Wall(new Point(16, 13)), new Wall(new Point(17, 13)), new Wall(new Point(19, 13)), new Wall(new Point(23, 13)), new Wall(new Point(24, 13)), new Enemy(new Point(25, 13)), new Wall(new Point(28, 13)), new Wall(new Point(29, 13)), new Wall(new Point(31, 13)), new Wall(new Point(32, 13)), new Wall(new Point(33, 13)), new Wall(new Point(34, 13)), new Wall(new Point(36, 13)), new Wall(new Point(2, 14)), new Wall(new Point(3, 14)), new Wall(new Point(5, 14)), new Wall(new Point(6, 14)), new Wall(new Point(8, 14)), new Wall(new Point(10, 14)), new Wall(new Point(11, 14)), new Wall(new Point(13, 14)), new Wall(new Point(14, 14)), new Wall(new Point(15, 14)), new Wall(new Point(16, 14)), new Wall(new Point(19, 14)), new Wall(new Point(21, 14)), new Wall(new Point(22, 14)), new Wall(new Point(23, 14)), new Wall(new Point(24, 14)), new Wall(new Point(25, 14)), new Wall(new Point(27, 14)), new Wall(new Point(28, 14)), new Wall(new Point(29, 14)), new Wall(new Point(31, 14)), new Wall(new Point(32, 14)), new Wall(new Point(33, 14)), new Wall(new Point(34, 14)), new Wall(new Point(38, 14)), new Wall(new Point(0, 15)), new Wall(new Point(3, 15)), new Wall(new Point(10, 15)), new Wall(new Point(11, 15)), new Wall(new Point(13, 15)), new Wall(new Point(14, 15)), new Wall(new Point(15, 15)), new Wall(new Point(18, 15)), new Wall(new Point(19, 15)), new Wall(new Point(27, 15)), new Wall(new Point(34, 15)), new Wall(new Point(36, 15)), new Wall(new Point(37, 15)), new Wall(new Point(38, 15)), new Wall(new Point(0, 16)), new Wall(new Point(1, 16)), new Wall(new Point(3, 16)), new Wall(new Point(5, 16)), new Wall(new Point(6, 16)), new Wall(new Point(8, 16)), new Wall(new Point(10, 16)), new Wall(new Point(11, 16)), new Wall(new Point(17, 16)), new Wall(new Point(18, 16)), new Wall(new Point(19, 16)), new Wall(new Point(21, 16)), new Wall(new Point(22, 16)), new Wall(new Point(23, 16)), new Wall(new Point(24, 16)), new Wall(new Point(25, 16)), new Wall(new Point(29, 16)), new Wall(new Point(30, 16)), new Wall(new Point(31, 16)), new Wall(new Point(32, 16)), new Wall(new Point(34, 16)), new Wall(new Point(36, 16)), new Wall(new Point(37, 16)), new Wall(new Point(38, 16)), new Wall(new Point(3, 17)), new Enemy(new Point(4, 17)), new Wall(new Point(8, 17)), new Wall(new Point(10, 17)), new Wall(new Point(11, 17)), new Wall(new Point(13, 17)), new Wall(new Point(14, 17)), new Wall(new Point(15, 17)), new Wall(new Point(16, 17)), new Wall(new Point(17, 17)), new Wall(new Point(18, 17)), new Wall(new Point(19, 17)), new Wall(new Point(21, 17)), new Wall(new Point(25, 17)), new Wall(new Point(27, 17)), new Wall(new Point(28, 17)), new Wall(new Point(29, 17)), new Wall(new Point(32, 17)), new Wall(new Point(34, 17)), new Enemy(new Point(39, 17)), new Wall(new Point(1, 18)), new Wall(new Point(2, 18)), new Wall(new Point(3, 18)), new Wall(new Point(5, 18)), new Wall(new Point(6, 18)), new Wall(new Point(8, 18)), new Enemy(new Point(9, 18)), new Wall(new Point(10, 18)), new Wall(new Point(11, 18)), new Wall(new Point(18, 18)), new Wall(new Point(19, 18)), new Wall(new Point(21, 18)), new Wall(new Point(23, 18)), new Wall(new Point(27, 18)), new Wall(new Point(29, 18)), new Wall(new Point(31, 18)), new Wall(new Point(32, 18)), new Wall(new Point(34, 18)), new Wall(new Point(5, 19)), new Wall(new Point(6, 19)), new Wall(new Point(8, 19)), new Wall(new Point(13, 19)), new Wall(new Point(14, 19)), new Wall(new Point(15, 19)), new Wall(new Point(16, 19)), new Enemy(new Point(19, 19)), new Wall(new Point(23, 19)), new Wall(new Point(24, 19)), new Wall(new Point(25, 19)), new Wall(new Point(26, 19)), new Wall(new Point(27, 19)), new Enemy(new Point(29, 19)), new Wall(new Point(34, 19)), new Enemy(new Point(36, 19))]);
 
 	if (env === "dev") {
 		Utils.exportObjs(Utils.exports);

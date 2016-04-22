@@ -101,38 +101,45 @@ if (!Object.values) {
 	const Tile = class Tile {
 		constructor(point, ...contents) {
 			this.position = point;
-			this.contents = new Set();
+			this.contents = [];
 		}
 
 		//check if tile has anything in it
 		get isEmpty() {
-			return this.contents.size === 0;
+			return this.contents.length === 0;
 		}
 
 		//add object to tiles container
 		add(obj) {
 			if (!obj instanceof GameObject) throw new TypeError("Added object must be of type GameObject.");
-			this.contents.add(obj);
+			if(obj.isBlocking){
+				this.contents.unshift(obj);
+			}else{
+				this.contents.push(obj);
+			}
 		}
 
 		//remove from tiles container
 		remove(obj) {
-			this.contents.delete(obj);
+			let index = this.contents.indexOf(obj);
+			if(index > -1){
+				this.contents.splice(index, 1);
+			}
 		}
 
 		//get the first object in container
 		get top() {
-			return this.contents.values().next().value;
+			return this.contents[0];
 		}
 
 		//remove everything from container
 		empty() {
-			this.contents.clear();
+			this.contents = [];
 		}
 
 		//get all contents
 		get get() {
-			return Array.from(this.contents);
+			return this.contents;
 		}
 
 		toString() {
@@ -205,7 +212,7 @@ if (!Object.values) {
 			this.matrix.forEach((row, y) => row.forEach((tile, x) => {
 				if (tile && !tile.isEmpty) {
 					let temp = tile.top;
-					tile.empty();
+					tile.contents.shift();
 					this.insert(temp);
 				}
 			}));
@@ -299,9 +306,14 @@ if (!Object.values) {
 	const Weapon = class Weapon {
 		//todo: basespeed (weight?), special properties (cleave, reach)
 		//stuff
-		constructor(damage, speed) {
+		constructor(name, damage, speed) {
 			this.damage = damage || 1;
 			this.speed = speed || 10;
+			this.name = name;
+		}
+		
+		toString(){
+			return `${this.name} (${this.damage}, ${this.speed})`;
 		}
 	};
 
@@ -353,9 +365,15 @@ if (!Object.values) {
 			return this.type;
 		}
 	};
+	
+	const Blocking = Base => class extends Base{
+		get isBlocking(){
+			return true;
+		}
+	};
 
 	//todo: create base class Inanimate or something
-	const Wall = class Wall extends GameObject {
+	const Wall = class Wall extends Blocking(GameObject) {
 		constructor(position) {
 			super(position);
 			this.bgColor = "hsl(0,0%,15%)";
@@ -373,8 +391,8 @@ if (!Object.values) {
 	//any living dead undead whatever creature
 	//perhaps there should be a Hittable mixin or something so the same methods
 	//could be used for inanimate objects as well
-	const Creature = class Creature extends GameObject {
-		constructor(position, stats) {
+	const Creature = class Creature extends Blocking(GameObject) {
+		constructor(position, stats, weapon) {
 			super(position);
 			//actions actually contains arrays of actions
 			this.actions = [];
@@ -385,8 +403,9 @@ if (!Object.values) {
 				"viewDistance": 5,
 				"moveSpeed": 10
 			};
+			this.weapon = weapon || new Weapon("Claws");
+			this.inventory = [this.weapon];
 
-			this.weapon = new Weapon();
 			this.flavorName = "creature";
 			this.flavor = "It is mundane."; //flavor text used in examine
 		}
@@ -453,7 +472,7 @@ if (!Object.values) {
 
 	const Player = class Player extends Creature {
 		constructor(position, stats) {
-			super(position, stats);
+			super(position, stats, new Weapon("Dagger", 1, 5));
 			this.actions = [];
 			this.bgColor = "white";
 			this.glyph = "@";
@@ -476,7 +495,7 @@ if (!Object.values) {
 	//maybe this should be abstract
 	const Enemy = class Enemy extends Creature {
 		constructor(position, stats) {
-			super(position, stats);
+			super(position, stats, new Weapon("Claws", 2, 10));
 			this.actions = [];
 			this.bgColor = "hsl(30, 30%, 45%)";
 			this.glyph = "E";
@@ -496,6 +515,13 @@ if (!Object.values) {
 
 		toString() {
 			return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.weapon.damage + " ATT<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.");
+		}
+	};
+	
+	const Item = class Item extends GameObject{
+		constructor(position){
+			super(position);
+			
 		}
 	};
 
@@ -561,7 +587,8 @@ if (!Object.values) {
 			//check if the point we're trying to move to is empty
 			let target = new Point(...actor.position.get);
 			target.moveBy(this.movement);
-			return this.context.get(target) && this.context.get(target).isEmpty;
+			let tile = this.context.get(target);
+			return tile.isEmpty || (tile && tile.top && !tile.top.isBlocking);
 		}
 
 		do(actor) {
@@ -593,7 +620,7 @@ if (!Object.values) {
 			target.moveBy(this.direction);
 			target = this.context.get(target);
 
-			this.logger.log(actor.flavorName + " hit " + target.top.flavorName + " for " + actor.weapon.damage + " damage", (actor.constructor === Player ? "hit" : "damage"));
+			this.logger.log(actor.flavorName + " hit " + target.top.flavorName + " for " + actor.weapon.damage + " damage with " + actor.weapon, (actor.constructor === Player ? "hit" : "damage"));
 			let died = target.top.takeDamage(actor.weapon.damage, this.logger);
 			if (died) {
 				this.context.remove(target.top);
@@ -1309,6 +1336,7 @@ if (!Object.values) {
 			h: 20
 		}), [
 			new Player(new Point(18, 9)),
+			new Item(new Point(18, 10)),
 			new Wall(new Point(3,0)),
 			new Wall(new Point(7,0)),
 			new Wall(new Point(8,0)),

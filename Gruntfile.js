@@ -24,7 +24,7 @@ module.exports = function(grunt) {
 				banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n',
 				sourceMap: true,
 				mangle: {
-					except: ['Player', 'Wall', 'Enemy']
+					except: ['Blocking', 'Creature', 'Player', 'Wall', 'Enemy']
 				},
 				compress: {
 					unsafe: true,
