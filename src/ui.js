@@ -17,28 +17,31 @@
 
 		if (elem.classList.contains("moveable")) {
 			elem.addEventListener("mousedown", e => {
+				e.stopPropagation();
+				e.cancelBubble();
+				e.preventDefault();
 				elemX = e.pageX - elem.offsetLeft;
 				elemY = e.pageY - elem.offsetTop;
 				dragging = "body";
 				selected = elem;
-				e.stopPropagation();
-				e.preventDefault();
 			});
 		}
 
 		if (elem.classList.contains("resizeable")) {
 			right.addEventListener("mousedown", e => {
+				e.stopPropagation();
+				e.cancelBubble();
+				e.preventDefault();
 				dragging = "right";
 				selected = elem;
-				e.stopPropagation();
-				e.preventDefault();
 			});
 
 			bottom.addEventListener("mousedown", e => {
+				e.stopPropagation();
+				e.cancelBubble();
+				e.preventDefault();
 				dragging = "bottom";
 				selected = elem;
-				e.stopPropagation();
-				e.preventDefault();
 			});
 
 			elem.appendChild(right);
@@ -61,8 +64,10 @@
 	});
 
 	document.addEventListener("mouseup", e => {
+		e.stopPropagation();
+		e.cancelBubble();
+		e.preventDefault();
 		dragging = false;
 		selected = undefined;
-		e.preventDefault();
 	});
 })();

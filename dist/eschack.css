@@ -56,7 +56,6 @@ canvas {
 .info-container#info-container-player {
   top: 10px;
   height: 50px;
-  padding: 10px;
   border: 1px solid black; }
 
 .info-container#info-container-other-life {
@@ -68,14 +67,12 @@ canvas {
   top: 270px;
   width: 300px;
   height: 150px;
-  padding: 10px;
   border: 1px solid black; }
 
 #info-container-other-life-wrap {
   top: 90px;
   width: 300px;
   height: 150px;
-  padding: 10px;
   border: 1px solid black; }
 
 #bottom-row > * {
@@ -335,7 +332,9 @@ label {
           filter: invert(1);
   mix-blend-mode: difference;
   box-sizing: border-box;
-  box-shadow: 0 0 5px #0427a4; }
+  box-shadow: 0 0 5px #0427a4;
+  -webkit-transition: top 0.1s, left 0.1s;
+          transition: top 0.1s, left 0.1s; }
 
 /*
 loader stolen from here

@@ -122,7 +122,6 @@ canvas {
 	&#info-container-player {
 		top: 10px;
 		height: 50px;
-		padding: 10px;
 		border: $basic-border;
 	}
 	&#info-container-other-life{
@@ -134,7 +133,6 @@ canvas {
 		top: 270px;
 		width: 300px;
 		height: 150px;
-		padding: 10px;
 		border: $basic-border;
 	}
 }
@@ -143,7 +141,6 @@ canvas {
 	top: 90px;
 	width: 300px;
 	height: 150px;
-	padding: 10px;
 	border: $basic-border;
 }
 
@@ -210,6 +207,7 @@ label{
 	mix-blend-mode: difference;
 	box-sizing: border-box;
 	box-shadow: 0 0 5px $cursor-color;
+	transition: top 0.1s, left 0.1s;
 }
 
 /*

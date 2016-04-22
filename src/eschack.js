@@ -1149,6 +1149,7 @@ if (!Object.values) {
 			let miscOtherInfoContainer = document.getElementById("info-container-other-misc");
 			
 			this.examineContainer = document.createElement("div");
+			this.examineContainer.style.padding = "10px";
 			
 			miscOtherInfoContainer.appendChild(this.examineContainer);
 
