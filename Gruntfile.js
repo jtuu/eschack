@@ -24,7 +24,7 @@ module.exports = function(grunt) {
 				banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n',
 				sourceMap: true,
 				mangle: {
-					except: ['Blocking', 'Creature', 'Player', 'Wall', 'Enemy']
+					except: ['Blocking', 'Item', 'Creature', 'Player', 'Wall', 'Enemy']
 				},
 				compress: {
 					unsafe: true,
@@ -107,7 +107,7 @@ module.exports = function(grunt) {
 		},
 		watch: {
 			html: {
-				files: ['src/eschack.jade'],
+				files: ['src/eschack.jade', 'todo.json'],
 				tasks: ['html']
 			},
 			sass: {

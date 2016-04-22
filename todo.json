@@ -3,7 +3,6 @@
 		"level data loading from json or something",
 		"inventory, items, stats",
 		"ItemPickupAction, ItemDropAction, ItemEquipAction...",
-		"dont log actions happening outside of fov",
 		"enemies shouldnt attack eachother (faction system?)",
 		"pathfinding"
 	]

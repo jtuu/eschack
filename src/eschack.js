@@ -389,7 +389,7 @@ if (!Object.values) {
 		}
 		
 		die(logger) {
-			logger.log(this.flavorName + " died", "death");
+			if(logger)logger.log(this.flavorName + " died", "death");
 			if(this.lifebar)this.lifebar.remove();
 		}
 		
@@ -629,7 +629,9 @@ if (!Object.values) {
 			target.moveBy(this.direction);
 			target = this.context.get(target);
 
-			this.logger.log(actor.flavorName + " hit " + target.top.flavorName + " for " + actor.weapon.damage + " damage with " + actor.weapon, (actor.constructor === Player ? "hit" : "damage"));
+			if(this.logger){
+				this.logger.log(actor.flavorName + " hit " + target.top.flavorName + " for " + actor.weapon.damage + " damage with " + actor.weapon, (actor.constructor === Player ? "hit" : "damage"));
+			}
 			let died = target.top.takeDamage(actor.weapon.damage, this.logger);
 			if (died) {
 				this.context.remove(target.top);
@@ -777,9 +779,10 @@ if (!Object.values) {
 		//decide actor logic
 		think(actor, player) {
 			if (actor instanceof Enemy) {
-				let fov = this.getFov(actor);
+				let fov = this.getFov(actor),
+					instruction = null,
+					shouldLog = this.getFov(player).has(actor.position);
 				actor.target = fov.get(player.position);
-				let instruction = null;
 
 				if (!actor.target) {
 					//cant find target, move randomly
@@ -794,13 +797,13 @@ if (!Object.values) {
 					let vector = Point.distance(actor.position, actor.target.position);
 					vector.reduce();
 					instruction = vector;
-					if (!actor.noticed) this.logger.log(actor.flavorName + " noticed " + player.flavorName);
+					if (!actor.noticed && shouldLog) this.logger.log(actor.flavorName + " noticed " + player.flavorName);
 					actor.noticed = true;
 				}
 
 				let proposals = this.proposalMap[instruction.constructor];
 				if (proposals) {
-					let methods = proposals.map(action => () => new action(this.board, this.logger, instruction));
+					let methods = proposals.map(action => () => new action(this.board, (shouldLog ? this.logger : null), instruction));
 					actor.actions.push(methods);
 				}
 			}

@@ -547,7 +547,7 @@ if (!Object.values) {
 			};
 
 			_class3.prototype.die = function die(logger) {
-				logger.log(this.flavorName + " died", "death");
+				if (logger) logger.log(this.flavorName + " died", "death");
 				if (this.lifebar) this.lifebar.remove();
 			};
 
@@ -863,7 +863,9 @@ if (!Object.values) {
 			target.moveBy(this.direction);
 			target = this.context.get(target);
 
-			this.logger.log(actor.flavorName + " hit " + target.top.flavorName + " for " + actor.weapon.damage + " damage with " + actor.weapon, actor.constructor === Player ? "hit" : "damage");
+			if (this.logger) {
+				this.logger.log(actor.flavorName + " hit " + target.top.flavorName + " for " + actor.weapon.damage + " damage with " + actor.weapon, actor.constructor === Player ? "hit" : "damage");
+			}
 			var died = target.top.takeDamage(actor.weapon.damage, this.logger);
 			if (died) {
 				this.context.remove(target.top);
@@ -1051,9 +1053,10 @@ if (!Object.values) {
 
 			if (actor instanceof Enemy) {
 				var _ret = function () {
-					var fov = _this17.getFov(actor);
+					var fov = _this17.getFov(actor),
+					    instruction = null,
+					    shouldLog = _this17.getFov(player).has(actor.position);
 					actor.target = fov.get(player.position);
-					var instruction = null;
 
 					if (!actor.target) {
 						//cant find target, move randomly
@@ -1070,7 +1073,7 @@ if (!Object.values) {
 						var vector = Point.distance(actor.position, actor.target.position);
 						vector.reduce();
 						instruction = vector;
-						if (!actor.noticed) _this17.logger.log(actor.flavorName + " noticed " + player.flavorName);
+						if (!actor.noticed && shouldLog) _this17.logger.log(actor.flavorName + " noticed " + player.flavorName);
 						actor.noticed = true;
 					}
 
@@ -1078,7 +1081,7 @@ if (!Object.values) {
 					if (proposals) {
 						var methods = proposals.map(function (action) {
 							return function () {
-								return new action(_this17.board, _this17.logger, instruction);
+								return new action(_this17.board, shouldLog ? _this17.logger : null, instruction);
 							};
 						});
 						actor.actions.push(methods);
