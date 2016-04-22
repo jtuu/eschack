@@ -1246,7 +1246,17 @@ if (!Object.values) {
 			}
 
 			let fov = this.logic.getFov(this.player);
-			this.logic.think(this.player);
+			
+			this.objs.forEach(obj => {
+				if(obj.type === "Enemy"){
+					if(fov.has(obj.position)){
+						obj.lifebar.show();
+					}else{
+						obj.lifebar.hide();
+					}
+				}
+			});
+
 			mainCtx.clearRect(0, 0, w, h);
 			fov.draw();
 			secondCtx.drawImage(mainCanvas, 0, 0);
@@ -1272,7 +1282,17 @@ if (!Object.values) {
 			});
 			
 			let fov = this.logic.getFov(this.player);
-			this.objs.forEach(obj => this.logic.think(obj, this.player));
+			
+			this.objs.forEach(obj => {
+				this.logic.think(obj, this.player);
+				if(obj.type === "Enemy"){
+					if(fov.has(obj.position)){
+						obj.lifebar.show();
+					}else{
+						obj.lifebar.hide();
+					}
+				}
+			});
 			fov.draw();
 			
 			document.getElementById("loader").remove();

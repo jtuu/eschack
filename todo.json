@@ -2,7 +2,6 @@
 	"todo": [	
 		"level data loading from json or something",
 		"inventory, items, stats",
-		"hide lifebars for enemies outside of fov",
 		"enemies shouldnt attack eachother (faction system?)",
 		"pathfinding"
 	]
