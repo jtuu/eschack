@@ -69,6 +69,12 @@ canvas {
   height: 150px;
   border: 1px solid black; }
 
+.info-container#info-container-inventory {
+  top: 440px;
+  height: 300px;
+  width: 150px;
+  border: 1px solid black; }
+
 #info-container-other-life-wrap {
   top: 90px;
   width: 300px;

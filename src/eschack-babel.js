@@ -172,7 +172,9 @@ if (!Object.values) {
 			var index = this.contents.indexOf(obj);
 			if (index > -1) {
 				this.contents.splice(index, 1);
+				return true;
 			}
+			return false;
 		};
 
 		//get the first object in container
@@ -356,15 +358,6 @@ if (!Object.values) {
 			return this.has(point) ? this.matrix[y][x] : undefined;
 		};
 
-		//wtf is this
-
-
-		TileGroup.prototype.find = function find(obj) {
-			this.matrix.forEach(function (row) {
-				return row.find();
-			});
-		};
-
 		//go through matrix and draw each cell
 
 
@@ -407,25 +400,6 @@ if (!Object.values) {
 		}]);
 
 		return TileGroup;
-	}();
-
-	var Weapon = function () {
-		//todo: basespeed (weight?), special properties (cleave, reach)
-		//stuff
-
-		function Weapon(name, damage, speed) {
-			_classCallCheck(this, Weapon);
-
-			this.damage = damage || 1;
-			this.speed = speed || 10;
-			this.name = name;
-		}
-
-		Weapon.prototype.toString = function toString() {
-			return this.name + " (" + this.damage + ", " + this.speed + ")";
-		};
-
-		return Weapon;
 	}();
 
 	//basically any gameobject that takes up a whole tile is a GameObject
@@ -602,7 +576,8 @@ if (!Object.values) {
 				"maxHP": 3,
 				"HP": 3,
 				"viewDistance": 5,
-				"moveSpeed": 10
+				"moveSpeed": 10,
+				"inventorySize": 5
 			};
 			_this8.weapon = weapon || new Weapon("Claws");
 			_this8.inventory = [_this8.weapon];
@@ -681,6 +656,7 @@ if (!Object.values) {
 			_this10.stats.HP = 50;
 			_this10.stats.viewDistance = 8;
 			_this10.stats.moveSpeed = 10;
+			//this.stats.inventorySize = 15;
 
 			_this10.stats = stats || _this10.stats;
 
@@ -737,8 +713,36 @@ if (!Object.values) {
 			return _possibleConstructorReturn(this, _GameObject.call(this, position));
 		}
 
+		Item.prototype.update = function update() {
+			return true;
+		};
+
 		return Item;
 	}(GameObject);
+
+	var Weapon = function (_Item) {
+		_inherits(Weapon, _Item);
+
+		//todo: basespeed (weight?), special properties (cleave, reach)
+		//stuff
+
+		function Weapon(name, damage, speed) {
+			_classCallCheck(this, Weapon);
+
+			var _this13 = _possibleConstructorReturn(this, _Item.call(this, null));
+
+			_this13.damage = damage || 1;
+			_this13.speed = speed || 10;
+			_this13.name = name;
+			return _this13;
+		}
+
+		Weapon.prototype.toString = function toString() {
+			return this.name + " (" + this.damage + ", " + this.speed + ")";
+		};
+
+		return Weapon;
+	}(Item);
 
 	//these contain the logic for actions but they will be used on the actor
 	//the context shouldnt be changed but the action can be reused
@@ -807,10 +811,10 @@ if (!Object.values) {
 		function MoveAction(context, logger, movement) {
 			_classCallCheck(this, MoveAction);
 
-			var _this14 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
+			var _this15 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
 
-			_this14.movement = movement;
-			return _this14;
+			_this15.movement = movement;
+			return _this15;
 		}
 
 		MoveAction.prototype.try = function _try(actor, time) {
@@ -840,10 +844,10 @@ if (!Object.values) {
 		function AttackAction(context, logger, direction) {
 			_classCallCheck(this, AttackAction);
 
-			var _this15 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
+			var _this16 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
 
-			_this15.direction = direction;
-			return _this15;
+			_this16.direction = direction;
+			return _this16;
 		}
 
 		AttackAction.prototype.try = function _try(actor, time) {
@@ -875,6 +879,37 @@ if (!Object.values) {
 		};
 
 		return AttackAction;
+	}(Action);
+
+	var ItemPickupAction = function (_Action4) {
+		_inherits(ItemPickupAction, _Action4);
+
+		function ItemPickupAction(context, logger) {
+			_classCallCheck(this, ItemPickupAction);
+
+			return _possibleConstructorReturn(this, _Action4.call(this, context, logger));
+		}
+
+		ItemPickupAction.prototype.try = function _try(actor, time) {
+			return time % 10 === 0 && actor.inventory.length < actor.stats.inventorySize && this.context.get(actor.position).contents.some(function (obj) {
+				return obj instanceof Item;
+			});
+		};
+
+		ItemPickupAction.prototype.do = function _do(actor) {
+			var targetTile = this.context.get(actor.position),
+			    item = targetTile.contents.find(function (obj) {
+				return obj instanceof Item;
+			});
+			actor.inventory.push(item);
+			targetTile.remove(item);
+			if (this.logger) {
+				this.logger.log(actor.flavorName + " picked up " + item.flavorName);
+			}
+			return 10;
+		};
+
+		return ItemPickupAction;
 	}(Action);
 
 	var Lifebar = function () {
@@ -921,7 +956,7 @@ if (!Object.values) {
 		};
 
 		Lifebar.prototype.setStyle = function setStyle(style) {
-			var _this16 = this;
+			var _this18 = this;
 
 			var styles = {
 				"hilight": "hilighted",
@@ -933,8 +968,8 @@ if (!Object.values) {
 				Object.values(styles).filter(function (v) {
 					return v !== style;
 				}).forEach(function (f) {
-					_this16.bar.classList.remove(f);
-					_this16.label.classList.remove(f);
+					_this18.bar.classList.remove(f);
+					_this18.label.classList.remove(f);
 				});
 
 				this.bar.classList.add(style);
@@ -990,7 +1025,10 @@ if (!Object.values) {
 				97: "sw",
 				103: "nw",
 
-				101: "c"
+				101: "c",
+
+				"g": "pickup",
+				71: "pickup"
 			};
 
 			this.actionMap = {
@@ -1018,7 +1056,8 @@ if (!Object.values) {
 				"nw": function nw() {
 					return new Vector(-1, -1);
 				},
-				"c": null
+				"c": null,
+				"pickup": "pickup"
 			};
 		}
 
@@ -1043,19 +1082,20 @@ if (!Object.values) {
 
 			this.proposalMap = {};
 			this.proposalMap[Vector] = [MoveAction, AttackAction, NullAction];
+			this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 		}
 
 		//decide actor logic
 
 
 		ActionManager.prototype.think = function think(actor, player) {
-			var _this17 = this;
+			var _this19 = this;
 
 			if (actor instanceof Enemy) {
 				var _ret = function () {
-					var fov = _this17.getFov(actor),
+					var fov = _this19.getFov(actor),
 					    instruction = null,
-					    shouldLog = _this17.getFov(player).has(actor.position);
+					    shouldLog = _this19.getFov(player).has(actor.position);
 					actor.target = fov.get(player.position);
 
 					if (!actor.target) {
@@ -1073,15 +1113,15 @@ if (!Object.values) {
 						var vector = Point.distance(actor.position, actor.target.position);
 						vector.reduce();
 						instruction = vector;
-						if (!actor.noticed && shouldLog) _this17.logger.log(actor.flavorName + " noticed " + player.flavorName);
+						if (!actor.noticed && shouldLog) _this19.logger.log(actor.flavorName + " noticed " + player.flavorName);
 						actor.noticed = true;
 					}
 
-					var proposals = _this17.proposalMap[instruction.constructor];
+					var proposals = _this19.proposalMap[instruction.constructor];
 					if (proposals) {
 						var methods = proposals.map(function (action) {
 							return function () {
-								return new action(_this17.board, shouldLog ? _this17.logger : null, instruction);
+								return new action(_this19.board, shouldLog ? _this19.logger : null, instruction);
 							};
 						});
 						actor.actions.push(methods);
@@ -1137,18 +1177,22 @@ if (!Object.values) {
 
 
 		ActionManager.prototype.delegateAction = function delegateAction(actor, instruction) {
-			var _this18 = this;
+			var _this20 = this;
 
 			if (!actor) {
 				return;
 			}
-			if (instruction && typeof instruction === "function") {
-				instruction = instruction();
-				var proposals = this.proposalMap[instruction.constructor];
+			if (instruction) {
+				var key = instruction;
+				if (typeof instruction === "function") {
+					instruction = instruction();
+					key = instruction.constructor;
+				}
+				var proposals = this.proposalMap[key];
 				if (proposals) {
 					var methods = proposals.map(function (action) {
 						return function () {
-							return new action(_this18.board, _this18.logger, instruction);
+							return new action(_this20.board, _this20.logger, instruction);
 						};
 					});
 					actor.actions.push(methods);
@@ -1158,7 +1202,7 @@ if (!Object.values) {
 				}
 			} else if (instruction === null) {
 				actor.actions.push([function () {
-					return new NullAction(null, _this18.logger);
+					return new NullAction(null, _this20.logger);
 				}]);
 				return true;
 			}
@@ -1438,7 +1482,7 @@ if (!Object.values) {
 
 
 		LogboxManager.prototype.log = function log(text) {
-			var _this19 = this;
+			var _this21 = this;
 
 			var type = arguments.length <= 1 || arguments[1] === undefined ? "default" : arguments[1];
 
@@ -1459,12 +1503,42 @@ if (!Object.values) {
 			} else {
 				this.rows[0].children[0].remove();
 				this.rows.forEach(function (row, index) {
-					row.appendChild(_this19.messages[_this19.messages.length - (_this19.rowCount - index)]);
+					row.appendChild(_this21.messages[_this21.messages.length - (_this21.rowCount - index)]);
 				});
 			}
 		};
 
 		return LogboxManager;
+	}();
+
+	var InventoryManager = function () {
+		function InventoryManager(inventoryBox, inventory) {
+			_classCallCheck(this, InventoryManager);
+
+			this.wrapper = inventoryBox;
+			this.inventory = inventory;
+			var container = document.createElement("div");
+			container.style.padding = "10px";
+			this.container = container;
+			this.wrapper.appendChild(this.container);
+		}
+
+		InventoryManager.prototype.update = function update() {
+			var _this22 = this;
+
+			if (!!this.container.children.length) {
+				Array.from(this.container.children).forEach(function (item) {
+					return item.remove();
+				});
+			}
+			this.inventory.forEach(function (item) {
+				var ele = document.createElement("div");
+				ele.innerHTML = item;
+				_this22.container.appendChild(ele);
+			});
+		};
+
+		return InventoryManager;
 	}();
 
 	//handle mouse stuff and examine cursor
@@ -1513,7 +1587,7 @@ if (!Object.values) {
 	//the game
 	var Game = function () {
 		function Game(board, objs) {
-			var _this20 = this;
+			var _this23 = this;
 
 			_classCallCheck(this, Game);
 
@@ -1525,15 +1599,15 @@ if (!Object.values) {
 			this.player = objs[0];
 			this.objs = [];
 			objs.forEach(function (obj) {
-				return _this20.objs[obj.id] = obj;
+				return _this23.objs[obj.id] = obj;
 			});
 
 			this.logic = new ActionManager(this.board, this.logger);
 
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this20.logic.delegateAction(_this20.player, _this20.keyHandler.get(e.keyCode))) {
-					_this20.update();
+				if (_this23.logic.delegateAction(_this23.player, _this23.keyHandler.get(e.keyCode))) {
+					_this23.update();
 				}
 			});
 
@@ -1547,64 +1621,66 @@ if (!Object.values) {
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this20.board.bounds;
+				var bounds = _this23.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this20.logic.getFov(_this20.player),
-					    gamePoint = Utils.screenToGame(screenPoint, _this20.board.tileSize, _this20.board.spacing);
+					var fov = _this23.logic.getFov(_this23.player),
+					    gamePoint = Utils.screenToGame(screenPoint, _this23.board.tileSize, _this23.board.spacing);
 
 					//set cursor position
-					_this20.mouseHandler.cursorFromScreen(screenPoint);
+					_this23.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov && fov.has(gamePoint)) {
-						var targetTile = _this20.board.get(gamePoint);
+						var targetTile = _this23.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this20.objs.forEach(function (obj) {
+							_this23.objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this20.examineContainer.innerHTML = targetTile.top;
+							_this23.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this20.examineContainer.innerHTML = targetTile;
+							_this23.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this20.examineContainer.innerHTML = "You can't see that";
+						_this23.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this20.objs.forEach(function (obj) {
+						_this23.objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this20.objs[Number(id)];
+						var target = _this23.objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this20.mouseHandler.cursorFromGame(target.position);
-							_this20.examineContainer.innerHTML = target;
+							_this23.mouseHandler.cursorFromGame(target.position);
+							_this23.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
 			});
+
+			this.inventoryManager = new InventoryManager(document.getElementById("info-container-inventory"), this.player.inventory);
 		}
 
 		Game.prototype.update = function update() {
-			var _this21 = this;
+			var _this24 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
@@ -1619,21 +1695,21 @@ if (!Object.values) {
 						return;
 					}
 					if (obj.isAlive) {
-						var _duration = obj.update(_this21.logger, _this21.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this24.logger, _this24.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this21.logic.think(obj, _this21.player);
+							_this24.logic.think(obj, _this24.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						if (!obj.isAlive) {
-							_this21.board.remove(obj);
-							delete _this21.objs[obj.id];
+							_this24.board.remove(obj);
+							delete _this24.objs[obj.id];
 						}
 					} else {
-						_this21.board.remove(obj);
-						delete _this21.objs[obj.id];
+						_this24.board.remove(obj);
+						delete _this24.objs[obj.id];
 					}
 				});
 			}
@@ -1659,14 +1735,16 @@ if (!Object.values) {
 				fov.draw();
 				secondCtx.drawImage(mainCanvas, 0, 0);
 			}
+
+			this.inventoryManager.update();
 		};
 
 		Game.prototype.start = function start() {
-			var _this22 = this;
+			var _this25 = this;
 
 			document.getElementById("button-save").addEventListener("click", function (e) {
 				e.stopPropagation();
-				Utils.saveGame(_this22);
+				Utils.saveGame(_this25);
 			});
 
 			document.getElementById("button-delete").addEventListener("click", function (e) {
@@ -1677,14 +1755,14 @@ if (!Object.values) {
 			this.logger.log("Hello and welcome", "hilight");
 			this.objs.forEach(function (obj) {
 				if (obj) {
-					_this22.board.insert(obj);
+					_this25.board.insert(obj);
 				}
 			});
 
 			var fov = this.logic.getFov(this.player);
 
 			this.objs.forEach(function (obj) {
-				_this22.logic.think(obj, _this22.player);
+				_this25.logic.think(obj, _this25.player);
 				if (obj.type === "Enemy") {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
@@ -1694,6 +1772,7 @@ if (!Object.values) {
 				}
 			});
 			fov.draw();
+			this.inventoryManager.update();
 
 			document.getElementById("loader").remove();
 		};

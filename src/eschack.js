@@ -124,7 +124,9 @@ if (!Object.values) {
 			let index = this.contents.indexOf(obj);
 			if(index > -1){
 				this.contents.splice(index, 1);
+				return true;
 			}
+			return false;
 		}
 
 		//get the first object in container
@@ -263,11 +265,6 @@ if (!Object.values) {
 			return this.has(point) ? this.matrix[y][x] : undefined;
 		}
 
-		//wtf is this
-		find(obj) {
-			this.matrix.forEach(row => row.find());
-		}
-
 		//go through matrix and draw each cell
 		draw() {
 			this.matrix.forEach((row, y) => row.forEach((tile, x) => {
@@ -300,20 +297,6 @@ if (!Object.values) {
 					}
 				}
 			}));
-		}
-	};
-
-	const Weapon = class Weapon {
-		//todo: basespeed (weight?), special properties (cleave, reach)
-		//stuff
-		constructor(name, damage, speed) {
-			this.damage = damage || 1;
-			this.speed = speed || 10;
-			this.name = name;
-		}
-		
-		toString(){
-			return `${this.name} (${this.damage}, ${this.speed})`;
 		}
 	};
 
@@ -425,7 +408,8 @@ if (!Object.values) {
 				"maxHP": 3,
 				"HP": 3,
 				"viewDistance": 5,
-				"moveSpeed": 10
+				"moveSpeed": 10,
+				"inventorySize": 5
 			};
 			this.weapon = weapon || new Weapon("Claws");
 			this.inventory = [this.weapon];
@@ -490,13 +474,14 @@ if (!Object.values) {
 			this.stats.HP = 50;
 			this.stats.viewDistance = 8;
 			this.stats.moveSpeed = 10;
+			//this.stats.inventorySize = 15;
 			
 			this.stats = stats || this.stats;
 
 			this.lifebar = new Lifebar(this.id, "Hero", document.getElementById("info-container-player"), this.stats.maxHP, this.stats.HP);
 			this.flavorName = "you";
 			this.flavor = "Hi mom!";
-				//todo: store username here?
+			//todo: store username here?
 		}
 	};
 
@@ -529,10 +514,27 @@ if (!Object.values) {
 	const Item = class Item extends GameObject{
 		constructor(position){
 			super(position);
-			
+		}
+		
+		update(){
+			return true;
 		}
 	};
-
+	
+	const Weapon = class Weapon extends Item{
+		//todo: basespeed (weight?), special properties (cleave, reach)
+		//stuff
+		constructor(name, damage, speed) {
+			super(null);
+			this.damage = damage || 1;
+			this.speed = speed || 10;
+			this.name = name;
+		}
+		
+		toString(){
+			return `${this.name} (${this.damage}, ${this.speed})`;
+		}
+	};
 
 	//these contain the logic for actions but they will be used on the actor
 	//the context shouldnt be changed but the action can be reused
@@ -640,6 +642,27 @@ if (!Object.values) {
 			return this.duration;
 		}
 	};
+	
+	const ItemPickupAction = class ItemPickupAction extends Action {
+		constructor(context, logger){
+			super(context, logger);
+		}
+		
+		try(actor, time){
+			return time % 10 === 0 && actor.inventory.length < actor.stats.inventorySize && this.context.get(actor.position).contents.some(obj => obj instanceof Item);
+		}
+		
+		do(actor){
+			let targetTile = this.context.get(actor.position),
+				item = targetTile.contents.find(obj => obj instanceof Item);
+			actor.inventory.push(item);
+			targetTile.remove(item);
+			if(this.logger){
+				this.logger.log(actor.flavorName + " picked up " + item.flavorName);
+			}
+			return 10;
+		}
+	};
 
 	const Lifebar = class Lifebar {
 		constructor(id, name, container, max, value) {
@@ -743,7 +766,10 @@ if (!Object.values) {
 				97: "sw",
 				103: "nw",
 
-				101: "c"
+				101: "c",
+				
+				"g": "pickup",
+				71: "pickup"
 			};
 
 			this.actionMap = {
@@ -755,7 +781,8 @@ if (!Object.values) {
 				"se": () => new Vector(1, 1),
 				"sw": () => new Vector(-1, 1),
 				"nw": () => new Vector(-1, -1),
-				"c": null
+				"c": null,
+				"pickup": "pickup"
 			};
 		}
 
@@ -774,6 +801,7 @@ if (!Object.values) {
 
 			this.proposalMap = {};
 			this.proposalMap[Vector] = [MoveAction, AttackAction, NullAction];
+			this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 		}
 
 		//decide actor logic
@@ -853,9 +881,13 @@ if (!Object.values) {
 			if(!actor){
 				return;
 			}
-			if (instruction && typeof instruction === "function") {
-				instruction = instruction();
-				let proposals = this.proposalMap[instruction.constructor];
+			if (instruction) {
+				let key = instruction;
+				if(typeof instruction === "function"){
+					instruction = instruction();
+					key = instruction.constructor;
+				}
+				let proposals = this.proposalMap[key];
 				if (proposals) {
 					let methods = proposals.map(action => () => new action(this.board, this.logger, instruction));
 					actor.actions.push(methods);
@@ -1137,6 +1169,28 @@ if (!Object.values) {
 			}
 		}
 	};
+	
+	const InventoryManager = class InventoryManager{
+		constructor(inventoryBox, inventory){
+			this.wrapper = inventoryBox;
+			this.inventory = inventory;
+			let container = document.createElement("div");
+			container.style.padding = "10px";
+			this.container = container;
+			this.wrapper.appendChild(this.container);
+		}
+		
+		update() {
+			if (!!this.container.children.length) {
+				Array.from(this.container.children).forEach(item => item.remove());
+			}
+			this.inventory.forEach(item => {
+				let ele = document.createElement("div");
+				ele.innerHTML = item;
+				this.container.appendChild(ele);
+			});
+		}
+	};
 
 	//handle mouse stuff and examine cursor
 	const MouseHandler = class MouseHandler {
@@ -1253,6 +1307,8 @@ if (!Object.values) {
 					}
 				}
 			});
+			
+			this.inventoryManager = new InventoryManager(document.getElementById("info-container-inventory"), this.player.inventory);
 		}
 
 		update() {
@@ -1310,6 +1366,7 @@ if (!Object.values) {
 				secondCtx.drawImage(mainCanvas, 0, 0);
 			}
 
+			this.inventoryManager.update();
 		}
 
 		start() {
@@ -1343,6 +1400,7 @@ if (!Object.values) {
 				}
 			});
 			fov.draw();
+			this.inventoryManager.update();
 			
 			document.getElementById("loader").remove();
 		}
