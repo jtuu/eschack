@@ -26,9 +26,12 @@
 				<div id="settings">
 					<button id="button-save">save</button>
 					<button id="button-delete">delete</button>
+					<hr>
 					<h4>Controls</h4>
 					<p>Use numpad or wasd to move.</p>
-					<p>num5 rests a turn.</p>
+					<p>num5: rest a turn</p>
+					<p>g: pick up item</p>
+					<hr>
 					<a data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/" class="github-button">Watch</a>
 					<script id="github-bjs" async defer src="https://buttons.github.io/buttons.js"></script>
 				</div>
@@ -47,10 +50,15 @@
 		<div id="column-right" class="column">
 			<div id="info-container-player" class="info-container moveable resizeable"></div>
 			<div id="info-container-other-life-wrap" class="moveable resizeable">
+				<strong>Enemies</strong>
 				<div id="info-container-other-life" class="info-container"></div>
 			</div>
-			<div id="info-container-other-misc" class="info-container moveable resizeable"></div>
-			<div id="info-container-inventory" class="info-container moveable resizeable"></div>
+			<div id="info-container-other-misc" class="info-container moveable resizeable">
+				<strong>Examine</strong>
+			</div>
+			<div id="info-container-inventory" class="info-container moveable resizeable">
+				<strong>Inventory</strong>
+			</div>
 		</div>
 		<script src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js"></script>
 		<script src="src/eschack.js"></script>

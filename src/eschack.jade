@@ -20,10 +20,12 @@ html
 				#settings
 					button#button-save save
 					button#button-delete delete
+					hr
 					h4 Controls
 					p Use numpad or wasd to move.
-					p num5 rests a turn.
-						
+					p num5: rest a turn
+					p g: pick up item
+					hr
 					a.github-button(data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/") Watch
 					script#github-bjs(async defer src="https://buttons.github.io/buttons.js")
 				#todo
@@ -34,9 +36,12 @@ html
 		.column#column-right
 			.info-container.moveable.resizeable#info-container-player
 			#info-container-other-life-wrap.moveable.resizeable
+				strong Enemies
 				.info-container#info-container-other-life
 			.info-container.moveable.resizeable#info-container-other-misc
+				strong Examine
 			.info-container.moveable.resizeable#info-container-inventory
+				strong Inventory
 
 
 		script(src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js")
