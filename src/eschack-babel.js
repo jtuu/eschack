@@ -1004,19 +1004,15 @@ if (!Object.values) {
 			_classCallCheck(this, KeyHandler);
 
 			this.keyCases = {
-				"w": "n",
 				87: "n",
 				104: "n",
 
-				"a": "w",
 				65: "w",
 				100: "w",
 
-				"s": "s",
 				83: "s",
 				98: "s",
 
-				"d": "e",
 				68: "e",
 				102: "e",
 
@@ -1215,20 +1211,6 @@ if (!Object.values) {
 	var Utils = function () {
 		function Utils() {
 			_classCallCheck(this, Utils);
-
-			this.exports = {
-				"instance": game,
-				"Creature": Creature,
-				"Player": Player,
-				"GameObject": GameObject,
-				"Point": Point,
-				"Vector": Vector,
-				"ActionManager": ActionManager,
-				"TileGroup": TileGroup,
-				"Utils": Utils,
-				"Tile": Tile,
-				"Wall": Wall
-			};
 		}
 
 		Utils.rotate = function rotate(arr, angle) {
@@ -1454,6 +1436,30 @@ if (!Object.values) {
 			}
 		};
 
+		_createClass(Utils, null, [{
+			key: "exports",
+			get: function get() {
+				return {
+					"instance": game,
+					"Creature": Creature,
+					"Player": Player,
+					"GameObject": GameObject,
+					"Point": Point,
+					"Vector": Vector,
+					"ActionManager": ActionManager,
+					"TileGroup": TileGroup,
+					"Utils": Utils,
+					"Tile": Tile,
+					"Wall": Wall
+				};
+			}
+		}, {
+			key: "alphabetMap",
+			get: function get() {
+				return ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+			}
+		}]);
+
 		return Utils;
 	}();
 
@@ -1531,9 +1537,9 @@ if (!Object.values) {
 					return item.remove();
 				});
 			}
-			this.inventory.forEach(function (item) {
+			this.inventory.forEach(function (item, key) {
 				var ele = document.createElement("div");
-				ele.innerHTML = item;
+				ele.innerHTML = Utils.alphabetMap[key] + " - " + item;
 				_this22.container.appendChild(ele);
 			});
 		};

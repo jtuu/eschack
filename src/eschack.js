@@ -745,19 +745,15 @@ if (!Object.values) {
 	const KeyHandler = class KeyHandler {
 		constructor() {
 			this.keyCases = {
-				"w": "n",
 				87: "n",
 				104: "n",
 
-				"a": "w",
 				65: "w",
 				100: "w",
 
-				"s": "s",
 				83: "s",
 				98: "s",
 
-				"d": "e",
 				68: "e",
 				102: "e",
 
@@ -904,8 +900,9 @@ if (!Object.values) {
 	};
 
 	const Utils = class Utils {
-		constructor() {
-			this.exports = {
+		
+		static get exports(){
+			return {
 				"instance": game,
 				"Creature": Creature,
 				"Player": Player,
@@ -918,6 +915,10 @@ if (!Object.values) {
 				"Tile": Tile,
 				"Wall": Wall
 			};
+		}
+		
+		static get alphabetMap(){
+			return ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 		}
 
 		static rotate(arr, angle) {
@@ -1184,9 +1185,9 @@ if (!Object.values) {
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(item => item.remove());
 			}
-			this.inventory.forEach(item => {
+			this.inventory.forEach((item, key) => {
 				let ele = document.createElement("div");
-				ele.innerHTML = item;
+				ele.innerHTML = Utils.alphabetMap[key] + " - " + item;
 				this.container.appendChild(ele);
 			});
 		}
