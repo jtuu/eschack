@@ -671,7 +671,11 @@ if (!Object.values) {
 		}
 		
 		try(actor, time){
-			return time % 10 === 0 && actor.inventory[Utils.alphabetMap.indexOf(this.inventorySlot)];
+			let hasItem = !!actor.inventory[Utils.alphabetMap.indexOf(this.inventorySlot)];
+			if(!hasItem){
+				this.logger.log("No such item");
+			}
+			return time % 10 === 0 && hasItem;
 		}
 		
 		do(actor){

@@ -925,7 +925,11 @@ if (!Object.values) {
 		}
 
 		ItemDropAction.prototype.try = function _try(actor, time) {
-			return time % 10 === 0 && actor.inventory[Utils.alphabetMap.indexOf(this.inventorySlot)];
+			var hasItem = !!actor.inventory[Utils.alphabetMap.indexOf(this.inventorySlot)];
+			if (!hasItem) {
+				this.logger.log("No such item");
+			}
+			return time % 10 === 0 && hasItem;
 		};
 
 		ItemDropAction.prototype.do = function _do(actor) {
