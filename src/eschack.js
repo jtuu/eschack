@@ -664,6 +664,26 @@ if (!Object.values) {
 		}
 	};
 
+	const ItemDropAction = class ItemDropAction extends Action {
+		constructor(context, logger, inventorySlot){
+			super(context, logger);
+			this.inventorySlot = inventorySlot;
+		}
+		
+		try(actor, time){
+			return time % 10 === 0 && actor.inventory[Utils.alphabetMap.indexOf(this.inventorySlot)];
+		}
+		
+		do(actor){
+			let index = Utils.alphabetMap.indexOf(this.inventorySlot),
+				item = actor.inventory[index];
+			actor.inventory.splice(index, 1);
+			item.position = new Point(...actor.position.get);
+			this.context.insert(item);
+			return 10;
+		}
+	};
+	
 	const Lifebar = class Lifebar {
 		constructor(id, name, container, max, value) {
 			this.id = id;
@@ -744,47 +764,67 @@ if (!Object.values) {
 	//handle key related stuff and i guess also some action mapping lol
 	const KeyHandler = class KeyHandler {
 		constructor() {
-			this.keyCases = {
-				87: "n",
-				104: "n",
-
-				65: "w",
-				100: "w",
-
-				83: "s",
-				98: "s",
-
-				68: "e",
-				102: "e",
-
-				105: "ne",
-				99: "se",
-				97: "sw",
-				103: "nw",
-
-				101: "c",
+			this.use("default");
+		}
+		
+		use(map = "default"){
+			if(map ==="default"){
+				this.using = "default";
 				
-				"g": "pickup",
-				71: "pickup"
-			};
+				this.keyCases = {
+					104: "n",
 
-			this.actionMap = {
-				"n": () => new Vector(0, -1),
-				"w": () => new Vector(-1, 0),
-				"s": () => new Vector(0, 1),
-				"e": () => new Vector(1, 0),
-				"ne": () => new Vector(1, -1),
-				"se": () => new Vector(1, 1),
-				"sw": () => new Vector(-1, 1),
-				"nw": () => new Vector(-1, -1),
-				"c": null,
-				"pickup": "pickup"
-			};
+					100: "w",
+
+					98: "s",
+
+					102: "e",
+
+					105: "ne",
+					99: "se",
+					97: "sw",
+					103: "nw",
+
+					101: "c",
+					
+					"g": "pickup",
+					71: "pickup",
+					
+					68: "dropdialog"
+				};
+
+				this.actionMap = {
+					"n": () => new Vector(0, -1),
+					"w": () => new Vector(-1, 0),
+					"s": () => new Vector(0, 1),
+					"e": () => new Vector(1, 0),
+					"ne": () => new Vector(1, -1),
+					"se": () => new Vector(1, 1),
+					"sw": () => new Vector(-1, 1),
+					"nw": () => new Vector(-1, -1),
+					"c": null,
+					"pickup": "pickup",
+					"dropdialog": () => "drop"
+				};
+				
+				
+			}else if(map === "dropdialog"){
+				this.using = "dropdialog";
+				this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
+			}
 		}
 
 		//input is a key or a keycode
 		//returns action instruction
 		get(key) {
+			if(this.keyCases[key] === "dropdialog"){
+				this.use("dropdialog");
+				return "drop";
+			}else if(this.using === "dropdialog"){
+				let val = this.keyCases[key];
+				this.use();
+				return "drop:"+val;
+			}
 			return this.actionMap[this.keyCases[key]];
 		}
 	};
@@ -798,6 +838,7 @@ if (!Object.values) {
 			this.proposalMap = {};
 			this.proposalMap[Vector] = [MoveAction, AttackAction, NullAction];
 			this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
+			this.proposalMap["drop"] = [ItemDropAction, NullAction];
 		}
 
 		//decide actor logic
@@ -882,6 +923,12 @@ if (!Object.values) {
 				if(typeof instruction === "function"){
 					instruction = instruction();
 					key = instruction.constructor;
+				}else if(typeof instruction === "string"){
+					[key, instruction] = instruction.split(":");
+					if(key === "drop" && !instruction){
+						this.logger.log("Which item to drop? [a-z]");
+						return false;
+					}
 				}
 				let proposals = this.proposalMap[key];
 				if (proposals) {

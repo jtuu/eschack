@@ -912,6 +912,34 @@ if (!Object.values) {
 		return ItemPickupAction;
 	}(Action);
 
+	var ItemDropAction = function (_Action5) {
+		_inherits(ItemDropAction, _Action5);
+
+		function ItemDropAction(context, logger, inventorySlot) {
+			_classCallCheck(this, ItemDropAction);
+
+			var _this18 = _possibleConstructorReturn(this, _Action5.call(this, context, logger));
+
+			_this18.inventorySlot = inventorySlot;
+			return _this18;
+		}
+
+		ItemDropAction.prototype.try = function _try(actor, time) {
+			return time % 10 === 0 && actor.inventory[Utils.alphabetMap.indexOf(this.inventorySlot)];
+		};
+
+		ItemDropAction.prototype.do = function _do(actor) {
+			var index = Utils.alphabetMap.indexOf(this.inventorySlot),
+			    item = actor.inventory[index];
+			actor.inventory.splice(index, 1);
+			item.position = new (Function.prototype.bind.apply(Point, [null].concat(actor.position.get)))();
+			this.context.insert(item);
+			return 10;
+		};
+
+		return ItemDropAction;
+	}(Action);
+
 	var Lifebar = function () {
 		function Lifebar(id, name, container, max, value) {
 			_classCallCheck(this, Lifebar);
@@ -956,7 +984,7 @@ if (!Object.values) {
 		};
 
 		Lifebar.prototype.setStyle = function setStyle(style) {
-			var _this18 = this;
+			var _this19 = this;
 
 			var styles = {
 				"hilight": "hilighted",
@@ -968,8 +996,8 @@ if (!Object.values) {
 				Object.values(styles).filter(function (v) {
 					return v !== style;
 				}).forEach(function (f) {
-					_this18.bar.classList.remove(f);
-					_this18.label.classList.remove(f);
+					_this19.bar.classList.remove(f);
+					_this19.label.classList.remove(f);
 				});
 
 				this.bar.classList.add(style);
@@ -1003,65 +1031,89 @@ if (!Object.values) {
 		function KeyHandler() {
 			_classCallCheck(this, KeyHandler);
 
-			this.keyCases = {
-				87: "n",
-				104: "n",
-
-				65: "w",
-				100: "w",
-
-				83: "s",
-				98: "s",
-
-				68: "e",
-				102: "e",
-
-				105: "ne",
-				99: "se",
-				97: "sw",
-				103: "nw",
-
-				101: "c",
-
-				"g": "pickup",
-				71: "pickup"
-			};
-
-			this.actionMap = {
-				"n": function n() {
-					return new Vector(0, -1);
-				},
-				"w": function w() {
-					return new Vector(-1, 0);
-				},
-				"s": function s() {
-					return new Vector(0, 1);
-				},
-				"e": function e() {
-					return new Vector(1, 0);
-				},
-				"ne": function ne() {
-					return new Vector(1, -1);
-				},
-				"se": function se() {
-					return new Vector(1, 1);
-				},
-				"sw": function sw() {
-					return new Vector(-1, 1);
-				},
-				"nw": function nw() {
-					return new Vector(-1, -1);
-				},
-				"c": null,
-				"pickup": "pickup"
-			};
+			this.use("default");
 		}
+
+		KeyHandler.prototype.use = function use() {
+			var map = arguments.length <= 0 || arguments[0] === undefined ? "default" : arguments[0];
+
+			if (map === "default") {
+				this.using = "default";
+
+				this.keyCases = {
+					104: "n",
+
+					100: "w",
+
+					98: "s",
+
+					102: "e",
+
+					105: "ne",
+					99: "se",
+					97: "sw",
+					103: "nw",
+
+					101: "c",
+
+					"g": "pickup",
+					71: "pickup",
+
+					68: "dropdialog"
+				};
+
+				this.actionMap = {
+					"n": function n() {
+						return new Vector(0, -1);
+					},
+					"w": function w() {
+						return new Vector(-1, 0);
+					},
+					"s": function s() {
+						return new Vector(0, 1);
+					},
+					"e": function e() {
+						return new Vector(1, 0);
+					},
+					"ne": function ne() {
+						return new Vector(1, -1);
+					},
+					"se": function se() {
+						return new Vector(1, 1);
+					},
+					"sw": function sw() {
+						return new Vector(-1, 1);
+					},
+					"nw": function nw() {
+						return new Vector(-1, -1);
+					},
+					"c": null,
+					"pickup": "pickup",
+					"dropdialog": function dropdialog() {
+						return "drop";
+					}
+				};
+			} else if (map === "dropdialog") {
+				this.using = "dropdialog";
+				this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce(function (p, c) {
+					return p[c.toUpperCase().charCodeAt(0)] = c, p;
+				}, {});
+			}
+		};
 
 		//input is a key or a keycode
 		//returns action instruction
 
 
 		KeyHandler.prototype.get = function get(key) {
+			if (this.keyCases[key] === "dropdialog") {
+				this.use("dropdialog");
+				return "drop";
+			} else if (this.using === "dropdialog") {
+				var val = this.keyCases[key];
+				this.use();
+				return "drop:" + val;
+			}
 			return this.actionMap[this.keyCases[key]];
 		};
 
@@ -1079,19 +1131,20 @@ if (!Object.values) {
 			this.proposalMap = {};
 			this.proposalMap[Vector] = [MoveAction, AttackAction, NullAction];
 			this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
+			this.proposalMap["drop"] = [ItemDropAction, NullAction];
 		}
 
 		//decide actor logic
 
 
 		ActionManager.prototype.think = function think(actor, player) {
-			var _this19 = this;
+			var _this20 = this;
 
 			if (actor instanceof Enemy) {
 				var _ret = function () {
-					var fov = _this19.getFov(actor),
+					var fov = _this20.getFov(actor),
 					    instruction = null,
-					    shouldLog = _this19.getFov(player).has(actor.position);
+					    shouldLog = _this20.getFov(player).has(actor.position);
 					actor.target = fov.get(player.position);
 
 					if (!actor.target) {
@@ -1109,15 +1162,15 @@ if (!Object.values) {
 						var vector = Point.distance(actor.position, actor.target.position);
 						vector.reduce();
 						instruction = vector;
-						if (!actor.noticed && shouldLog) _this19.logger.log(actor.flavorName + " noticed " + player.flavorName);
+						if (!actor.noticed && shouldLog) _this20.logger.log(actor.flavorName + " noticed " + player.flavorName);
 						actor.noticed = true;
 					}
 
-					var proposals = _this19.proposalMap[instruction.constructor];
+					var proposals = _this20.proposalMap[instruction.constructor];
 					if (proposals) {
 						var methods = proposals.map(function (action) {
 							return function () {
-								return new action(_this19.board, shouldLog ? _this19.logger : null, instruction);
+								return new action(_this20.board, shouldLog ? _this20.logger : null, instruction);
 							};
 						});
 						actor.actions.push(methods);
@@ -1173,7 +1226,7 @@ if (!Object.values) {
 
 
 		ActionManager.prototype.delegateAction = function delegateAction(actor, instruction) {
-			var _this20 = this;
+			var _this21 = this;
 
 			if (!actor) {
 				return;
@@ -1183,12 +1236,22 @@ if (!Object.values) {
 				if (typeof instruction === "function") {
 					instruction = instruction();
 					key = instruction.constructor;
+				} else if (typeof instruction === "string") {
+					var _instruction$split = instruction.split(":");
+
+					key = _instruction$split[0];
+					instruction = _instruction$split[1];
+
+					if (key === "drop" && !instruction) {
+						this.logger.log("Which item to drop? [a-z]");
+						return false;
+					}
 				}
 				var proposals = this.proposalMap[key];
 				if (proposals) {
 					var methods = proposals.map(function (action) {
 						return function () {
-							return new action(_this20.board, _this20.logger, instruction);
+							return new action(_this21.board, _this21.logger, instruction);
 						};
 					});
 					actor.actions.push(methods);
@@ -1198,7 +1261,7 @@ if (!Object.values) {
 				}
 			} else if (instruction === null) {
 				actor.actions.push([function () {
-					return new NullAction(null, _this20.logger);
+					return new NullAction(null, _this21.logger);
 				}]);
 				return true;
 			}
@@ -1488,7 +1551,7 @@ if (!Object.values) {
 
 
 		LogboxManager.prototype.log = function log(text) {
-			var _this21 = this;
+			var _this22 = this;
 
 			var type = arguments.length <= 1 || arguments[1] === undefined ? "default" : arguments[1];
 
@@ -1509,7 +1572,7 @@ if (!Object.values) {
 			} else {
 				this.rows[0].children[0].remove();
 				this.rows.forEach(function (row, index) {
-					row.appendChild(_this21.messages[_this21.messages.length - (_this21.rowCount - index)]);
+					row.appendChild(_this22.messages[_this22.messages.length - (_this22.rowCount - index)]);
 				});
 			}
 		};
@@ -1530,7 +1593,7 @@ if (!Object.values) {
 		}
 
 		InventoryManager.prototype.update = function update() {
-			var _this22 = this;
+			var _this23 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -1540,7 +1603,7 @@ if (!Object.values) {
 			this.inventory.forEach(function (item, key) {
 				var ele = document.createElement("div");
 				ele.innerHTML = Utils.alphabetMap[key] + " - " + item;
-				_this22.container.appendChild(ele);
+				_this23.container.appendChild(ele);
 			});
 		};
 
@@ -1593,7 +1656,7 @@ if (!Object.values) {
 	//the game
 	var Game = function () {
 		function Game(board, objs) {
-			var _this23 = this;
+			var _this24 = this;
 
 			_classCallCheck(this, Game);
 
@@ -1605,15 +1668,15 @@ if (!Object.values) {
 			this.player = objs[0];
 			this.objs = [];
 			objs.forEach(function (obj) {
-				return _this23.objs[obj.id] = obj;
+				return _this24.objs[obj.id] = obj;
 			});
 
 			this.logic = new ActionManager(this.board, this.logger);
 
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this23.logic.delegateAction(_this23.player, _this23.keyHandler.get(e.keyCode))) {
-					_this23.update();
+				if (_this24.logic.delegateAction(_this24.player, _this24.keyHandler.get(e.keyCode))) {
+					_this24.update();
 				}
 			});
 
@@ -1627,56 +1690,56 @@ if (!Object.values) {
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this23.board.bounds;
+				var bounds = _this24.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this23.logic.getFov(_this23.player),
-					    gamePoint = Utils.screenToGame(screenPoint, _this23.board.tileSize, _this23.board.spacing);
+					var fov = _this24.logic.getFov(_this24.player),
+					    gamePoint = Utils.screenToGame(screenPoint, _this24.board.tileSize, _this24.board.spacing);
 
 					//set cursor position
-					_this23.mouseHandler.cursorFromScreen(screenPoint);
+					_this24.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov && fov.has(gamePoint)) {
-						var targetTile = _this23.board.get(gamePoint);
+						var targetTile = _this24.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this23.objs.forEach(function (obj) {
+							_this24.objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this23.examineContainer.innerHTML = targetTile.top;
+							_this24.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this23.examineContainer.innerHTML = targetTile;
+							_this24.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this23.examineContainer.innerHTML = "You can't see that";
+						_this24.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this23.objs.forEach(function (obj) {
+						_this24.objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this23.objs[Number(id)];
+						var target = _this24.objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this23.mouseHandler.cursorFromGame(target.position);
-							_this23.examineContainer.innerHTML = target;
+							_this24.mouseHandler.cursorFromGame(target.position);
+							_this24.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
@@ -1686,7 +1749,7 @@ if (!Object.values) {
 		}
 
 		Game.prototype.update = function update() {
-			var _this24 = this;
+			var _this25 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
@@ -1701,21 +1764,21 @@ if (!Object.values) {
 						return;
 					}
 					if (obj.isAlive) {
-						var _duration = obj.update(_this24.logger, _this24.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this25.logger, _this25.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this24.logic.think(obj, _this24.player);
+							_this25.logic.think(obj, _this25.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						if (!obj.isAlive) {
-							_this24.board.remove(obj);
-							delete _this24.objs[obj.id];
+							_this25.board.remove(obj);
+							delete _this25.objs[obj.id];
 						}
 					} else {
-						_this24.board.remove(obj);
-						delete _this24.objs[obj.id];
+						_this25.board.remove(obj);
+						delete _this25.objs[obj.id];
 					}
 				});
 			}
@@ -1746,11 +1809,11 @@ if (!Object.values) {
 		};
 
 		Game.prototype.start = function start() {
-			var _this25 = this;
+			var _this26 = this;
 
 			document.getElementById("button-save").addEventListener("click", function (e) {
 				e.stopPropagation();
-				Utils.saveGame(_this25);
+				Utils.saveGame(_this26);
 			});
 
 			document.getElementById("button-delete").addEventListener("click", function (e) {
@@ -1761,14 +1824,14 @@ if (!Object.values) {
 			this.logger.log("Hello and welcome", "hilight");
 			this.objs.forEach(function (obj) {
 				if (obj) {
-					_this25.board.insert(obj);
+					_this26.board.insert(obj);
 				}
 			});
 
 			var fov = this.logic.getFov(this.player);
 
 			this.objs.forEach(function (obj) {
-				_this25.logic.think(obj, _this25.player);
+				_this26.logic.think(obj, _this26.player);
 				if (obj.type === "Enemy") {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
