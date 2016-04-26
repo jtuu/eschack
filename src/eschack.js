@@ -1237,6 +1237,18 @@ if (!Object.values) {
 					return paths;
 				}
 				
+				static insertEnemies(room, options){
+					let enemies = [];
+					for(let x = room.x + room.w; x > room.x; x--){
+						for(let y = room.y + room.h; y > room.y; y--){
+							if(Math.random() < options.enemies.spawnChance){
+								enemies.push(new Enemy(new Point(x, y)));
+							}
+						}
+					}
+					return enemies;
+				}
+				
 				static makeDungeon(options){
 					options = options || this.defaultOptions;
 					let matrix = [],
@@ -1271,12 +1283,14 @@ if (!Object.values) {
 						}
 						
 						//carve out rooms
+						//and try put some enemies in them
 						rooms.forEach(room => {
 							for(let x = room.x + room.w; x > room.x; x--){
 								for(let y = room.y + room.h; y > room.y; y--){
 									matrix[y][x].empty();
 								}
 							}
+							objs = objs.concat(this.insertEnemies(room, options));
 						});
 						
 						//carve out paths
@@ -1325,6 +1339,9 @@ if (!Object.values) {
 						},
 						paths: {
 							count: 8
+						},
+						enemies: {
+							spawnChance: 0.05
 						}
 					};
 				}

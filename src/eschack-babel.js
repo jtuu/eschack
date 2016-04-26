@@ -1590,7 +1590,21 @@ if (!Object.values) {
 						return paths;
 					};
 
+					_class4.insertEnemies = function insertEnemies(room, options) {
+						var enemies = [];
+						for (var x = room.x + room.w; x > room.x; x--) {
+							for (var y = room.y + room.h; y > room.y; y--) {
+								if (Math.random() < options.enemies.spawnChance) {
+									enemies.push(new Enemy(new Point(x, y)));
+								}
+							}
+						}
+						return enemies;
+					};
+
 					_class4.makeDungeon = function makeDungeon(options) {
+						var _this22 = this;
+
 						options = options || this.defaultOptions;
 						var matrix = [],
 						    objs = [],
@@ -1624,12 +1638,14 @@ if (!Object.values) {
 						}
 
 						//carve out rooms
+						//and try put some enemies in them
 						rooms.forEach(function (room) {
 							for (var _x3 = room.x + room.w; _x3 > room.x; _x3--) {
 								for (var _y = room.y + room.h; _y > room.y; _y--) {
 									matrix[_y][_x3].empty();
 								}
 							}
+							objs = objs.concat(_this22.insertEnemies(room, options));
 						});
 
 						//carve out paths
@@ -1680,6 +1696,9 @@ if (!Object.values) {
 								},
 								paths: {
 									count: 8
+								},
+								enemies: {
+									spawnChance: 0.05
 								}
 							};
 						}
@@ -1718,7 +1737,7 @@ if (!Object.values) {
 
 
 		LogboxManager.prototype.log = function log(text) {
-			var _this22 = this;
+			var _this23 = this;
 
 			var type = arguments.length <= 1 || arguments[1] === undefined ? "default" : arguments[1];
 
@@ -1739,7 +1758,7 @@ if (!Object.values) {
 			} else {
 				this.rows[0].children[0].remove();
 				this.rows.forEach(function (row, index) {
-					row.appendChild(_this22.messages[_this22.messages.length - (_this22.rowCount - index)]);
+					row.appendChild(_this23.messages[_this23.messages.length - (_this23.rowCount - index)]);
 				});
 			}
 		};
@@ -1760,7 +1779,7 @@ if (!Object.values) {
 		}
 
 		InventoryManager.prototype.update = function update() {
-			var _this23 = this;
+			var _this24 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -1770,7 +1789,7 @@ if (!Object.values) {
 			this.inventory.forEach(function (item, key) {
 				var ele = document.createElement("div");
 				ele.innerHTML = Utils.alphabetMap[key] + " - " + item;
-				_this23.container.appendChild(ele);
+				_this24.container.appendChild(ele);
 			});
 		};
 
@@ -1823,7 +1842,7 @@ if (!Object.values) {
 	//the game
 	var Game = function () {
 		function Game(board, objs) {
-			var _this24 = this;
+			var _this25 = this;
 
 			_classCallCheck(this, Game);
 
@@ -1835,15 +1854,15 @@ if (!Object.values) {
 			this.player = objs[0];
 			this.objs = [];
 			objs.forEach(function (obj) {
-				return _this24.objs[obj.id] = obj;
+				return _this25.objs[obj.id] = obj;
 			});
 
 			this.logic = new ActionManager(this.board, this.logger);
 
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this24.logic.delegateAction(_this24.player, _this24.keyHandler.get(e.keyCode))) {
-					_this24.update();
+				if (_this25.logic.delegateAction(_this25.player, _this25.keyHandler.get(e.keyCode))) {
+					_this25.update();
 				}
 			});
 
@@ -1857,56 +1876,56 @@ if (!Object.values) {
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this24.board.bounds;
+				var bounds = _this25.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this24.logic.getFov(_this24.player),
-					    gamePoint = Utils.screenToGame(screenPoint, _this24.board.tileSize, _this24.board.spacing);
+					var fov = _this25.logic.getFov(_this25.player),
+					    gamePoint = Utils.screenToGame(screenPoint, _this25.board.tileSize, _this25.board.spacing);
 
 					//set cursor position
-					_this24.mouseHandler.cursorFromScreen(screenPoint);
+					_this25.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov && fov.has(gamePoint)) {
-						var targetTile = _this24.board.get(gamePoint);
+						var targetTile = _this25.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this24.objs.forEach(function (obj) {
+							_this25.objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this24.examineContainer.innerHTML = targetTile.top;
+							_this25.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this24.examineContainer.innerHTML = targetTile;
+							_this25.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this24.examineContainer.innerHTML = "You can't see that";
+						_this25.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this24.objs.forEach(function (obj) {
+						_this25.objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this24.objs[Number(id)];
+						var target = _this25.objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this24.mouseHandler.cursorFromGame(target.position);
-							_this24.examineContainer.innerHTML = target;
+							_this25.mouseHandler.cursorFromGame(target.position);
+							_this25.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
@@ -1916,7 +1935,7 @@ if (!Object.values) {
 		}
 
 		Game.prototype.update = function update() {
-			var _this25 = this;
+			var _this26 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
@@ -1931,21 +1950,21 @@ if (!Object.values) {
 						return;
 					}
 					if (obj.isAlive) {
-						var _duration = obj.update(_this25.logger, _this25.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this26.logger, _this26.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this25.logic.think(obj, _this25.player);
+							_this26.logic.think(obj, _this26.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						if (!obj.isAlive) {
-							_this25.board.remove(obj);
-							delete _this25.objs[obj.id];
+							_this26.board.remove(obj);
+							delete _this26.objs[obj.id];
 						}
 					} else {
-						_this25.board.remove(obj);
-						delete _this25.objs[obj.id];
+						_this26.board.remove(obj);
+						delete _this26.objs[obj.id];
 					}
 				});
 			}
@@ -1976,11 +1995,11 @@ if (!Object.values) {
 		};
 
 		Game.prototype.start = function start() {
-			var _this26 = this;
+			var _this27 = this;
 
 			document.getElementById("button-save").addEventListener("click", function (e) {
 				e.stopPropagation();
-				Utils.saveGame(_this26);
+				Utils.saveGame(_this27);
 			});
 
 			document.getElementById("button-delete").addEventListener("click", function (e) {
@@ -1991,14 +2010,14 @@ if (!Object.values) {
 			this.logger.log("Hello and welcome", "hilight");
 			this.objs.forEach(function (obj) {
 				if (obj) {
-					_this26.board.insert(obj);
+					_this27.board.insert(obj);
 				}
 			});
 
 			var fov = this.logic.getFov(this.player);
 
 			this.objs.forEach(function (obj) {
-				_this26.logic.think(obj, _this26.player);
+				_this27.logic.think(obj, _this27.player);
 				if (obj.type === "Enemy") {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
