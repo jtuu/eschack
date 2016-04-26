@@ -433,15 +433,28 @@ if (!Object.values) {
 		//recreate class from plain obj
 
 		GameObject.from = function from(obj) {
-			var newObj = new this(new Point(obj.position.x, obj.position.y), obj.stats);
+			var point = null;
+			if (obj.position) {
+				point = new Point(obj.position.x, obj.position.y);
+			}
+			var newObj = new this(point, obj.stats);
 
-			var exempt = ["lifebar", "position"];
+			var exempt = ["lifebar", "position", "inventory", "equipment"];
 
 			for (var key in obj) {
 				if (!exempt.includes(key)) {
 					newObj[key] = obj[key];
 				}
 			}
+			newObj.inventory = [];
+			for (var _key in obj.inventory) {
+				newObj.inventory[_key] = eval(obj.inventory[_key].type).from(obj.inventory[_key]);
+			}
+			newObj.equipment = [];
+			for (var _key2 in obj.equipment) {
+				newObj.equipment[_key2] = eval(obj.equipment[_key2].type).from(obj.equipment[_key2]);
+			}
+
 			return newObj;
 		};
 
@@ -1419,12 +1432,15 @@ if (!Object.values) {
 
 		Utils.saveGame = function saveGame(instance) {
 			var save = {};
-			save.board = instance.board;
-			save.player = instance.player;
+			//all we need is the objs
+			//in Game.start they will get inserted
 			save.objs = instance.objs;
+			//remove fov because of circular reference
+			save.objs.forEach(function (obj) {
+				return delete obj.fov;
+			});
 
-			save = LZString.compress(JSON.stringify(save));
-			localStorage.setItem(saveName, save);
+			localStorage.setItem(saveName, LZString.compress(JSON.stringify(save)));
 			console.log("Game saved");
 		};
 
@@ -1437,17 +1453,10 @@ if (!Object.values) {
 						"Wall": Wall,
 						"Creature": Creature,
 						"Enemy": Enemy,
-						"Player": Player
+						"Player": Player,
+						"Item": Item,
+						"Weapon": Weapon
 					};
-					var data = [];
-					data.push(new TileGroup(null, {
-						origin: new Point(save.board.origin.x, save.board.origin.y),
-						baseColor: save.board.baseColor,
-						tileSize: save.board.tileSize,
-						spacing: save.board.spacing,
-						w: save.board.w,
-						h: save.board.h
-					}));
 
 					var objs = [];
 					save.objs.forEach(function (obj) {
@@ -1457,11 +1466,9 @@ if (!Object.values) {
 							}
 						}
 					});
-					data.push(objs);
-
 					console.log("Savedata loaded");
 					return {
-						v: new (Function.prototype.bind.apply(Game, [null].concat(data)))()
+						v: objs
 					};
 				}();
 
@@ -1506,6 +1513,20 @@ if (!Object.values) {
 		//use this to generate maps
 		//(actually it generates array of objs which then get inserted by Game)
 
+
+		Utils.initUIButtons = function initUIButtons(instance) {
+			var _this22 = this;
+
+			document.getElementById("button-save").addEventListener("click", function (e) {
+				e.stopPropagation();
+				_this22.saveGame(instance);
+			});
+
+			document.getElementById("button-delete").addEventListener("click", function (e) {
+				e.stopPropagation();
+				_this22.deleteSave();
+			});
+		};
 
 		_createClass(Utils, null, [{
 			key: "exports",
@@ -1613,7 +1634,7 @@ if (!Object.values) {
 
 
 					_class4.makeDungeon = function makeDungeon(options) {
-						var _this22 = this;
+						var _this23 = this;
 
 						options = options || this.defaultOptions;
 						var matrix = [],
@@ -1655,7 +1676,7 @@ if (!Object.values) {
 									matrix[_y][_x3].empty();
 								}
 							}
-							objs = objs.concat(_this22.insertEnemies(room, options));
+							objs = objs.concat(_this23.insertEnemies(room, options));
 						});
 
 						//carve out paths
@@ -1747,7 +1768,7 @@ if (!Object.values) {
 
 
 		LogboxManager.prototype.log = function log(text) {
-			var _this23 = this;
+			var _this24 = this;
 
 			var type = arguments.length <= 1 || arguments[1] === undefined ? "default" : arguments[1];
 
@@ -1768,7 +1789,7 @@ if (!Object.values) {
 			} else {
 				this.rows[0].children[0].remove();
 				this.rows.forEach(function (row, index) {
-					row.appendChild(_this23.messages[_this23.messages.length - (_this23.rowCount - index)]);
+					row.appendChild(_this24.messages[_this24.messages.length - (_this24.rowCount - index)]);
 				});
 			}
 		};
@@ -1790,7 +1811,7 @@ if (!Object.values) {
 		}
 
 		InventoryManager.prototype.update = function update() {
-			var _this24 = this;
+			var _this25 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -1800,7 +1821,7 @@ if (!Object.values) {
 			this.inventory.forEach(function (item, key) {
 				var ele = document.createElement("div");
 				ele.innerHTML = Utils.alphabetMap[key] + " - " + item;
-				_this24.container.appendChild(ele);
+				_this25.container.appendChild(ele);
 			});
 		};
 
@@ -1853,7 +1874,7 @@ if (!Object.values) {
 	//the game
 	var Game = function () {
 		function Game(board, objs) {
-			var _this25 = this;
+			var _this26 = this;
 
 			_classCallCheck(this, Game);
 
@@ -1863,12 +1884,14 @@ if (!Object.values) {
 			this.time = 0;
 
 			this.board = board;
-			this.player = objs[0];
+			this.player = objs.find(function (v) {
+				return v;
+			});
 
 			//map objs argument into this.objs by the objs creation id
 			this.objs = [];
 			objs.forEach(function (obj) {
-				return _this25.objs[obj.id] = obj;
+				return _this26.objs[obj.id] = obj;
 			});
 
 			this.logic = new ActionManager(this.board, this.logger);
@@ -1876,8 +1899,8 @@ if (!Object.values) {
 			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this25.logic.delegateAction(_this25.player, _this25.keyHandler.get(e.keyCode))) {
-					_this25.update();
+				if (_this26.logic.delegateAction(_this26.player, _this26.keyHandler.get(e.keyCode))) {
+					_this26.update();
 				}
 			});
 
@@ -1891,56 +1914,56 @@ if (!Object.values) {
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this25.board.bounds;
+				var bounds = _this26.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this25.player.fov,
-					    gamePoint = Utils.screenToGame(screenPoint, _this25.board.tileSize, _this25.board.spacing);
+					var fov = _this26.player.fov,
+					    gamePoint = Utils.screenToGame(screenPoint, _this26.board.tileSize, _this26.board.spacing);
 
 					//set cursor position
-					_this25.mouseHandler.cursorFromScreen(screenPoint);
+					_this26.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov && fov.has(gamePoint)) {
-						var targetTile = _this25.board.get(gamePoint);
+						var targetTile = _this26.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this25.objs.forEach(function (obj) {
+							_this26.objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this25.examineContainer.innerHTML = targetTile.top;
+							_this26.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this25.examineContainer.innerHTML = targetTile;
+							_this26.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this25.examineContainer.innerHTML = "You can't see that";
+						_this26.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this25.objs.forEach(function (obj) {
+						_this26.objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this25.objs[Number(id)];
+						var target = _this26.objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this25.mouseHandler.cursorFromGame(target.position);
-							_this25.examineContainer.innerHTML = target;
+							_this26.mouseHandler.cursorFromGame(target.position);
+							_this26.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
@@ -1950,7 +1973,7 @@ if (!Object.values) {
 		}
 
 		Game.prototype.update = function update() {
-			var _this26 = this;
+			var _this27 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
@@ -1967,22 +1990,22 @@ if (!Object.values) {
 					}
 
 					if (obj.isAlive) {
-						var _duration = obj.update(_this26.logger, _this26.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this27.logger, _this27.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this26.logic.think(obj, _this26.player);
+							_this27.logic.think(obj, _this27.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						//obj died during update
 						if (!obj.isAlive) {
-							_this26.board.remove(obj);
-							delete _this26.objs[obj.id];
+							_this27.board.remove(obj);
+							delete _this27.objs[obj.id];
 						}
 					} else {
-						_this26.board.remove(obj);
-						delete _this26.objs[obj.id];
+						_this27.board.remove(obj);
+						delete _this27.objs[obj.id];
 					}
 				});
 			}
@@ -2014,22 +2037,12 @@ if (!Object.values) {
 		};
 
 		Game.prototype.start = function start() {
-			var _this27 = this;
-
-			document.getElementById("button-save").addEventListener("click", function (e) {
-				e.stopPropagation();
-				Utils.saveGame(_this27);
-			});
-
-			document.getElementById("button-delete").addEventListener("click", function (e) {
-				e.stopPropagation();
-				Utils.deleteSave();
-			});
+			var _this28 = this;
 
 			this.logger.log("Hello and welcome", "hilight");
 			this.objs.forEach(function (obj) {
 				if (obj) {
-					_this27.board.insert(obj);
+					_this28.board.insert(obj);
 				}
 			});
 
@@ -2037,7 +2050,7 @@ if (!Object.values) {
 			this.player.fov = fov;
 
 			this.objs.forEach(function (obj) {
-				_this27.logic.think(obj, _this27.player);
+				_this28.logic.think(obj, _this28.player);
 				if (obj.type === "Enemy") {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
@@ -2055,14 +2068,15 @@ if (!Object.values) {
 		return Game;
 	}();
 
-	var game = Utils.loadGame() || new Game(new TileGroup(null, {
+	var game = new Game(new TileGroup(null, {
 		origin: new Point(0, 0),
 		baseColor: "slategrey",
 		tileSize: 25,
 		spacing: 1,
 		w: 40,
 		h: 20
-	}), Utils.DungeonGenerator.makeDungeon());
+	}), Utils.loadGame() || Utils.DungeonGenerator.makeDungeon());
+	Utils.initUIButtons(game);
 
 	if (env === "dev") {
 		Utils.exportObjs(Utils.exports);

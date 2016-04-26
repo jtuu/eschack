@@ -150,6 +150,12 @@ canvas {
 	border: $basic-border;
 }
 
+.menu-title{
+	background:black;
+	color:darkgrey;
+	display:block;
+}
+
 #bottom-row{
 	> * {
 		display: inline-block;

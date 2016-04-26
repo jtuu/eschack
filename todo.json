@@ -1,6 +1,6 @@
 {
 	"todo": [	
-		"implement map generator",
+		"object de/serialization for better loading & saving",
 		"inventory, items, stats",
 		"equipment, ItemEquipAction",
 		"enemies shouldnt attack eachother (faction system?)",

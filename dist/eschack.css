@@ -81,6 +81,11 @@ canvas {
   height: 150px;
   border: 1px solid black; }
 
+.menu-title {
+  background: black;
+  color: darkgrey;
+  display: block; }
+
 #bottom-row > * {
   display: inline-block;
   margin: 10px;

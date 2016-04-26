@@ -332,15 +332,28 @@ if (!Object.values) {
 
 		//recreate class from plain obj
 		static from(obj) {
-			let newObj = new this(new Point(obj.position.x, obj.position.y), obj.stats);
+			let point = null;
+			if(obj.position){
+				point = new Point(obj.position.x, obj.position.y);
+			}
+			let newObj = new this(point, obj.stats);
 
-			let exempt = ["lifebar", "position"];
+			let exempt = ["lifebar", "position", "inventory", "equipment"];
 
 			for (let key in obj) {
 				if (!exempt.includes(key)) {
 					newObj[key] = obj[key];
 				}
 			}
+			newObj.inventory = [];
+			for(let key in obj.inventory){
+				newObj.inventory[key] = (eval(obj.inventory[key].type)).from(obj.inventory[key]);
+			}
+			newObj.equipment = [];
+			for(let key in obj.equipment){
+				newObj.equipment[key] = (eval(obj.equipment[key].type)).from(obj.equipment[key]);
+			}
+			
 			return newObj;
 		}
 
@@ -1105,12 +1118,13 @@ if (!Object.values) {
 		
 		static saveGame(instance){
 			let save = {};
-			save.board = instance.board;
-			save.player = instance.player;
+			//all we need is the objs
+			//in Game.start they will get inserted
 			save.objs = instance.objs;
+			//remove fov because of circular reference
+			save.objs.forEach(obj => delete obj.fov);
 
-			save = LZString.compress(JSON.stringify(save));
-			localStorage.setItem(saveName, save);
+			localStorage.setItem(saveName, LZString.compress(JSON.stringify(save)));
 			console.log("Game saved");
 		}
 		
@@ -1122,17 +1136,10 @@ if (!Object.values) {
 					"Wall": Wall,
 					"Creature": Creature,
 					"Enemy": Enemy,
-					"Player": Player
+					"Player": Player,
+					"Item": Item,
+					"Weapon": Weapon
 				};
-				let data = [];
-				data.push(new TileGroup(null, {
-					origin: new Point(save.board.origin.x, save.board.origin.y),
-					baseColor: save.board.baseColor,
-					tileSize: save.board.tileSize,
-					spacing: save.board.spacing,
-					w: save.board.w,
-					h: save.board.h
-				}));
 
 				let objs = [];
 				save.objs.forEach(obj => {
@@ -1142,10 +1149,8 @@ if (!Object.values) {
 						}
 					}
 				});
-				data.push(objs);
-
 				console.log("Savedata loaded");
-				return new Game(...data);
+				return objs;
 			} else {
 				console.log("No existing savedata found");
 				return null;
@@ -1352,6 +1357,17 @@ if (!Object.values) {
 			};
 		}
 		
+		static initUIButtons(instance){
+			document.getElementById("button-save").addEventListener("click", e => {
+				e.stopPropagation();
+				this.saveGame(instance);
+			});
+			
+			document.getElementById("button-delete").addEventListener("click", e => {
+				e.stopPropagation();
+				this.deleteSave();
+			});
+		}
 	};
 
 	//manages logging
@@ -1458,7 +1474,7 @@ if (!Object.values) {
 			this.time = 0;
 			
 			this.board = board;
-			this.player = objs[0];
+			this.player = objs.find(v=>v);
 			
 			//map objs argument into this.objs by the objs creation id
 			this.objs = [];
@@ -1605,15 +1621,6 @@ if (!Object.values) {
 		}
 
 		start() {
-			document.getElementById("button-save").addEventListener("click", e => {
-				e.stopPropagation();
-				Utils.saveGame(this);
-			});
-			
-			document.getElementById("button-delete").addEventListener("click", e => {
-				e.stopPropagation();
-				Utils.deleteSave();
-			});
 			
 			this.logger.log("Hello and welcome", "hilight");
 			this.objs.forEach(obj => {
@@ -1642,7 +1649,7 @@ if (!Object.values) {
 		}
 	};
 
-	var game = Utils.loadGame() || new Game(
+	var game = new Game(
 		new TileGroup(null, {
 			origin: new Point(0, 0),
 			baseColor: "slategrey",
@@ -1650,8 +1657,9 @@ if (!Object.values) {
 			spacing: 1,
 			w: 40,
 			h: 20
-		}), Utils.DungeonGenerator.makeDungeon()
+		}), Utils.loadGame() || Utils.DungeonGenerator.makeDungeon()
 	);
+	Utils.initUIButtons(game);
 	
 	if (env === "dev") {
 		Utils.exportObjs(Utils.exports);
