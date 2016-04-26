@@ -1503,6 +1503,10 @@ if (!Object.values) {
 			}
 		};
 
+		//use this to generate maps
+		//(actually it generates array of objs which then get inserted by Game)
+
+
 		_createClass(Utils, null, [{
 			key: "exports",
 			get: function get() {
@@ -1590,6 +1594,9 @@ if (!Object.values) {
 						return paths;
 					};
 
+					//try to spawn some enemies within room
+
+
 					_class4.insertEnemies = function insertEnemies(room, options) {
 						var enemies = [];
 						for (var x = room.x + room.w; x > room.x; x--) {
@@ -1601,6 +1608,9 @@ if (!Object.values) {
 						}
 						return enemies;
 					};
+
+					//main method
+
 
 					_class4.makeDungeon = function makeDungeon(options) {
 						var _this22 = this;
@@ -1698,7 +1708,7 @@ if (!Object.values) {
 									count: 8
 								},
 								enemies: {
-									spawnChance: 0.05
+									spawnChance: 0.02
 								}
 							};
 						}
@@ -1766,6 +1776,7 @@ if (!Object.values) {
 		return LogboxManager;
 	}();
 
+	//manages the inventory UI component
 	var InventoryManager = function () {
 		function InventoryManager(inventoryBox, inventory) {
 			_classCallCheck(this, InventoryManager);
@@ -1848,10 +1859,13 @@ if (!Object.values) {
 
 			this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
+			//global gametime
 			this.time = 0;
 
 			this.board = board;
 			this.player = objs[0];
+
+			//map objs argument into this.objs by the objs creation id
 			this.objs = [];
 			objs.forEach(function (obj) {
 				return _this25.objs[obj.id] = obj;
@@ -1859,6 +1873,7 @@ if (!Object.values) {
 
 			this.logic = new ActionManager(this.board, this.logger);
 
+			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
 				if (_this25.logic.delegateAction(_this25.player, _this25.keyHandler.get(e.keyCode))) {
@@ -1881,7 +1896,7 @@ if (!Object.values) {
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this25.logic.getFov(_this25.player),
+					var fov = _this25.player.fov,
 					    gamePoint = Utils.screenToGame(screenPoint, _this25.board.tileSize, _this25.board.spacing);
 
 					//set cursor position
@@ -1946,9 +1961,11 @@ if (!Object.values) {
 				this.time += TICK;
 
 				this.objs.forEach(function (obj, index) {
+					//skip player
 					if (index === 0) {
 						return;
 					}
+
 					if (obj.isAlive) {
 						var _duration = obj.update(_this26.logger, _this26.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
@@ -1958,6 +1975,7 @@ if (!Object.values) {
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
+						//obj died during update
 						if (!obj.isAlive) {
 							_this26.board.remove(obj);
 							delete _this26.objs[obj.id];
@@ -1975,6 +1993,7 @@ if (!Object.values) {
 			}
 
 			var fov = this.logic.getFov(this.player);
+			this.player.fov = fov;
 
 			if (fov) {
 				this.objs.forEach(function (obj) {
@@ -2015,6 +2034,7 @@ if (!Object.values) {
 			});
 
 			var fov = this.logic.getFov(this.player);
+			this.player.fov = fov;
 
 			this.objs.forEach(function (obj) {
 				_this27.logic.think(obj, _this27.player);

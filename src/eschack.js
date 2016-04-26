@@ -1178,6 +1178,8 @@ if (!Object.values) {
 			}
 		}
 		
+		//use this to generate maps
+		//(actually it generates array of objs which then get inserted by Game)
 		static get DungeonGenerator(){
 			return class{
 				static makeRoom(options){
@@ -1237,6 +1239,7 @@ if (!Object.values) {
 					return paths;
 				}
 				
+				//try to spawn some enemies within room
 				static insertEnemies(room, options){
 					let enemies = [];
 					for(let x = room.x + room.w; x > room.x; x--){
@@ -1249,6 +1252,7 @@ if (!Object.values) {
 					return enemies;
 				}
 				
+				//main method
 				static makeDungeon(options){
 					options = options || this.defaultOptions;
 					let matrix = [],
@@ -1341,7 +1345,7 @@ if (!Object.values) {
 							count: 8
 						},
 						enemies: {
-							spawnChance: 0.05
+							spawnChance: 0.02
 						}
 					};
 				}
@@ -1392,6 +1396,7 @@ if (!Object.values) {
 		}
 	};
 	
+	//manages the inventory UI component
 	const InventoryManager = class InventoryManager{
 		constructor(inventoryBox, inventory){
 			this.wrapper = inventoryBox;
@@ -1449,15 +1454,19 @@ if (!Object.values) {
 			
 			this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
+			//global gametime
 			this.time = 0;
 			
 			this.board = board;
 			this.player = objs[0];
+			
+			//map objs argument into this.objs by the objs creation id
 			this.objs = [];
 			objs.forEach(obj => this.objs[obj.id] = obj);
 
 			this.logic = new ActionManager(this.board, this.logger);
 
+			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", e => {
 				if (this.logic.delegateAction(this.player, this.keyHandler.get(e.keyCode))) {
@@ -1480,7 +1489,7 @@ if (!Object.values) {
 				
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					let fov = this.logic.getFov(this.player),
+					let fov = this.player.fov,
 						gamePoint = Utils.screenToGame(screenPoint, this.board.tileSize, this.board.spacing);
 						
 					//set cursor position
@@ -1543,9 +1552,11 @@ if (!Object.values) {
 				this.time += TICK;
 				
 				this.objs.forEach((obj, index) => {
+					//skip player
 					if(index === 0){
 						return;
 					}
+					
 					if(obj.isAlive){
 						let duration = obj.update(this.logger, this.time + (objDurations[obj.id] || 0));
 						if(duration > 0){
@@ -1555,6 +1566,7 @@ if (!Object.values) {
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + duration : duration;
 						}
 						
+						//obj died during update
 						if(!obj.isAlive){
 							this.board.remove(obj);
 							delete this.objs[obj.id];
@@ -1572,6 +1584,7 @@ if (!Object.values) {
 			}
 
 			let fov = this.logic.getFov(this.player);
+			this.player.fov = fov;
 			
 			if(fov){
 				this.objs.forEach(obj => {
@@ -1610,6 +1623,7 @@ if (!Object.values) {
 			});
 			
 			let fov = this.logic.getFov(this.player);
+			this.player.fov = fov;
 			
 			this.objs.forEach(obj => {
 				this.logic.think(obj, this.player);
