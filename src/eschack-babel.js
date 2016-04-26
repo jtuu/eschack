@@ -1525,6 +1525,169 @@ if (!Object.values) {
 			get: function get() {
 				return ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 			}
+		}, {
+			key: "DungeonGenerator",
+			get: function get() {
+				return function () {
+					function _class4() {
+						_classCallCheck(this, _class4);
+					}
+
+					_class4.makeRoom = function makeRoom(options) {
+						var room = {};
+
+						room.w = ~ ~(Math.random() * (options.rooms.size.max.w - options.rooms.size.min.w) + options.rooms.size.min.w);
+						room.h = ~ ~(Math.random() * (options.rooms.size.max.h - options.rooms.size.min.h) + options.rooms.size.min.h);
+						room.x = ~ ~(Math.random() * (options.size.w - room.w));
+						room.y = ~ ~(Math.random() * (options.size.h - room.h));
+
+						return room;
+					};
+
+					_class4.makePoint = function makePoint(options) {
+						return {
+							x: ~ ~(Math.random() * options.size.w),
+							y: ~ ~(Math.random() * options.size.h)
+						};
+					};
+
+					_class4.makePaths = function makePaths(rooms, midPoints, options) {
+						var paths = [];
+
+						//connect rooms to midpoints
+						for (var i = 0; i < options.paths.count; i++) {
+							var path = {},
+							    dest = midPoints[i % options.paths.count % options.midPoints.count];
+
+							path.x1 = rooms[i].x + ~ ~(Math.random() * rooms[i].w);
+							path.y1 = rooms[i].y + ~ ~(Math.random() * rooms[i].h);
+
+							path.x2 = dest.x;
+							path.y2 = rooms[i].y + ~ ~(Math.random() * rooms[i].h);
+
+							path.x3 = dest.x;
+							path.y3 = dest.y;
+
+							paths.push(path);
+						}
+
+						//connect midpoints together
+						for (var _i = 1; _i < options.midPoints.count; _i++) {
+							var _path = {};
+
+							_path.x1 = midPoints[_i - 1].x;
+							_path.y1 = midPoints[_i - 1].y;
+
+							_path.x2 = midPoints[_i].x;
+							_path.y2 = midPoints[_i - 1].y;
+
+							_path.x3 = midPoints[_i].x;
+							_path.y3 = midPoints[_i].y;
+
+							paths.push(_path);
+						}
+
+						return paths;
+					};
+
+					_class4.makeDungeon = function makeDungeon(options) {
+						options = options || this.defaultOptions;
+						var matrix = [],
+						    objs = [],
+						    rooms = Array(options.rooms.count).fill(),
+						    midPoints = Array(options.midPoints.count).fill();
+
+						//get rooms
+						for (var i in rooms) {
+							rooms[i] = this.makeRoom(options);
+						}
+
+						//place player in first room
+						objs.push(new Player(new Point(rooms[0].x + 1, rooms[0].y + 1)));
+
+						//get midpoints
+						for (var _i2 in midPoints) {
+							midPoints[_i2] = this.makePoint(options);
+						}
+
+						//get paths
+						var paths = this.makePaths(rooms, midPoints, options);
+
+						//fill matrix with walls
+						for (var y = 0; y < options.size.h; y++) {
+							matrix[y] = [];
+							for (var x = 0; x < options.size.w; x++) {
+								var tile = new Tile(new Point(x, y));
+								tile.add(new Wall(new Point(x, y)));
+								matrix[y][x] = tile;
+							}
+						}
+
+						//carve out rooms
+						rooms.forEach(function (room) {
+							for (var _x3 = room.x + room.w; _x3 > room.x; _x3--) {
+								for (var _y = room.y + room.h; _y > room.y; _y--) {
+									matrix[_y][_x3].empty();
+								}
+							}
+						});
+
+						//carve out paths
+						paths.forEach(function (path) {
+							for (var i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1; i0++) {
+								matrix[path.y1][i0].empty();
+							}
+							for (var _i3 = Math.min(path.y2, path.y3), _i4 = Math.max(path.y2, path.y3); _i3 < _i4; _i3++) {
+								matrix[_i3][path.x2].empty();
+							}
+						});
+
+						//get objs
+						for (var _y2 = 0; _y2 < options.size.h; _y2++) {
+							for (var _x4 = 0; _x4 < options.size.w; _x4++) {
+								if (!matrix[_y2][_x4].isEmpty) {
+									objs.push(matrix[_y2][_x4].top);
+								}
+							}
+						}
+
+						return objs;
+					};
+
+					_createClass(_class4, null, [{
+						key: "defaultOptions",
+						get: function get() {
+							return {
+								size: {
+									w: 40,
+									h: 20
+								},
+								rooms: {
+									count: 8,
+									size: {
+										max: {
+											w: 8,
+											h: 8
+										},
+										min: {
+											w: 3,
+											h: 3
+										}
+									}
+								},
+								midPoints: {
+									count: 2
+								},
+								paths: {
+									count: 8
+								}
+							};
+						}
+					}]);
+
+					return _class4;
+				}();
+			}
 		}]);
 
 		return Utils;
@@ -1860,7 +2023,7 @@ if (!Object.values) {
 		spacing: 1,
 		w: 40,
 		h: 20
-	}), [new Player(new Point(18, 9)), new Item(new Point(18, 10)), new Wall(new Point(3, 0)), new Wall(new Point(7, 0)), new Wall(new Point(8, 0)), new Wall(new Point(9, 0)), new Wall(new Point(10, 0)), new Wall(new Point(11, 0)), new Wall(new Point(12, 0)), new Wall(new Point(13, 0)), new Wall(new Point(14, 0)), new Wall(new Point(15, 0)), new Wall(new Point(16, 0)), new Wall(new Point(17, 0)), new Enemy(new Point(18, 0)), new Wall(new Point(22, 0)), new Wall(new Point(23, 0)), new Wall(new Point(27, 0)), new Wall(new Point(28, 0)), new Wall(new Point(29, 0)), new Wall(new Point(30, 0)), new Wall(new Point(31, 0)), new Wall(new Point(32, 0)), new Wall(new Point(33, 0)), new Wall(new Point(34, 0)), new Wall(new Point(35, 0)), new Enemy(new Point(39, 0)), new Wall(new Point(1, 1)), new Wall(new Point(5, 1)), new Wall(new Point(7, 1)), new Wall(new Point(9, 1)), new Wall(new Point(14, 1)), new Wall(new Point(15, 1)), new Wall(new Point(16, 1)), new Wall(new Point(17, 1)), new Wall(new Point(19, 1)), new Wall(new Point(20, 1)), new Wall(new Point(22, 1)), new Wall(new Point(23, 1)), new Wall(new Point(25, 1)), new Wall(new Point(32, 1)), new Wall(new Point(33, 1)), new Enemy(new Point(1, 2)), new Wall(new Point(3, 2)), new Enemy(new Point(5, 2)), new Wall(new Point(7, 2)), new Wall(new Point(11, 2)), new Wall(new Point(12, 2)), new Enemy(new Point(24, 2)), new Wall(new Point(25, 2)), new Wall(new Point(27, 2)), new Wall(new Point(28, 2)), new Wall(new Point(30, 2)), new Wall(new Point(35, 2)), new Enemy(new Point(39, 2)), new Wall(new Point(1, 3)), new Wall(new Point(5, 3)), new Wall(new Point(7, 3)), new Wall(new Point(9, 3)), new Wall(new Point(12, 3)), new Wall(new Point(13, 3)), new Wall(new Point(14, 3)), new Wall(new Point(15, 3)), new Wall(new Point(16, 3)), new Wall(new Point(17, 3)), new Wall(new Point(18, 3)), new Wall(new Point(19, 3)), new Wall(new Point(20, 3)), new Wall(new Point(21, 3)), new Wall(new Point(22, 3)), new Wall(new Point(23, 3)), new Wall(new Point(24, 3)), new Wall(new Point(25, 3)), new Wall(new Point(28, 3)), new Wall(new Point(30, 3)), new Wall(new Point(31, 3)), new Wall(new Point(32, 3)), new Wall(new Point(33, 3)), new Wall(new Point(34, 3)), new Wall(new Point(35, 3)), new Wall(new Point(36, 3)), new Wall(new Point(37, 3)), new Wall(new Point(38, 3)), new Wall(new Point(39, 3)), new Wall(new Point(3, 4)), new Wall(new Point(7, 4)), new Wall(new Point(9, 4)), new Wall(new Point(10, 4)), new Wall(new Point(12, 4)), new Wall(new Point(13, 4)), new Wall(new Point(17, 4)), new Enemy(new Point(22, 4)), new Wall(new Point(24, 4)), new Wall(new Point(25, 4)), new Wall(new Point(26, 4)), new Wall(new Point(28, 4)), new Wall(new Point(33, 4)), new Wall(new Point(1, 5)), new Wall(new Point(5, 5)), new Wall(new Point(13, 5)), new Wall(new Point(15, 5)), new Wall(new Point(17, 5)), new Wall(new Point(19, 5)), new Wall(new Point(21, 5)), new Wall(new Point(22, 5)), new Wall(new Point(24, 5)), new Wall(new Point(25, 5)), new Wall(new Point(30, 5)), new Wall(new Point(31, 5)), new Wall(new Point(33, 5)), new Wall(new Point(35, 5)), new Wall(new Point(37, 5)), new Wall(new Point(38, 5)), new Wall(new Point(7, 6)), new Wall(new Point(8, 6)), new Wall(new Point(9, 6)), new Wall(new Point(10, 6)), new Wall(new Point(11, 6)), new Wall(new Point(13, 6)), new Wall(new Point(15, 6)), new Wall(new Point(17, 6)), new Wall(new Point(19, 6)), new Wall(new Point(21, 6)), new Wall(new Point(22, 6)), new Wall(new Point(24, 6)), new Wall(new Point(27, 6)), new Wall(new Point(28, 6)), new Wall(new Point(33, 6)), new Wall(new Point(38, 6)), new Wall(new Point(0, 7)), new Wall(new Point(1, 7)), new Wall(new Point(2, 7)), new Wall(new Point(3, 7)), new Wall(new Point(4, 7)), new Enemy(new Point(14, 7)), new Wall(new Point(15, 7)), new Wall(new Point(21, 7)), new Wall(new Point(22, 7)), new Wall(new Point(26, 7)), new Wall(new Point(27, 7)), new Wall(new Point(28, 7)), new Wall(new Point(29, 7)), new Wall(new Point(30, 7)), new Wall(new Point(31, 7)), new Wall(new Point(33, 7)), new Wall(new Point(34, 7)), new Wall(new Point(35, 7)), new Wall(new Point(36, 7)), new Wall(new Point(38, 7)), new Wall(new Point(4, 8)), new Wall(new Point(5, 8)), new Wall(new Point(7, 8)), new Wall(new Point(8, 8)), new Wall(new Point(9, 8)), new Wall(new Point(11, 8)), new Wall(new Point(12, 8)), new Wall(new Point(13, 8)), new Wall(new Point(14, 8)), new Wall(new Point(15, 8)), new Wall(new Point(21, 8)), new Wall(new Point(22, 8)), new Wall(new Point(24, 8)), new Wall(new Point(25, 8)), new Wall(new Point(26, 8)), new Wall(new Point(27, 8)), new Wall(new Point(28, 8)), new Wall(new Point(29, 8)), new Wall(new Point(30, 8)), new Wall(new Point(31, 8)), new Enemy(new Point(33, 8)), new Wall(new Point(36, 8)), new Wall(new Point(38, 8)), new Enemy(new Point(2, 9)), new Wall(new Point(5, 9)), new Wall(new Point(31, 9)), new Wall(new Point(33, 9)), new Wall(new Point(34, 9)), new Wall(new Point(36, 9)), new Wall(new Point(38, 9)), new Wall(new Point(4, 10)), new Wall(new Point(5, 10)), new Wall(new Point(7, 10)), new Wall(new Point(8, 10)), new Wall(new Point(9, 10)), new Wall(new Point(10, 10)), new Wall(new Point(11, 10)), new Wall(new Point(12, 10)), new Wall(new Point(13, 10)), new Wall(new Point(15, 10)), new Wall(new Point(21, 10)), new Wall(new Point(22, 10)), new Wall(new Point(24, 10)), new Wall(new Point(26, 10)), new Wall(new Point(27, 10)), new Wall(new Point(29, 10)), new Wall(new Point(33, 10)), new Wall(new Point(34, 10)), new Wall(new Point(36, 10)), new Wall(new Point(38, 10)), new Wall(new Point(1, 11)), new Wall(new Point(2, 11)), new Wall(new Point(3, 11)), new Wall(new Point(4, 11)), new Wall(new Point(7, 11)), new Enemy(new Point(10, 11)), new Wall(new Point(11, 11)), new Wall(new Point(12, 11)), new Wall(new Point(15, 11)), new Wall(new Point(21, 11)), new Wall(new Point(24, 11)), new Wall(new Point(26, 11)), new Wall(new Point(27, 11)), new Wall(new Point(29, 11)), new Wall(new Point(31, 11)), new Wall(new Point(32, 11)), new Wall(new Point(33, 11)), new Wall(new Point(34, 11)), new Wall(new Point(38, 11)), new Wall(new Point(1, 12)), new Wall(new Point(6, 12)), new Wall(new Point(7, 12)), new Wall(new Point(8, 12)), new Wall(new Point(10, 12)), new Wall(new Point(11, 12)), new Wall(new Point(14, 12)), new Wall(new Point(15, 12)), new Wall(new Point(16, 12)), new Wall(new Point(17, 12)), new Wall(new Point(19, 12)), new Wall(new Point(20, 12)), new Wall(new Point(21, 12)), new Wall(new Point(23, 12)), new Wall(new Point(24, 12)), new Wall(new Point(26, 12)), new Wall(new Point(29, 12)), new Wall(new Point(36, 12)), new Wall(new Point(37, 12)), new Wall(new Point(38, 12)), new Wall(new Point(1, 13)), new Wall(new Point(2, 13)), new Wall(new Point(3, 13)), new Wall(new Point(4, 13)), new Wall(new Point(5, 13)), new Wall(new Point(6, 13)), new Wall(new Point(13, 13)), new Wall(new Point(14, 13)), new Wall(new Point(15, 13)), new Wall(new Point(16, 13)), new Wall(new Point(17, 13)), new Wall(new Point(19, 13)), new Wall(new Point(23, 13)), new Wall(new Point(24, 13)), new Enemy(new Point(25, 13)), new Wall(new Point(28, 13)), new Wall(new Point(29, 13)), new Wall(new Point(31, 13)), new Wall(new Point(32, 13)), new Wall(new Point(33, 13)), new Wall(new Point(34, 13)), new Wall(new Point(36, 13)), new Wall(new Point(2, 14)), new Wall(new Point(3, 14)), new Wall(new Point(5, 14)), new Wall(new Point(6, 14)), new Wall(new Point(8, 14)), new Wall(new Point(10, 14)), new Wall(new Point(11, 14)), new Wall(new Point(13, 14)), new Wall(new Point(14, 14)), new Wall(new Point(15, 14)), new Wall(new Point(16, 14)), new Wall(new Point(19, 14)), new Wall(new Point(21, 14)), new Wall(new Point(22, 14)), new Wall(new Point(23, 14)), new Wall(new Point(24, 14)), new Wall(new Point(25, 14)), new Wall(new Point(27, 14)), new Wall(new Point(28, 14)), new Wall(new Point(29, 14)), new Wall(new Point(31, 14)), new Wall(new Point(32, 14)), new Wall(new Point(33, 14)), new Wall(new Point(34, 14)), new Wall(new Point(38, 14)), new Wall(new Point(0, 15)), new Wall(new Point(3, 15)), new Wall(new Point(10, 15)), new Wall(new Point(11, 15)), new Wall(new Point(13, 15)), new Wall(new Point(14, 15)), new Wall(new Point(15, 15)), new Wall(new Point(18, 15)), new Wall(new Point(19, 15)), new Wall(new Point(27, 15)), new Wall(new Point(34, 15)), new Wall(new Point(36, 15)), new Wall(new Point(37, 15)), new Wall(new Point(38, 15)), new Wall(new Point(0, 16)), new Wall(new Point(1, 16)), new Wall(new Point(3, 16)), new Wall(new Point(5, 16)), new Wall(new Point(6, 16)), new Wall(new Point(8, 16)), new Wall(new Point(10, 16)), new Wall(new Point(11, 16)), new Wall(new Point(17, 16)), new Wall(new Point(18, 16)), new Wall(new Point(19, 16)), new Wall(new Point(21, 16)), new Wall(new Point(22, 16)), new Wall(new Point(23, 16)), new Wall(new Point(24, 16)), new Wall(new Point(25, 16)), new Wall(new Point(29, 16)), new Wall(new Point(30, 16)), new Wall(new Point(31, 16)), new Wall(new Point(32, 16)), new Wall(new Point(34, 16)), new Wall(new Point(36, 16)), new Wall(new Point(37, 16)), new Wall(new Point(38, 16)), new Wall(new Point(3, 17)), new Enemy(new Point(4, 17)), new Wall(new Point(8, 17)), new Wall(new Point(10, 17)), new Wall(new Point(11, 17)), new Wall(new Point(13, 17)), new Wall(new Point(14, 17)), new Wall(new Point(15, 17)), new Wall(new Point(16, 17)), new Wall(new Point(17, 17)), new Wall(new Point(18, 17)), new Wall(new Point(19, 17)), new Wall(new Point(21, 17)), new Wall(new Point(25, 17)), new Wall(new Point(27, 17)), new Wall(new Point(28, 17)), new Wall(new Point(29, 17)), new Wall(new Point(32, 17)), new Wall(new Point(34, 17)), new Enemy(new Point(39, 17)), new Wall(new Point(1, 18)), new Wall(new Point(2, 18)), new Wall(new Point(3, 18)), new Wall(new Point(5, 18)), new Wall(new Point(6, 18)), new Wall(new Point(8, 18)), new Enemy(new Point(9, 18)), new Wall(new Point(10, 18)), new Wall(new Point(11, 18)), new Wall(new Point(18, 18)), new Wall(new Point(19, 18)), new Wall(new Point(21, 18)), new Wall(new Point(23, 18)), new Wall(new Point(27, 18)), new Wall(new Point(29, 18)), new Wall(new Point(31, 18)), new Wall(new Point(32, 18)), new Wall(new Point(34, 18)), new Wall(new Point(5, 19)), new Wall(new Point(6, 19)), new Wall(new Point(8, 19)), new Wall(new Point(13, 19)), new Wall(new Point(14, 19)), new Wall(new Point(15, 19)), new Wall(new Point(16, 19)), new Enemy(new Point(19, 19)), new Wall(new Point(23, 19)), new Wall(new Point(24, 19)), new Wall(new Point(25, 19)), new Wall(new Point(26, 19)), new Wall(new Point(27, 19)), new Enemy(new Point(29, 19)), new Wall(new Point(34, 19)), new Enemy(new Point(36, 19))]);
+	}), Utils.DungeonGenerator.makeDungeon());
 
 	if (env === "dev") {
 		Utils.exportObjs(Utils.exports);
