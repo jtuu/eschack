@@ -1,6 +1,6 @@
 {
 	"todo": [	
-		"object de/serialization for better loading & saving",
+		"object de/serialization for better loading & saving https://bpaste.net/show/84a7e19fd3a3",
 		"inventory, items, stats",
 		"equipment, ItemEquipAction",
 		"enemies shouldnt attack eachother (faction system?)",

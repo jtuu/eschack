@@ -16,48 +16,84 @@
 		bottom.classList.add("edge-bottom");
 
 		if (elem.classList.contains("moveable")) {
-			elem.addEventListener("mousedown", e => {
-				elemX = e.pageX - elem.offsetLeft;
-				elemY = e.pageY - elem.offsetTop;
+			function move(e){
+				e.stopPropagation();
+				//e.cancelBubble();
+				e.preventDefault();
+				let x = e.pageX;
+				let y = e.pageY;
+				if(x === undefined){
+					x = e.touches[0].pageX;
+					y = e.touches[0].pageY;
+				}
+				elemX = x - elem.offsetLeft;
+				elemY = y - elem.offsetTop;
 				dragging = "body";
 				selected = elem;
-				e.stopPropagation();
-			});
+			}
+			elem.addEventListener("mousedown", move);
+			elem.addEventListener("touchstart", move);
 		}
 
 		if (elem.classList.contains("resizeable")) {
-			right.addEventListener("mousedown", e => {
+			function startr(e){
+				e.stopPropagation();
+				//e.cancelBubble();
+				e.preventDefault();
 				dragging = "right";
 				selected = elem;
+			}
+			
+			function startb(e){
 				e.stopPropagation();
-			});
-
-			bottom.addEventListener("mousedown", e => {
+				//e.cancelBubble();
+				e.preventDefault();
 				dragging = "bottom";
 				selected = elem;
-				e.stopPropagation();
-			});
+			}
+			
+			bottom.addEventListener("mousedown", startb);
+			bottom.addEventListener("touchstart", startb);
+			right.addEventListener("mousedown", startr);
+			right.addEventListener("touchstart", startr);
 
 			elem.appendChild(right);
 			elem.appendChild(bottom);
 		}
 	});
-
-	document.addEventListener("mousemove", e => {
+	
+	function gmove(e){
+		e.preventDefault();
 		if (dragging && selected) {
+			console.log(e)
+			let x = e.pageX;
+			let y = e.pageY;
+			if(x === undefined){
+				x = e.touches[0].pageX;
+				y = e.touches[0].pageY;
+			}
 			if (dragging === "right") {
-				selected.style.width = selected.offsetWidth + (e.pageX - selected.offsetWidth) - selected.offsetLeft + "px";
+				selected.style.width = selected.offsetWidth + (x - selected.offsetWidth) - selected.offsetLeft + "px";
 			} else if (dragging === "bottom") {
-				selected.style.height = selected.offsetHeight + (e.pageY - selected.offsetHeight) - selected.offsetTop + "px";
+				selected.style.height = selected.offsetHeight + (y - selected.offsetHeight) - selected.offsetTop + "px";
 			} else if (dragging === "body") {
-				selected.style.top = e.pageY - elemY + "px";
-				selected.style.left = e.pageX - elemX + "px";
+				selected.style.top = y - elemY + "px";
+				selected.style.left = x - elemX + "px";
 			}
 		}
-	});
-
-	document.addEventListener("mouseup", e => {
+	}
+	
+	document.addEventListener("mousemove", gmove);
+	document.addEventListener("touchmove", gmove);
+	
+	function end(e){
+		e.stopPropagation();
+		//e.cancelBubble();
+		e.preventDefault();
 		dragging = false;
 		selected = undefined;
-	});
+	}
+	
+	document.addEventListener("mouseup", end);
+	document.addEventListener("touchend", end);
 })();
