@@ -112,6 +112,7 @@ canvas {
 	padding: 10px;
 	box-sizing: border-box;
 	max-width: calc(100% - 100px - #{$canvas-width});
+	position:relative;
 	
 	> * {
 		//padding: 20px 0 80px 0;
@@ -141,6 +142,13 @@ canvas {
 		width: 200px;
 		border: $basic-border;
 	}
+	&#info-container-equipment {
+		left: 230px;
+		top: 440px;
+		height: 200px;
+		width: 300px;
+		border: $basic-border;
+	}
 }
 
 #info-container-other-life-wrap{
@@ -163,6 +171,10 @@ canvas {
 		padding: 10px;
 		border: $basic-border;
 		vertical-align: top;
+	}
+	
+	& #settings {
+		min-width: 200px;
 	}
 }
 

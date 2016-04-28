@@ -417,15 +417,29 @@ if (!Object.values) {
 			//actions actually contains arrays of actions
 			this.actions = [];
 
+			let self = this;
 			this.stats = stats || {
 				"maxHP": 3,
 				"HP": 3,
 				"viewDistance": 5,
 				"moveSpeed": 10,
-				"inventorySize": 5
+				"inventorySize": 5,
+				get AC(){
+					return Object.keys(self.equipment)
+						.filter(k => self.equipment[k] && self.equipment[k].constructor === Armor)
+							.reduce((p, c) => self.equipment[c].defence + p, 0);
+					}
 			};
-			this.weapon = weapon || new Weapon("Claws");
-			this.inventory = [this.weapon];
+			this.inventory = [];
+			
+			this.equipment = {
+				"weapon": weapon || new Weapon("Fists"),
+				"head": null,
+				"body": null,
+				"hands": null,
+				"legs": null,
+				"feet": null
+			};
 
 			this.flavorName = "creature";
 			this.flavor = "It is mundane."; //flavor text used in examine
@@ -471,7 +485,7 @@ if (!Object.values) {
 		}
 
 		toString() {
-			return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.weapon.damage + " ATT";
+			return `${this.type}<br>${this.stats.HP} HP<br>${this.flavor}<br>${this.equipment.weapon.damage} ATT`;
 		}
 	};
 
@@ -490,6 +504,8 @@ if (!Object.values) {
 			//this.stats.inventorySize = 15;
 			
 			this.stats = stats || this.stats;
+			
+			this.equipment.head = new Armor("head", "Bronze helmet", 1);
 
 			this.lifebar = new Lifebar(this.id, "Hero", document.getElementById("info-container-player"), this.stats.maxHP, this.stats.HP);
 			this.flavorName = "you";
@@ -520,7 +536,7 @@ if (!Object.values) {
 		}
 
 		toString() {
-			return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.weapon.damage + " ATT<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.");
+			return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.weapon.equipment.damage + " ATT<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.");
 		}
 	};
 	
@@ -546,6 +562,19 @@ if (!Object.values) {
 		
 		toString(){
 			return `${this.name} (${this.damage}, ${this.speed})`;
+		}
+	};
+	
+	const Armor = class Armor extends Item{
+		constructor(slot, name, defence){
+			super(null);
+			this.slot = slot;
+			this.name = name;
+			this.defence = defence;
+		}
+		
+		toString(){
+			return `${this.name} (${this.defence})`;
 		}
 	};
 
@@ -628,7 +657,7 @@ if (!Object.values) {
 		}
 
 		try (actor, time) {
-			this.duration = actor.weapon.speed;
+			this.duration = actor.equipment.weapon.speed;
 			if(time % this.duration !== 0){
 				return false;
 			}
@@ -643,11 +672,17 @@ if (!Object.values) {
 			let target = new Point(...actor.position.get);
 			target.moveBy(this.direction);
 			target = this.context.get(target);
-
-			if(this.logger){
-				this.logger.log(actor.flavorName + " hit " + target.top.flavorName + " for " + actor.weapon.damage + " damage with " + actor.weapon, (actor.constructor === Player ? "hit" : "damage"));
+			
+			if(!actor.equipment.weapon){
+				actor.equipment.weapon = Utils.defaults.weapon();
 			}
-			let died = target.top.takeDamage(actor.weapon.damage, this.logger);
+			
+			let damage = Math.max(actor.equipment.weapon.damage - target.top.stats.AC, 0);
+			
+			if(this.logger){
+				this.logger.log(`${actor.flavorName} hit ${target.top.flavorName} for ${damage} damage with ${actor.equipment.weapon}`, (actor.constructor === Player ? "hit" : "damage"));
+			}
+			let died = target.top.takeDamage(damage, this.logger);
 			if (died) {
 				this.context.remove(target.top);
 			}
@@ -697,6 +732,37 @@ if (!Object.values) {
 			actor.inventory.splice(index, 1);
 			item.position = new Point(...actor.position.get);
 			this.context.insert(item);
+			return 10;
+		}
+	};
+	
+	const ItemEquipAction = class ItemEquipAction extends Action {
+		constructor(context, logger, inventorySlot){
+			super(context, logger);
+			this.inventorySlot = inventorySlot;
+		}
+		
+		try(actor, time){
+			let hasItem = !!actor.inventory[Utils.alphabetMap.indexOf(this.inventorySlot)];
+			if(!hasItem){
+				this.logger.log("No such item");
+			}
+			return time % 10 === 0 && hasItem;
+		}
+		
+		do(actor){
+			let inventoryIndex = Utils.alphabetMap.indexOf(this.inventorySlot),
+				item = actor.inventory[inventoryIndex];
+				
+			//if already has something equipped in that slot
+			//remove it into inventory
+			//actually this should be an unequipaction
+			if(actor.equipment[item.slot]){
+				actor.inventory.push(actor.equipment[item.slot]);
+				actor.equipment[item.slot] = null;
+			}
+			
+			actor.equipment[item.slot] = actor.inventory.splice(inventoryIndex, 1)[0];
 			return 10;
 		}
 	};
@@ -789,14 +855,11 @@ if (!Object.values) {
 				this.using = "default";
 				
 				this.keyCases = {
+					//numpad
 					104: "n",
-
 					100: "w",
-
 					98: "s",
-
 					102: "e",
-
 					105: "ne",
 					99: "se",
 					97: "sw",
@@ -812,12 +875,12 @@ if (!Object.values) {
 					66: "sw", //b
 					78: "se", //n
 
-					101: "c",
+					101: "c", //num5
 					
-					"g": "pickup",
-					71: "pickup",
+					71: "pickup", //g
 					
-					68: "dropdialog"
+					68: {use: "inventorydialog", act: "drop"}, //d
+					87: {use: "inventorydialog", act: "equip"} //w
 				};
 
 				this.actionMap = {
@@ -830,13 +893,11 @@ if (!Object.values) {
 					"sw": () => new Vector(-1, 1),
 					"nw": () => new Vector(-1, -1),
 					"c": null,
-					"pickup": "pickup",
-					"dropdialog": () => "drop"
+					"pickup": "pickup"
 				};
 				
-				
-			}else if(map === "dropdialog"){
-				this.using = "dropdialog";
+			}else if(map === "inventorydialog"){
+				this.using = "inventorydialog";
 				this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
 			}
 		}
@@ -844,14 +905,17 @@ if (!Object.values) {
 		//input is a key or a keycode
 		//returns action instruction
 		get(key) {
-			if(this.keyCases[key] === "dropdialog"){
-				this.use("dropdialog");
-				return "drop";
-			}else if(this.using === "dropdialog"){
+			if(typeof this.keyCases[key] === "object"){
+				this.act = this.keyCases[key].act;
+				this.use(this.keyCases[key].use);
+				return this.act;
+			}else if(this.using === "inventorydialog"){
 				let val = this.keyCases[key];
+				//return default
 				this.use();
-				return "drop:"+val;
+				return this.act+":"+val;
 			}
+			this.act = undefined;
 			return this.actionMap[this.keyCases[key]];
 		}
 	};
@@ -866,6 +930,7 @@ if (!Object.values) {
 			this.proposalMap[Vector] = [MoveAction, AttackAction, NullAction];
 			this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 			this.proposalMap["drop"] = [ItemDropAction, NullAction];
+			this.proposalMap["equip"] = [ItemEquipAction, NullAction];
 		}
 
 		//decide actor logic
@@ -955,6 +1020,9 @@ if (!Object.values) {
 					if(key === "drop" && !instruction){
 						this.logger.log("Which item to drop? [a-z]");
 						return false;
+					}else if(key === "equip" && !instruction){
+						this.logger.log("Which item to equip? [a-z]");
+						return false;
 					}
 				}
 				let proposals = this.proposalMap[key];
@@ -974,6 +1042,12 @@ if (!Object.values) {
 	};
 
 	const Utils = class Utils {
+		
+		static get defaults(){
+			return {
+				weapon: () => new Weapon("Fists")
+			};
+		}
 		
 		static get exports(){
 			return {
@@ -1282,7 +1356,9 @@ if (!Object.values) {
 						
 						//place player in first room
 						objs.push(new Player(new Point(rooms[0].x+1, rooms[0].y+1)));
-						
+						let armor = new Armor("body", "Barrel", 2);
+						armor.position = new Point(rooms[0].x+2, rooms[0].y+2);
+						objs.push(armor);
 						//get midpoints
 						for(let i in midPoints){
 							midPoints[i] = this.makePoint(options);
@@ -1444,6 +1520,34 @@ if (!Object.values) {
 			});
 		}
 	};
+	
+	
+	const EquipmentManager = class EquipmentManager{
+		constructor(equipmentBox, equipment){
+			this.wrapper = equipmentBox;
+			this.equipment = equipment;
+			let container = document.createElement("div");
+			container.style.padding = "10px";
+			this.container = container;
+			this.wrapper.appendChild(this.container);
+		}
+		
+		update(){
+			if (!!this.container.children.length) {
+				Array.from(this.container.children).forEach(item => item.remove());
+			}
+			Object.keys(this.equipment).filter(k => this.equipment[k]).forEach(k => {
+				let parent = document.createElement("div");
+				let key = document.createElement("span");
+				let value = document.createElement("span");
+				key.innerHTML = k + ": ";
+				value.innerHTML = this.equipment[k];
+				parent.appendChild(key);
+				parent.appendChild(value);
+				this.container.appendChild(parent);
+			});
+		}
+	};
 
 	//handle mouse stuff and examine cursor
 	const MouseHandler = class MouseHandler {
@@ -1566,6 +1670,7 @@ if (!Object.values) {
 			});
 			
 			this.inventoryManager = new InventoryManager(document.getElementById("info-container-inventory"), this.player.inventory);
+			this.equipmentManager = new EquipmentManager(document.getElementById("info-container-equipment"), this.player.equipment);
 		}
 
 		update() {
@@ -1628,6 +1733,7 @@ if (!Object.values) {
 			}
 
 			this.inventoryManager.update();
+			this.equipmentManager.update();
 		}
 
 		start() {
@@ -1654,6 +1760,7 @@ if (!Object.values) {
 			});
 			fov.draw();
 			this.inventoryManager.update();
+			this.equipmentManager.update();
 			
 			document.getElementById("loader").remove();
 		}

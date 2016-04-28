@@ -63,7 +63,7 @@
 	});
 	
 	function gmove(e){
-		e.preventDefault();
+		//e.preventDefault();
 		if (dragging && selected) {
 			console.log(e)
 			let x = e.pageX;
@@ -89,7 +89,7 @@
 	function end(e){
 		e.stopPropagation();
 		//e.cancelBubble();
-		e.preventDefault();
+		//e.preventDefault();
 		dragging = false;
 		selected = undefined;
 	}

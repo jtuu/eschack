@@ -51,7 +51,8 @@ canvas {
 #column-right {
   padding: 10px;
   box-sizing: border-box;
-  max-width: calc(100% - 100px - 1040px); }
+  max-width: calc(100% - 100px - 1040px);
+  position: relative; }
 
 .info-container#info-container-player {
   top: 10px;
@@ -75,6 +76,13 @@ canvas {
   width: 200px;
   border: 1px solid black; }
 
+.info-container#info-container-equipment {
+  left: 230px;
+  top: 440px;
+  height: 200px;
+  width: 300px;
+  border: 1px solid black; }
+
 #info-container-other-life-wrap {
   top: 90px;
   width: 300px;
@@ -92,6 +100,9 @@ canvas {
   padding: 10px;
   border: 1px solid black;
   vertical-align: top; }
+
+#bottom-row #settings {
+  min-width: 200px; }
 
 label {
   display: inline-block;

@@ -30,9 +30,10 @@
 					<h4>Controls</h4>
 					<p>numpad: movement</p>
 					<p>vi keys: movement</p>
-					<p>num5: rest a turn</p>
+					<p>num5: rest turn</p>
 					<p>g: pick up item</p>
-					<p>d: drop an item</p>
+					<p>d: drop item</p>
+					<p>w: wear or wield item</p>
 					<hr>
 					<a data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/" class="github-button">Watch</a>
 					<script id="github-bjs" async defer src="https://buttons.github.io/buttons.js"></script>
@@ -40,7 +41,8 @@
 				<div id="todo">
 					<h3>TODO</h3>
 					<ul>
-						<li>object de/serialization for better loading &amp; saving https://bpaste.net/show/84a7e19fd3a3</li>
+						<li>fix raycasting</li>
+						<li>fix saving/loading</li>
 						<li>inventory, items, stats</li>
 						<li>equipment, ItemEquipAction</li>
 						<li>enemies shouldnt attack eachother (faction system?)</li>
@@ -60,6 +62,9 @@
 			</div>
 			<div id="info-container-inventory" class="info-container moveable resizeable">
 				<strong class="menu-title">Inventory</strong>
+			</div>
+			<div id="info-container-equipment" class="info-container moveable resizeable">
+				<strong class="menu-title">Equipment</strong>
 			</div>
 		</div>
 		<script src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js"></script>
