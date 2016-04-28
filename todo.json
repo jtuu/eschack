@@ -1,9 +1,12 @@
 {
 	"todo": [
+		"place enemies in a more intelligent way",
+		"generate items for enemies",
+		"make enemies drop items and give xp",
 		"fix raycasting",
 		"fix saving/loading",
-		"inventory, items, stats",
-		"equipment, ItemEquipAction",
+		"items, stats",
+		"ItemUnequipAction",
 		"enemies shouldnt attack eachother (faction system?)",
 		"pathfinding"
 	]

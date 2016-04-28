@@ -65,7 +65,6 @@
 	function gmove(e){
 		//e.preventDefault();
 		if (dragging && selected) {
-			console.log(e)
 			let x = e.pageX;
 			let y = e.pageY;
 			if(x === undefined){

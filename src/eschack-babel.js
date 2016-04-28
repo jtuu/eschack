@@ -30,7 +30,8 @@ if (!Object.values) {
 	    mainCanvas = document.getElementById("canvas-main"),
 	    secondCanvas = document.getElementById("canvas-second"),
 	    w = 1040,
-	    h = 520;
+	    h = 520,
+	    TILE_COLOR = "hsla(244,3%,55%,1)";
 	mainCanvas.width = w;
 	mainCanvas.height = h;
 	secondCanvas.width = w;
@@ -668,34 +669,56 @@ if (!Object.values) {
 		return Creature;
 	}(Hittable(MoveBlocking(GameObject)));
 
+	var Corpse = function (_GameObject) {
+		_inherits(Corpse, _GameObject);
+
+		function Corpse(position) {
+			_classCallCheck(this, Corpse);
+
+			var _this10 = _possibleConstructorReturn(this, _GameObject.call(this, position));
+
+			_this10.bgColor = "hsl(0,40%,40%)";
+			_this10.glyph = "x"; //some block character
+			_this10.color = "hsl(0,40%,10%)";
+			_this10.flavorName = "corpse";
+			return _this10;
+		}
+
+		Corpse.prototype.update = function update() {
+			return 0;
+		};
+
+		return Corpse;
+	}(GameObject);
+
 	var Player = function (_Creature) {
 		_inherits(Player, _Creature);
 
 		function Player(position, stats) {
 			_classCallCheck(this, Player);
 
-			var _this10 = _possibleConstructorReturn(this, _Creature.call(this, position, stats, new Weapon("Dagger", 1, 5)));
+			var _this11 = _possibleConstructorReturn(this, _Creature.call(this, position, stats, new Weapon("Dagger", 1, 5)));
 
-			_this10.actions = [];
-			_this10.bgColor = "white";
-			_this10.glyph = "@";
-			_this10.color = "black";
+			_this11.actions = [];
+			_this11.bgColor = "white";
+			_this11.glyph = "@";
+			_this11.color = "black";
 
-			_this10.stats.maxHP = 50;
-			_this10.stats.HP = 50;
-			_this10.stats.viewDistance = 8;
-			_this10.stats.moveSpeed = 10;
+			_this11.stats.maxHP = 50;
+			_this11.stats.HP = 50;
+			_this11.stats.viewDistance = 8;
+			_this11.stats.moveSpeed = 10;
 			//this.stats.inventorySize = 15;
 
-			_this10.stats = stats || _this10.stats;
+			_this11.stats = stats || _this11.stats;
 
-			_this10.equipment.head = new Armor("head", "Bronze helmet", 1);
+			_this11.equipment.head = new Armor("head", "Bronze helmet", 1);
 
-			_this10.lifebar = new Lifebar(_this10.id, "Hero", document.getElementById("info-container-player"), _this10.stats.maxHP, _this10.stats.HP);
-			_this10.flavorName = "you";
-			_this10.flavor = "Hi mom!";
+			_this11.lifebar = new Lifebar(_this11.id, "Hero", document.getElementById("info-container-player"), _this11.stats.maxHP, _this11.stats.HP);
+			_this11.flavorName = "you";
+			_this11.flavor = "Hi mom!";
 			//todo: store username here?
-			return _this10;
+			return _this11;
 		}
 
 		return Player;
@@ -705,43 +728,46 @@ if (!Object.values) {
 	var Enemy = function (_Creature2) {
 		_inherits(Enemy, _Creature2);
 
-		function Enemy(position, stats) {
+		function Enemy(position, stats, weapon) {
 			_classCallCheck(this, Enemy);
 
-			var _this11 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats, new Weapon("Claws", 2, 10)));
+			var _this12 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats, weapon));
 
-			_this11.actions = [];
-			_this11.bgColor = "hsl(30, 30%, 45%)";
-			_this11.glyph = "E";
-			_this11.color = "white";
+			_this12.actions = [];
+			_this12.bgColor = "hsl(30, 30%, 45%)";
+			_this12.glyph = "E";
+			_this12.color = "white";
 
-			_this11.stats.maxHP = 3;
-			_this11.stats.HP = 3;
-			_this11.stats.viewDistance = 7;
-			_this11.stats.moveSpeed = 9;
+			_this12.stats.maxHP = 3;
+			_this12.stats.HP = 3;
+			_this12.stats.viewDistance = 7;
+			_this12.stats.moveSpeed = 9;
 
-			_this11.stats = stats || _this11.stats;
+			_this12.stats = stats || _this12.stats;
 
-			_this11.lifebar = new Lifebar(_this11.id, "Enemy", document.getElementById("info-container-other-life"), _this11.stats.maxHP, _this11.stats.HP);
-			_this11.flavorName = "the enemy";
-			_this11.flavor = "It has a fearsome visage.";
-			return _this11;
+			_this12.flavorName = "the enemy";
+			_this12.flavor = "It has a fearsome visage.";
+			return _this12;
 		}
 
 		Enemy.prototype.toString = function toString() {
-			return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.weapon.equipment.damage + " ATT<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.");
+			return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.equipment.weapon.damage + " ATT<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.");
+		};
+
+		Enemy.prototype.createLifebar = function createLifebar() {
+			this.lifebar = new Lifebar(this.id, this.type, document.getElementById("info-container-other-life"), this.stats.maxHP, this.stats.HP);
 		};
 
 		return Enemy;
 	}(Creature);
 
-	var Item = function (_GameObject) {
-		_inherits(Item, _GameObject);
+	var Item = function (_GameObject2) {
+		_inherits(Item, _GameObject2);
 
 		function Item(position) {
 			_classCallCheck(this, Item);
 
-			return _possibleConstructorReturn(this, _GameObject.call(this, position));
+			return _possibleConstructorReturn(this, _GameObject2.call(this, position));
 		}
 
 		Item.prototype.update = function update() {
@@ -750,6 +776,56 @@ if (!Object.values) {
 
 		return Item;
 	}(GameObject);
+
+	var Jackalope = function (_Enemy) {
+		_inherits(Jackalope, _Enemy);
+
+		function Jackalope(position) {
+			_classCallCheck(this, Jackalope);
+
+			var _this14 = _possibleConstructorReturn(this, _Enemy.call(this, position, null, new Weapon("Antlers", 2, 5)));
+
+			_this14.bgColor = "hsl(35, 25%, 65%)";
+			_this14.glyph = "J";
+			_this14.color = "hsl(35, 35%, 5%)";
+
+			_this14.stats.maxHP = 6;
+			_this14.stats.HP = 6;
+			_this14.stats.viewDistance = 7;
+			_this14.stats.moveSpeed = 8;
+			_this14.flavorName = "the jackalope";
+			_this14.flavor = "A large agressive rabbit with antlers on its head.";
+			_this14.createLifebar();
+			return _this14;
+		}
+
+		return Jackalope;
+	}(Enemy);
+
+	var Honeybadger = function (_Enemy2) {
+		_inherits(Honeybadger, _Enemy2);
+
+		function Honeybadger(position) {
+			_classCallCheck(this, Honeybadger);
+
+			var _this15 = _possibleConstructorReturn(this, _Enemy2.call(this, position, null, new Weapon("Claws", 4, 11)));
+
+			_this15.bgColor = "hsl(25, 5%, 10%)";
+			_this15.glyph = "B";
+			_this15.color = "hsl(5, 5%, 90%)";
+
+			_this15.stats.maxHP = 10;
+			_this15.stats.HP = 10;
+			_this15.stats.viewDistance = 7;
+			_this15.stats.moveSpeed = 10;
+			_this15.flavorName = "the honeybadger";
+			_this15.flavor = "Notorious for their ferocity.";
+			_this15.createLifebar();
+			return _this15;
+		}
+
+		return Honeybadger;
+	}(Enemy);
 
 	var Weapon = function (_Item) {
 		_inherits(Weapon, _Item);
@@ -760,12 +836,17 @@ if (!Object.values) {
 		function Weapon(name, damage, speed) {
 			_classCallCheck(this, Weapon);
 
-			var _this13 = _possibleConstructorReturn(this, _Item.call(this, null));
+			var _this16 = _possibleConstructorReturn(this, _Item.call(this, null));
 
-			_this13.damage = damage || 1;
-			_this13.speed = speed || 10;
-			_this13.name = name;
-			return _this13;
+			_this16.damage = damage || 1;
+			_this16.speed = speed || 10;
+			_this16.name = name;
+
+			_this16.glyph = "(";
+			_this16.color = "red";
+			_this16.bgColor = TILE_COLOR;
+			_this16.flavorName = _this16.name;
+			return _this16;
 		}
 
 		Weapon.prototype.toString = function toString() {
@@ -781,12 +862,17 @@ if (!Object.values) {
 		function Armor(slot, name, defence) {
 			_classCallCheck(this, Armor);
 
-			var _this14 = _possibleConstructorReturn(this, _Item2.call(this, null));
+			var _this17 = _possibleConstructorReturn(this, _Item2.call(this, null));
 
-			_this14.slot = slot;
-			_this14.name = name;
-			_this14.defence = defence;
-			return _this14;
+			_this17.slot = slot;
+			_this17.name = name;
+			_this17.defence = defence;
+
+			_this17.glyph = "[";
+			_this17.color = "cyan";
+			_this17.bgColor = TILE_COLOR;
+			_this17.flavorName = _this17.name;
+			return _this17;
 		}
 
 		Armor.prototype.toString = function toString() {
@@ -863,10 +949,10 @@ if (!Object.values) {
 		function MoveAction(context, logger, movement) {
 			_classCallCheck(this, MoveAction);
 
-			var _this16 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
+			var _this19 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
 
-			_this16.movement = movement;
-			return _this16;
+			_this19.movement = movement;
+			return _this19;
 		}
 
 		MoveAction.prototype.try = function _try(actor, time) {
@@ -896,10 +982,10 @@ if (!Object.values) {
 		function AttackAction(context, logger, direction) {
 			_classCallCheck(this, AttackAction);
 
-			var _this17 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
+			var _this20 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
 
-			_this17.direction = direction;
-			return _this17;
+			_this20.direction = direction;
+			return _this20;
 		}
 
 		AttackAction.prototype.try = function _try(actor, time) {
@@ -930,7 +1016,8 @@ if (!Object.values) {
 			}
 			var died = target.top.takeDamage(damage, this.logger);
 			if (died) {
-				this.context.remove(target.top);
+				target.add(new Corpse(new (Function.prototype.bind.apply(Point, [null].concat(target.top.position.get)))()));
+				target.remove(target.top);
 			}
 			this.context.update();
 			return this.duration;
@@ -976,10 +1063,10 @@ if (!Object.values) {
 		function ItemDropAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemDropAction);
 
-			var _this19 = _possibleConstructorReturn(this, _Action5.call(this, context, logger));
+			var _this22 = _possibleConstructorReturn(this, _Action5.call(this, context, logger));
 
-			_this19.inventorySlot = inventorySlot;
-			return _this19;
+			_this22.inventorySlot = inventorySlot;
+			return _this22;
 		}
 
 		ItemDropAction.prototype.try = function _try(actor, time) {
@@ -1008,10 +1095,10 @@ if (!Object.values) {
 		function ItemEquipAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemEquipAction);
 
-			var _this20 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
+			var _this23 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
 
-			_this20.inventorySlot = inventorySlot;
-			return _this20;
+			_this23.inventorySlot = inventorySlot;
+			return _this23;
 		}
 
 		ItemEquipAction.prototype.try = function _try(actor, time) {
@@ -1085,7 +1172,7 @@ if (!Object.values) {
 		};
 
 		Lifebar.prototype.setStyle = function setStyle(style) {
-			var _this21 = this;
+			var _this24 = this;
 
 			var styles = {
 				"hilight": "hilighted",
@@ -1097,8 +1184,8 @@ if (!Object.values) {
 				Object.values(styles).filter(function (v) {
 					return v !== style;
 				}).forEach(function (f) {
-					_this21.bar.classList.remove(f);
-					_this21.label.classList.remove(f);
+					_this24.bar.classList.remove(f);
+					_this24.label.classList.remove(f);
 				});
 
 				this.bar.classList.add(style);
@@ -1247,13 +1334,13 @@ if (!Object.values) {
 
 
 		ActionManager.prototype.think = function think(actor, player) {
-			var _this22 = this;
+			var _this25 = this;
 
 			if (actor instanceof Enemy) {
 				var _ret = function () {
-					var fov = _this22.getFov(actor),
+					var fov = _this25.getFov(actor),
 					    instruction = null,
-					    shouldLog = _this22.getFov(player).has(actor.position);
+					    shouldLog = _this25.getFov(player).has(actor.position);
 					actor.target = fov.get(player.position);
 
 					if (!actor.target) {
@@ -1271,15 +1358,15 @@ if (!Object.values) {
 						var vector = Point.distance(actor.position, actor.target.position);
 						vector.reduce();
 						instruction = vector;
-						if (!actor.noticed && shouldLog) _this22.logger.log(actor.flavorName + " noticed " + player.flavorName);
+						if (!actor.noticed && shouldLog) _this25.logger.log(actor.flavorName + " noticed " + player.flavorName);
 						actor.noticed = true;
 					}
 
-					var proposals = _this22.proposalMap[instruction.constructor];
+					var proposals = _this25.proposalMap[instruction.constructor];
 					if (proposals) {
 						var methods = proposals.map(function (action) {
 							return function () {
-								return new action(_this22.board, shouldLog ? _this22.logger : null, instruction);
+								return new action(_this25.board, shouldLog ? _this25.logger : null, instruction);
 							};
 						});
 						actor.actions.push(methods);
@@ -1325,7 +1412,7 @@ if (!Object.values) {
 
 			return new TileGroup(Utils.mergeQuarters(quarters), {
 				origin: new Point(ax - range + 1, ay - range + 1),
-				baseColor: "hsla(244,3%,55%,1)",
+				baseColor: TILE_COLOR,
 				tileSize: 25,
 				spacing: 1
 			});
@@ -1335,7 +1422,7 @@ if (!Object.values) {
 
 
 		ActionManager.prototype.delegateAction = function delegateAction(actor, instruction) {
-			var _this23 = this;
+			var _this26 = this;
 
 			if (!actor) {
 				return;
@@ -1363,7 +1450,7 @@ if (!Object.values) {
 				if (proposals) {
 					var methods = proposals.map(function (action) {
 						return function () {
-							return new action(_this23.board, _this23.logger, instruction);
+							return new action(_this26.board, _this26.logger, instruction);
 						};
 					});
 					actor.actions.push(methods);
@@ -1373,7 +1460,7 @@ if (!Object.values) {
 				}
 			} else if (instruction === null) {
 				actor.actions.push([function () {
-					return new NullAction(null, _this23.logger);
+					return new NullAction(null, _this26.logger);
 				}]);
 				return true;
 			}
@@ -1610,16 +1697,16 @@ if (!Object.values) {
 
 
 		Utils.initUIButtons = function initUIButtons(instance) {
-			var _this24 = this;
+			var _this27 = this;
 
 			document.getElementById("button-save").addEventListener("click", function (e) {
 				e.stopPropagation();
-				_this24.saveGame(instance);
+				_this27.saveGame(instance);
 			});
 
 			document.getElementById("button-delete").addEventListener("click", function (e) {
 				e.stopPropagation();
-				_this24.deleteSave();
+				_this27.deleteSave();
 			});
 		};
 
@@ -1723,11 +1810,13 @@ if (!Object.values) {
 
 
 					_class4.insertEnemies = function insertEnemies(room, options) {
+						var enemyList = [Jackalope, Honeybadger];
 						var enemies = [];
 						for (var x = room.x + room.w; x > room.x; x--) {
 							for (var y = room.y + room.h; y > room.y; y--) {
 								if (Math.random() < options.enemies.spawnChance) {
-									enemies.push(new Enemy(new Point(x, y)));
+									var enemy = enemyList[Math.round(Math.random() * (enemyList.length - 1))];
+									enemies.push(new enemy(new Point(x, y)));
 								}
 							}
 						}
@@ -1738,7 +1827,7 @@ if (!Object.values) {
 
 
 					_class4.makeDungeon = function makeDungeon(options) {
-						var _this25 = this;
+						var _this28 = this;
 
 						options = options || this.defaultOptions;
 						var matrix = [],
@@ -1753,9 +1842,7 @@ if (!Object.values) {
 
 						//place player in first room
 						objs.push(new Player(new Point(rooms[0].x + 1, rooms[0].y + 1)));
-						var armor = new Armor("body", "Barrel", 2);
-						armor.position = new Point(rooms[0].x + 2, rooms[0].y + 2);
-						objs.push(armor);
+
 						//get midpoints
 						for (var _i2 in midPoints) {
 							midPoints[_i2] = this.makePoint(options);
@@ -1782,7 +1869,7 @@ if (!Object.values) {
 									matrix[_y][_x3].empty();
 								}
 							}
-							objs = objs.concat(_this25.insertEnemies(room, options));
+							objs = objs.concat(_this28.insertEnemies(room, options));
 						});
 
 						//carve out paths
@@ -1874,7 +1961,7 @@ if (!Object.values) {
 
 
 		LogboxManager.prototype.log = function log(text) {
-			var _this26 = this;
+			var _this29 = this;
 
 			var type = arguments.length <= 1 || arguments[1] === undefined ? "default" : arguments[1];
 
@@ -1895,7 +1982,7 @@ if (!Object.values) {
 			} else {
 				this.rows[0].children[0].remove();
 				this.rows.forEach(function (row, index) {
-					row.appendChild(_this26.messages[_this26.messages.length - (_this26.rowCount - index)]);
+					row.appendChild(_this29.messages[_this29.messages.length - (_this29.rowCount - index)]);
 				});
 			}
 		};
@@ -1917,7 +2004,7 @@ if (!Object.values) {
 		}
 
 		InventoryManager.prototype.update = function update() {
-			var _this27 = this;
+			var _this30 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -1927,7 +2014,7 @@ if (!Object.values) {
 			this.inventory.forEach(function (item, key) {
 				var ele = document.createElement("div");
 				ele.innerHTML = Utils.alphabetMap[key] + " - " + item;
-				_this27.container.appendChild(ele);
+				_this30.container.appendChild(ele);
 			});
 		};
 
@@ -1947,7 +2034,7 @@ if (!Object.values) {
 		}
 
 		EquipmentManager.prototype.update = function update() {
-			var _this28 = this;
+			var _this31 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -1955,16 +2042,16 @@ if (!Object.values) {
 				});
 			}
 			Object.keys(this.equipment).filter(function (k) {
-				return _this28.equipment[k];
+				return _this31.equipment[k];
 			}).forEach(function (k) {
 				var parent = document.createElement("div");
 				var key = document.createElement("span");
 				var value = document.createElement("span");
 				key.innerHTML = k + ": ";
-				value.innerHTML = _this28.equipment[k];
+				value.innerHTML = _this31.equipment[k];
 				parent.appendChild(key);
 				parent.appendChild(value);
-				_this28.container.appendChild(parent);
+				_this31.container.appendChild(parent);
 			});
 		};
 
@@ -2017,7 +2104,7 @@ if (!Object.values) {
 	//the game
 	var Game = function () {
 		function Game(board, objs) {
-			var _this29 = this;
+			var _this32 = this;
 
 			_classCallCheck(this, Game);
 
@@ -2034,7 +2121,7 @@ if (!Object.values) {
 			//map objs argument into this.objs by the objs creation id
 			this.objs = [];
 			objs.forEach(function (obj) {
-				return _this29.objs[obj.id] = obj;
+				return _this32.objs[obj.id] = obj;
 			});
 
 			this.logic = new ActionManager(this.board, this.logger);
@@ -2042,8 +2129,8 @@ if (!Object.values) {
 			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this29.logic.delegateAction(_this29.player, _this29.keyHandler.get(e.keyCode))) {
-					_this29.update();
+				if (_this32.logic.delegateAction(_this32.player, _this32.keyHandler.get(e.keyCode))) {
+					_this32.update();
 				}
 			});
 
@@ -2057,56 +2144,56 @@ if (!Object.values) {
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this29.board.bounds;
+				var bounds = _this32.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this29.player.fov,
-					    gamePoint = Utils.screenToGame(screenPoint, _this29.board.tileSize, _this29.board.spacing);
+					var fov = _this32.player.fov,
+					    gamePoint = Utils.screenToGame(screenPoint, _this32.board.tileSize, _this32.board.spacing);
 
 					//set cursor position
-					_this29.mouseHandler.cursorFromScreen(screenPoint);
+					_this32.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov && fov.has(gamePoint)) {
-						var targetTile = _this29.board.get(gamePoint);
+						var targetTile = _this32.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this29.objs.forEach(function (obj) {
+							_this32.objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this29.examineContainer.innerHTML = targetTile.top;
+							_this32.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this29.examineContainer.innerHTML = targetTile;
+							_this32.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this29.examineContainer.innerHTML = "You can't see that";
+						_this32.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this29.objs.forEach(function (obj) {
+						_this32.objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this29.objs[Number(id)];
+						var target = _this32.objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this29.mouseHandler.cursorFromGame(target.position);
-							_this29.examineContainer.innerHTML = target;
+							_this32.mouseHandler.cursorFromGame(target.position);
+							_this32.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
@@ -2117,7 +2204,7 @@ if (!Object.values) {
 		}
 
 		Game.prototype.update = function update() {
-			var _this30 = this;
+			var _this33 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
@@ -2134,22 +2221,22 @@ if (!Object.values) {
 					}
 
 					if (obj.isAlive) {
-						var _duration = obj.update(_this30.logger, _this30.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this33.logger, _this33.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this30.logic.think(obj, _this30.player);
+							_this33.logic.think(obj, _this33.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						//obj died during update
 						if (!obj.isAlive) {
-							_this30.board.remove(obj);
-							delete _this30.objs[obj.id];
+							_this33.board.remove(obj);
+							delete _this33.objs[obj.id];
 						}
 					} else {
-						_this30.board.remove(obj);
-						delete _this30.objs[obj.id];
+						_this33.board.remove(obj);
+						delete _this33.objs[obj.id];
 					}
 				});
 			}
@@ -2164,7 +2251,7 @@ if (!Object.values) {
 
 			if (fov) {
 				this.objs.forEach(function (obj) {
-					if (obj.type === "Enemy") {
+					if (obj instanceof Enemy) {
 						if (fov.has(obj.position)) {
 							obj.lifebar.show();
 						} else {
@@ -2182,12 +2269,12 @@ if (!Object.values) {
 		};
 
 		Game.prototype.start = function start() {
-			var _this31 = this;
+			var _this34 = this;
 
 			this.logger.log("Hello and welcome", "hilight");
 			this.objs.forEach(function (obj) {
 				if (obj) {
-					_this31.board.insert(obj);
+					_this34.board.insert(obj);
 				}
 			});
 
@@ -2195,8 +2282,8 @@ if (!Object.values) {
 			this.player.fov = fov;
 
 			this.objs.forEach(function (obj) {
-				_this31.logic.think(obj, _this31.player);
-				if (obj.type === "Enemy") {
+				_this34.logic.think(obj, _this34.player);
+				if (obj instanceof Enemy) {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
 					} else {

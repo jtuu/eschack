@@ -61,7 +61,7 @@ canvas {
 
 .info-container#info-container-other-life {
   width: 100%;
-  height: 100%;
+  height: calc(100% - 23px);
   overflow-y: auto; }
 
 .info-container#info-container-other-misc {

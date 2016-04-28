@@ -13,7 +13,8 @@ if (!Object.values) {
 		mainCanvas = document.getElementById("canvas-main"),
 		secondCanvas = document.getElementById("canvas-second"),
 		w = 1040,
-		h = 520;
+		h = 520,
+		TILE_COLOR = "hsla(244,3%,55%,1)";
 	mainCanvas.width = w;
 	mainCanvas.height = h;
 	secondCanvas.width = w;
@@ -488,6 +489,20 @@ if (!Object.values) {
 			return `${this.type}<br>${this.stats.HP} HP<br>${this.flavor}<br>${this.equipment.weapon.damage} ATT`;
 		}
 	};
+	
+	const Corpse = class Corpse extends GameObject {
+		constructor(position){
+			super(position);
+			this.bgColor = "hsl(0,40%,40%)";
+			this.glyph = "x"; //some block character
+			this.color = "hsl(0,40%,10%)";
+			this.flavorName = "corpse";
+		}
+		
+		update(){
+			return 0;
+		}
+	};
 
 	const Player = class Player extends Creature {
 		constructor(position, stats) {
@@ -516,8 +531,8 @@ if (!Object.values) {
 
 	//maybe this should be abstract
 	const Enemy = class Enemy extends Creature {
-		constructor(position, stats) {
-			super(position, stats, new Weapon("Claws", 2, 10));
+		constructor(position, stats, weapon) {
+			super(position, stats, weapon);
 			this.actions = [];
 			this.bgColor = "hsl(30, 30%, 45%)";
 			this.glyph = "E";
@@ -527,16 +542,19 @@ if (!Object.values) {
 			this.stats.HP = 3;
 			this.stats.viewDistance = 7;
 			this.stats.moveSpeed = 9;
-			
+
 			this.stats = stats || this.stats;
 
-			this.lifebar = new Lifebar(this.id, "Enemy", document.getElementById("info-container-other-life"), this.stats.maxHP, this.stats.HP);
 			this.flavorName = "the enemy";
 			this.flavor = "It has a fearsome visage.";
 		}
 
 		toString() {
-			return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.weapon.equipment.damage + " ATT<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.");
+			return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.equipment.weapon.damage + " ATT<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.");
+		}
+		
+		createLifebar(){
+			this.lifebar = new Lifebar(this.id, this.type, document.getElementById("info-container-other-life"), this.stats.maxHP, this.stats.HP);
 		}
 	};
 	
@@ -550,6 +568,40 @@ if (!Object.values) {
 		}
 	};
 	
+	const Jackalope = class Jackalope extends Enemy {
+		constructor(position){
+			super(position, null, new Weapon("Antlers", 2, 5));
+			this.bgColor = "hsl(35, 25%, 65%)";
+			this.glyph = "J";
+			this.color = "hsl(35, 35%, 5%)";
+			
+			this.stats.maxHP = 6;
+			this.stats.HP = 6;
+			this.stats.viewDistance = 7;
+			this.stats.moveSpeed = 8;
+			this.flavorName = "the jackalope";
+			this.flavor = "A large agressive rabbit with antlers on its head.";
+			this.createLifebar();
+		}
+	};
+	
+	const Honeybadger = class Honeybadger extends Enemy {
+		constructor(position){
+			super(position, null, new Weapon("Claws", 4, 11));
+			this.bgColor = "hsl(25, 5%, 10%)";
+			this.glyph = "B";
+			this.color = "hsl(5, 5%, 90%)";
+			
+			this.stats.maxHP = 10;
+			this.stats.HP = 10;
+			this.stats.viewDistance = 7;
+			this.stats.moveSpeed = 10;
+			this.flavorName = "the honeybadger";
+			this.flavor = "Notorious for their ferocity.";
+			this.createLifebar();
+		}
+	};
+	
 	const Weapon = class Weapon extends Item{
 		//todo: basespeed (weight?), special properties (cleave, reach)
 		//stuff
@@ -558,6 +610,11 @@ if (!Object.values) {
 			this.damage = damage || 1;
 			this.speed = speed || 10;
 			this.name = name;
+			
+			this.glyph = "(";
+			this.color = "red";
+			this.bgColor = TILE_COLOR;
+			this.flavorName = this.name;
 		}
 		
 		toString(){
@@ -571,6 +628,11 @@ if (!Object.values) {
 			this.slot = slot;
 			this.name = name;
 			this.defence = defence;
+			
+			this.glyph = "[";
+			this.color = "cyan";
+			this.bgColor = TILE_COLOR;
+			this.flavorName = this.name;
 		}
 		
 		toString(){
@@ -684,7 +746,8 @@ if (!Object.values) {
 			}
 			let died = target.top.takeDamage(damage, this.logger);
 			if (died) {
-				this.context.remove(target.top);
+				target.add(new Corpse(new Point(...target.top.position.get)));
+				target.remove(target.top);
 			}
 			this.context.update();
 			return this.duration;
@@ -999,7 +1062,7 @@ if (!Object.values) {
 
 			return new TileGroup(Utils.mergeQuarters(quarters), {
 				origin: new Point(ax - range + 1, ay - range + 1),
-				baseColor: "hsla(244,3%,55%,1)",
+				baseColor: TILE_COLOR,
 				tileSize: 25,
 				spacing: 1
 			});
@@ -1330,11 +1393,13 @@ if (!Object.values) {
 				
 				//try to spawn some enemies within room
 				static insertEnemies(room, options){
+					let enemyList = [Jackalope, Honeybadger];
 					let enemies = [];
 					for(let x = room.x + room.w; x > room.x; x--){
 						for(let y = room.y + room.h; y > room.y; y--){
 							if(Math.random() < options.enemies.spawnChance){
-								enemies.push(new Enemy(new Point(x, y)));
+								let enemy = enemyList[Math.round(Math.random()*(enemyList.length-1))];
+								enemies.push(new enemy(new Point(x, y)));
 							}
 						}
 					}
@@ -1356,9 +1421,7 @@ if (!Object.values) {
 						
 						//place player in first room
 						objs.push(new Player(new Point(rooms[0].x+1, rooms[0].y+1)));
-						let armor = new Armor("body", "Barrel", 2);
-						armor.position = new Point(rooms[0].x+2, rooms[0].y+2);
-						objs.push(armor);
+
 						//get midpoints
 						for(let i in midPoints){
 							midPoints[i] = this.makePoint(options);
@@ -1719,7 +1782,7 @@ if (!Object.values) {
 			
 			if(fov){
 				this.objs.forEach(obj => {
-					if(obj.type === "Enemy"){
+					if(obj instanceof Enemy){
 						if(fov.has(obj.position)){
 							obj.lifebar.show();
 						}else{
@@ -1750,7 +1813,7 @@ if (!Object.values) {
 			
 			this.objs.forEach(obj => {
 				this.logic.think(obj, this.player);
-				if(obj.type === "Enemy"){
+				if(obj instanceof Enemy){
 					if(fov.has(obj.position)){
 						obj.lifebar.show();
 					}else{
