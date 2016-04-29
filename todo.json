@@ -1,5 +1,6 @@
 {
 	"todo": [
+		"add stats display for player, flavored stats for other creatures",
 		"place enemies in a more intelligent way",
 		"generate items for enemies",
 		"make enemies drop items and give xp",

@@ -827,6 +827,34 @@ if (!Object.values) {
 		return Honeybadger;
 	}(Enemy);
 
+	var Redcap = function (_Enemy3) {
+		_inherits(Redcap, _Enemy3);
+
+		function Redcap(position) {
+			_classCallCheck(this, Redcap);
+
+			var _this16 = _possibleConstructorReturn(this, _Enemy3.call(this, position, null, null));
+
+			_this16.bgColor = "hsl(66, 10%, 70%)";
+			_this16.glyph = "^";
+			_this16.color = "hsl(0, 80%, 60%)";
+
+			_this16.stats.maxHP = 10;
+			_this16.stats.HP = 10;
+			_this16.stats.viewDistance = 7;
+			_this16.stats.moveSpeed = 10;
+			_this16.flavorName = "the redcap";
+			_this16.flavor = "A malevolent murderous dwarf-like creature.";
+			_this16.createLifebar();
+
+			_this16.canWield = true;
+			_this16.canWear = true;
+			return _this16;
+		}
+
+		return Redcap;
+	}(Enemy);
+
 	var Weapon = function (_Item) {
 		_inherits(Weapon, _Item);
 
@@ -836,17 +864,17 @@ if (!Object.values) {
 		function Weapon(name, damage, speed) {
 			_classCallCheck(this, Weapon);
 
-			var _this16 = _possibleConstructorReturn(this, _Item.call(this, null));
+			var _this17 = _possibleConstructorReturn(this, _Item.call(this, null));
 
-			_this16.damage = damage || 1;
-			_this16.speed = speed || 10;
-			_this16.name = name;
+			_this17.damage = damage || 1;
+			_this17.speed = speed || 10;
+			_this17.name = name;
 
-			_this16.glyph = "(";
-			_this16.color = "red";
-			_this16.bgColor = TILE_COLOR;
-			_this16.flavorName = _this16.name;
-			return _this16;
+			_this17.glyph = "(";
+			_this17.color = "red";
+			_this17.bgColor = TILE_COLOR;
+			_this17.flavorName = _this17.name;
+			return _this17;
 		}
 
 		Weapon.prototype.toString = function toString() {
@@ -862,17 +890,17 @@ if (!Object.values) {
 		function Armor(slot, name, defence) {
 			_classCallCheck(this, Armor);
 
-			var _this17 = _possibleConstructorReturn(this, _Item2.call(this, null));
+			var _this18 = _possibleConstructorReturn(this, _Item2.call(this, null));
 
-			_this17.slot = slot;
-			_this17.name = name;
-			_this17.defence = defence;
+			_this18.slot = slot;
+			_this18.name = name;
+			_this18.defence = defence;
 
-			_this17.glyph = "[";
-			_this17.color = "cyan";
-			_this17.bgColor = TILE_COLOR;
-			_this17.flavorName = _this17.name;
-			return _this17;
+			_this18.glyph = "[";
+			_this18.color = "cyan";
+			_this18.bgColor = TILE_COLOR;
+			_this18.flavorName = _this18.name;
+			return _this18;
 		}
 
 		Armor.prototype.toString = function toString() {
@@ -949,10 +977,10 @@ if (!Object.values) {
 		function MoveAction(context, logger, movement) {
 			_classCallCheck(this, MoveAction);
 
-			var _this19 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
+			var _this20 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
 
-			_this19.movement = movement;
-			return _this19;
+			_this20.movement = movement;
+			return _this20;
 		}
 
 		MoveAction.prototype.try = function _try(actor, time) {
@@ -982,10 +1010,10 @@ if (!Object.values) {
 		function AttackAction(context, logger, direction) {
 			_classCallCheck(this, AttackAction);
 
-			var _this20 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
+			var _this21 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
 
-			_this20.direction = direction;
-			return _this20;
+			_this21.direction = direction;
+			return _this21;
 		}
 
 		AttackAction.prototype.try = function _try(actor, time) {
@@ -1063,10 +1091,10 @@ if (!Object.values) {
 		function ItemDropAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemDropAction);
 
-			var _this22 = _possibleConstructorReturn(this, _Action5.call(this, context, logger));
+			var _this23 = _possibleConstructorReturn(this, _Action5.call(this, context, logger));
 
-			_this22.inventorySlot = inventorySlot;
-			return _this22;
+			_this23.inventorySlot = inventorySlot;
+			return _this23;
 		}
 
 		ItemDropAction.prototype.try = function _try(actor, time) {
@@ -1095,10 +1123,10 @@ if (!Object.values) {
 		function ItemEquipAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemEquipAction);
 
-			var _this23 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
+			var _this24 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
 
-			_this23.inventorySlot = inventorySlot;
-			return _this23;
+			_this24.inventorySlot = inventorySlot;
+			return _this24;
 		}
 
 		ItemEquipAction.prototype.try = function _try(actor, time) {
@@ -1172,7 +1200,7 @@ if (!Object.values) {
 		};
 
 		Lifebar.prototype.setStyle = function setStyle(style) {
-			var _this24 = this;
+			var _this25 = this;
 
 			var styles = {
 				"hilight": "hilighted",
@@ -1184,8 +1212,8 @@ if (!Object.values) {
 				Object.values(styles).filter(function (v) {
 					return v !== style;
 				}).forEach(function (f) {
-					_this24.bar.classList.remove(f);
-					_this24.label.classList.remove(f);
+					_this25.bar.classList.remove(f);
+					_this25.label.classList.remove(f);
 				});
 
 				this.bar.classList.add(style);
@@ -1334,13 +1362,13 @@ if (!Object.values) {
 
 
 		ActionManager.prototype.think = function think(actor, player) {
-			var _this25 = this;
+			var _this26 = this;
 
 			if (actor instanceof Enemy) {
 				var _ret = function () {
-					var fov = _this25.getFov(actor),
+					var fov = _this26.getFov(actor),
 					    instruction = null,
-					    shouldLog = _this25.getFov(player).has(actor.position);
+					    shouldLog = _this26.getFov(player).has(actor.position);
 					actor.target = fov.get(player.position);
 
 					if (!actor.target) {
@@ -1358,15 +1386,15 @@ if (!Object.values) {
 						var vector = Point.distance(actor.position, actor.target.position);
 						vector.reduce();
 						instruction = vector;
-						if (!actor.noticed && shouldLog) _this25.logger.log(actor.flavorName + " noticed " + player.flavorName);
+						if (!actor.noticed && shouldLog) _this26.logger.log(actor.flavorName + " noticed " + player.flavorName);
 						actor.noticed = true;
 					}
 
-					var proposals = _this25.proposalMap[instruction.constructor];
+					var proposals = _this26.proposalMap[instruction.constructor];
 					if (proposals) {
 						var methods = proposals.map(function (action) {
 							return function () {
-								return new action(_this25.board, shouldLog ? _this25.logger : null, instruction);
+								return new action(_this26.board, shouldLog ? _this26.logger : null, instruction);
 							};
 						});
 						actor.actions.push(methods);
@@ -1422,7 +1450,7 @@ if (!Object.values) {
 
 
 		ActionManager.prototype.delegateAction = function delegateAction(actor, instruction) {
-			var _this26 = this;
+			var _this27 = this;
 
 			if (!actor) {
 				return;
@@ -1450,7 +1478,7 @@ if (!Object.values) {
 				if (proposals) {
 					var methods = proposals.map(function (action) {
 						return function () {
-							return new action(_this26.board, _this26.logger, instruction);
+							return new action(_this27.board, _this27.logger, instruction);
 						};
 					});
 					actor.actions.push(methods);
@@ -1460,7 +1488,7 @@ if (!Object.values) {
 				}
 			} else if (instruction === null) {
 				actor.actions.push([function () {
-					return new NullAction(null, _this26.logger);
+					return new NullAction(null, _this27.logger);
 				}]);
 				return true;
 			}
@@ -1692,21 +1720,30 @@ if (!Object.values) {
 			}
 		};
 
+		Utils.generateRandomWeapon = function generateRandomWeapon() {
+			var materials = ["Bronze", "Iron", "Steel"],
+			    types = ["Dagger", "Sword", "Axe", "Pikestaff"];
+
+			var name = materials[Math.round(Math.random() * (materials.length - 1))] + " " + types[Math.round(Math.random() * (types.length - 1))];
+
+			return new Weapon(name, Math.round(Math.random() * 5 + 1), Math.round(Math.random() * 6 + 4));
+		};
+
 		//use this to generate maps
 		//(actually it generates array of objs which then get inserted by Game)
 
 
 		Utils.initUIButtons = function initUIButtons(instance) {
-			var _this27 = this;
+			var _this28 = this;
 
 			document.getElementById("button-save").addEventListener("click", function (e) {
 				e.stopPropagation();
-				_this27.saveGame(instance);
+				_this28.saveGame(instance);
 			});
 
 			document.getElementById("button-delete").addEventListener("click", function (e) {
 				e.stopPropagation();
-				_this27.deleteSave();
+				_this28.deleteSave();
 			});
 		};
 
@@ -1810,24 +1847,33 @@ if (!Object.values) {
 
 
 					_class4.insertEnemies = function insertEnemies(room, options) {
-						var enemyList = [Jackalope, Honeybadger];
+						var enemyList = [Jackalope, Honeybadger, Redcap];
 						var enemies = [];
 						for (var x = room.x + room.w; x > room.x; x--) {
 							for (var y = room.y + room.h; y > room.y; y--) {
 								if (Math.random() < options.enemies.spawnChance) {
 									var enemy = enemyList[Math.round(Math.random() * (enemyList.length - 1))];
-									enemies.push(new enemy(new Point(x, y)));
+									enemy = new enemy(new Point(x, y));
+									enemy = this.generateEquipment(enemy);
+									enemies.push(enemy);
 								}
 							}
 						}
 						return enemies;
 					};
 
+					_class4.generateEquipment = function generateEquipment(enemy) {
+						if (enemy.canWield) {
+							enemy.equipment.weapon = Utils.generateRandomWeapon();
+						}
+						return enemy;
+					};
+
 					//main method
 
 
 					_class4.makeDungeon = function makeDungeon(options) {
-						var _this28 = this;
+						var _this29 = this;
 
 						options = options || this.defaultOptions;
 						var matrix = [],
@@ -1869,7 +1915,7 @@ if (!Object.values) {
 									matrix[_y][_x3].empty();
 								}
 							}
-							objs = objs.concat(_this28.insertEnemies(room, options));
+							objs = objs.concat(_this29.insertEnemies(room, options));
 						});
 
 						//carve out paths
@@ -1961,7 +2007,7 @@ if (!Object.values) {
 
 
 		LogboxManager.prototype.log = function log(text) {
-			var _this29 = this;
+			var _this30 = this;
 
 			var type = arguments.length <= 1 || arguments[1] === undefined ? "default" : arguments[1];
 
@@ -1982,7 +2028,7 @@ if (!Object.values) {
 			} else {
 				this.rows[0].children[0].remove();
 				this.rows.forEach(function (row, index) {
-					row.appendChild(_this29.messages[_this29.messages.length - (_this29.rowCount - index)]);
+					row.appendChild(_this30.messages[_this30.messages.length - (_this30.rowCount - index)]);
 				});
 			}
 		};
@@ -2004,7 +2050,7 @@ if (!Object.values) {
 		}
 
 		InventoryManager.prototype.update = function update() {
-			var _this30 = this;
+			var _this31 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -2014,7 +2060,7 @@ if (!Object.values) {
 			this.inventory.forEach(function (item, key) {
 				var ele = document.createElement("div");
 				ele.innerHTML = Utils.alphabetMap[key] + " - " + item;
-				_this30.container.appendChild(ele);
+				_this31.container.appendChild(ele);
 			});
 		};
 
@@ -2034,7 +2080,7 @@ if (!Object.values) {
 		}
 
 		EquipmentManager.prototype.update = function update() {
-			var _this31 = this;
+			var _this32 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -2042,16 +2088,16 @@ if (!Object.values) {
 				});
 			}
 			Object.keys(this.equipment).filter(function (k) {
-				return _this31.equipment[k];
+				return _this32.equipment[k];
 			}).forEach(function (k) {
 				var parent = document.createElement("div");
 				var key = document.createElement("span");
 				var value = document.createElement("span");
 				key.innerHTML = k + ": ";
-				value.innerHTML = _this31.equipment[k];
+				value.innerHTML = _this32.equipment[k];
 				parent.appendChild(key);
 				parent.appendChild(value);
-				_this31.container.appendChild(parent);
+				_this32.container.appendChild(parent);
 			});
 		};
 
@@ -2104,7 +2150,7 @@ if (!Object.values) {
 	//the game
 	var Game = function () {
 		function Game(board, objs) {
-			var _this32 = this;
+			var _this33 = this;
 
 			_classCallCheck(this, Game);
 
@@ -2121,7 +2167,7 @@ if (!Object.values) {
 			//map objs argument into this.objs by the objs creation id
 			this.objs = [];
 			objs.forEach(function (obj) {
-				return _this32.objs[obj.id] = obj;
+				return _this33.objs[obj.id] = obj;
 			});
 
 			this.logic = new ActionManager(this.board, this.logger);
@@ -2129,8 +2175,8 @@ if (!Object.values) {
 			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this32.logic.delegateAction(_this32.player, _this32.keyHandler.get(e.keyCode))) {
-					_this32.update();
+				if (_this33.logic.delegateAction(_this33.player, _this33.keyHandler.get(e.keyCode))) {
+					_this33.update();
 				}
 			});
 
@@ -2144,56 +2190,56 @@ if (!Object.values) {
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this32.board.bounds;
+				var bounds = _this33.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this32.player.fov,
-					    gamePoint = Utils.screenToGame(screenPoint, _this32.board.tileSize, _this32.board.spacing);
+					var fov = _this33.player.fov,
+					    gamePoint = Utils.screenToGame(screenPoint, _this33.board.tileSize, _this33.board.spacing);
 
 					//set cursor position
-					_this32.mouseHandler.cursorFromScreen(screenPoint);
+					_this33.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov && fov.has(gamePoint)) {
-						var targetTile = _this32.board.get(gamePoint);
+						var targetTile = _this33.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this32.objs.forEach(function (obj) {
+							_this33.objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this32.examineContainer.innerHTML = targetTile.top;
+							_this33.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this32.examineContainer.innerHTML = targetTile;
+							_this33.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this32.examineContainer.innerHTML = "You can't see that";
+						_this33.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this32.objs.forEach(function (obj) {
+						_this33.objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this32.objs[Number(id)];
+						var target = _this33.objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this32.mouseHandler.cursorFromGame(target.position);
-							_this32.examineContainer.innerHTML = target;
+							_this33.mouseHandler.cursorFromGame(target.position);
+							_this33.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
@@ -2204,7 +2250,7 @@ if (!Object.values) {
 		}
 
 		Game.prototype.update = function update() {
-			var _this33 = this;
+			var _this34 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
@@ -2221,22 +2267,22 @@ if (!Object.values) {
 					}
 
 					if (obj.isAlive) {
-						var _duration = obj.update(_this33.logger, _this33.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this34.logger, _this34.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this33.logic.think(obj, _this33.player);
+							_this34.logic.think(obj, _this34.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						//obj died during update
 						if (!obj.isAlive) {
-							_this33.board.remove(obj);
-							delete _this33.objs[obj.id];
+							_this34.board.remove(obj);
+							delete _this34.objs[obj.id];
 						}
 					} else {
-						_this33.board.remove(obj);
-						delete _this33.objs[obj.id];
+						_this34.board.remove(obj);
+						delete _this34.objs[obj.id];
 					}
 				});
 			}
@@ -2269,12 +2315,12 @@ if (!Object.values) {
 		};
 
 		Game.prototype.start = function start() {
-			var _this34 = this;
+			var _this35 = this;
 
 			this.logger.log("Hello and welcome", "hilight");
 			this.objs.forEach(function (obj) {
 				if (obj) {
-					_this34.board.insert(obj);
+					_this35.board.insert(obj);
 				}
 			});
 
@@ -2282,7 +2328,7 @@ if (!Object.values) {
 			this.player.fov = fov;
 
 			this.objs.forEach(function (obj) {
-				_this34.logic.think(obj, _this34.player);
+				_this35.logic.think(obj, _this35.player);
 				if (obj instanceof Enemy) {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();

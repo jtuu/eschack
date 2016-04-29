@@ -602,6 +602,26 @@ if (!Object.values) {
 		}
 	};
 	
+	const Redcap = class Redcap extends Enemy {
+		constructor(position){
+			super(position, null, null);
+			this.bgColor = "hsl(66, 10%, 70%)";
+			this.glyph = "^";
+			this.color = "hsl(0, 80%, 60%)";
+			
+			this.stats.maxHP = 10;
+			this.stats.HP = 10;
+			this.stats.viewDistance = 7;
+			this.stats.moveSpeed = 10;
+			this.flavorName = "the redcap";
+			this.flavor = "A malevolent murderous dwarf-like creature.";
+			this.createLifebar();
+			
+			this.canWield = true;
+			this.canWear = true;
+		}
+	};
+	
 	const Weapon = class Weapon extends Item{
 		//todo: basespeed (weight?), special properties (cleave, reach)
 		//stuff
@@ -1330,6 +1350,16 @@ if (!Object.values) {
 			}
 		}
 		
+		static generateRandomWeapon(){
+			let materials = ["Bronze","Iron","Steel"],
+				types = ["Dagger","Sword","Axe","Pikestaff"];
+			
+			let name = materials[Math.round(Math.random() * (materials.length - 1))] +
+					" " + types[Math.round(Math.random() * (types.length - 1))];
+			
+			return new Weapon(name, Math.round(Math.random() * 5 + 1), Math.round(Math.random() * 6 + 4));
+		}
+		
 		//use this to generate maps
 		//(actually it generates array of objs which then get inserted by Game)
 		static get DungeonGenerator(){
@@ -1393,17 +1423,26 @@ if (!Object.values) {
 				
 				//try to spawn some enemies within room
 				static insertEnemies(room, options){
-					let enemyList = [Jackalope, Honeybadger];
+					let enemyList = [Jackalope, Honeybadger, Redcap];
 					let enemies = [];
 					for(let x = room.x + room.w; x > room.x; x--){
 						for(let y = room.y + room.h; y > room.y; y--){
 							if(Math.random() < options.enemies.spawnChance){
 								let enemy = enemyList[Math.round(Math.random()*(enemyList.length-1))];
-								enemies.push(new enemy(new Point(x, y)));
+								enemy = new enemy(new Point(x, y));
+								enemy = this.generateEquipment(enemy);
+								enemies.push(enemy);
 							}
 						}
 					}
 					return enemies;
+				}
+				
+				static generateEquipment(enemy){
+					if(enemy.canWield){
+						enemy.equipment.weapon = Utils.generateRandomWeapon();
+					}
+					return enemy;
 				}
 				
 				//main method
