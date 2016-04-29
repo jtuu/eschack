@@ -666,6 +666,16 @@ if (!Object.values) {
 			return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.equipment.weapon.damage + " ATT";
 		};
 
+		_createClass(Creature, [{
+			key: "items",
+			get: function get() {
+				var items = this.inventory.concat(Object.values(this.equipment)).filter(function (v) {
+					return v;
+				});
+				return items;
+			}
+		}]);
+
 		return Creature;
 	}(Hittable(MoveBlocking(GameObject)));
 
@@ -767,7 +777,10 @@ if (!Object.values) {
 		function Item(position) {
 			_classCallCheck(this, Item);
 
-			return _possibleConstructorReturn(this, _GameObject2.call(this, position));
+			var _this13 = _possibleConstructorReturn(this, _GameObject2.call(this, position));
+
+			_this13.canDrop = true;
+			return _this13;
 		}
 
 		Item.prototype.update = function update() {
@@ -788,6 +801,8 @@ if (!Object.values) {
 			_this14.bgColor = "hsl(35, 25%, 65%)";
 			_this14.glyph = "J";
 			_this14.color = "hsl(35, 35%, 5%)";
+
+			_this14.equipment.weapon.canDrop = false;
 
 			_this14.stats.maxHP = 6;
 			_this14.stats.HP = 6;
@@ -813,6 +828,8 @@ if (!Object.values) {
 			_this15.bgColor = "hsl(25, 5%, 10%)";
 			_this15.glyph = "B";
 			_this15.color = "hsl(5, 5%, 90%)";
+
+			_this15.equipment.weapon.canDrop = false;
 
 			_this15.stats.maxHP = 10;
 			_this15.stats.HP = 10;
@@ -866,6 +883,7 @@ if (!Object.values) {
 
 			var _this17 = _possibleConstructorReturn(this, _Item.call(this, null));
 
+			_this17.slot = "weapon";
 			_this17.damage = damage || 1;
 			_this17.speed = speed || 10;
 			_this17.name = name;
@@ -1044,6 +1062,13 @@ if (!Object.values) {
 			}
 			var died = target.top.takeDamage(damage, this.logger);
 			if (died) {
+				//drop all items and corpse
+				target.top.items.forEach(function (item) {
+					if (item.canDrop) {
+						item.position = new (Function.prototype.bind.apply(Point, [null].concat(target.top.position.get)))();
+						target.add(item);
+					}
+				});
 				target.add(new Corpse(new (Function.prototype.bind.apply(Point, [null].concat(target.top.position.get)))()));
 				target.remove(target.top);
 			}
@@ -1866,6 +1891,7 @@ if (!Object.values) {
 						if (enemy.canWield) {
 							enemy.equipment.weapon = Utils.generateRandomWeapon();
 						}
+						if (enemy.canWear) {}
 						return enemy;
 					};
 

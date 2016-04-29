@@ -488,6 +488,11 @@ if (!Object.values) {
 		toString() {
 			return `${this.type}<br>${this.stats.HP} HP<br>${this.flavor}<br>${this.equipment.weapon.damage} ATT`;
 		}
+		
+		get items(){
+			let items = this.inventory.concat(Object.values(this.equipment)).filter(v => v);
+			return items;
+		}
 	};
 	
 	const Corpse = class Corpse extends GameObject {
@@ -561,6 +566,7 @@ if (!Object.values) {
 	const Item = class Item extends GameObject{
 		constructor(position){
 			super(position);
+			this.canDrop = true;
 		}
 		
 		update(){
@@ -574,6 +580,8 @@ if (!Object.values) {
 			this.bgColor = "hsl(35, 25%, 65%)";
 			this.glyph = "J";
 			this.color = "hsl(35, 35%, 5%)";
+			
+			this.equipment.weapon.canDrop = false;
 			
 			this.stats.maxHP = 6;
 			this.stats.HP = 6;
@@ -591,6 +599,8 @@ if (!Object.values) {
 			this.bgColor = "hsl(25, 5%, 10%)";
 			this.glyph = "B";
 			this.color = "hsl(5, 5%, 90%)";
+			
+			this.equipment.weapon.canDrop = false;
 			
 			this.stats.maxHP = 10;
 			this.stats.HP = 10;
@@ -627,6 +637,7 @@ if (!Object.values) {
 		//stuff
 		constructor(name, damage, speed) {
 			super(null);
+			this.slot = "weapon";
 			this.damage = damage || 1;
 			this.speed = speed || 10;
 			this.name = name;
@@ -766,6 +777,13 @@ if (!Object.values) {
 			}
 			let died = target.top.takeDamage(damage, this.logger);
 			if (died) {
+				//drop all items and corpse
+				target.top.items.forEach(item => {
+					if(item.canDrop){
+						item.position = new Point(...target.top.position.get);
+						target.add(item);
+					}
+				});
 				target.add(new Corpse(new Point(...target.top.position.get)));
 				target.remove(target.top);
 			}
@@ -1441,6 +1459,9 @@ if (!Object.values) {
 				static generateEquipment(enemy){
 					if(enemy.canWield){
 						enemy.equipment.weapon = Utils.generateRandomWeapon();
+					}
+					if(enemy.canWear){
+						
 					}
 					return enemy;
 				}
