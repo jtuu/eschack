@@ -28,9 +28,12 @@
 					<button id="button-delete">delete</button>
 					<hr>
 					<h4>Controls</h4>
-					<p>Use numpad or wasd to move.</p>
-					<p>num5: rest a turn</p>
+					<p>numpad: movement</p>
+					<p>vi keys: movement</p>
+					<p>num5: rest turn</p>
 					<p>g: pick up item</p>
+					<p>d: drop item</p>
+					<p>w: wear or wield item</p>
 					<hr>
 					<a data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/" class="github-button">Watch</a>
 					<script id="github-bjs" async defer src="https://buttons.github.io/buttons.js"></script>
@@ -38,9 +41,14 @@
 				<div id="todo">
 					<h3>TODO</h3>
 					<ul>
-						<li>level data loading from json or something</li>
-						<li>inventory, items, stats</li>
-						<li>ItemPickupAction, ItemDropAction, ItemEquipAction...</li>
+						<li>add stats display for player, flavored stats for other creatures</li>
+						<li>place enemies in a more intelligent way</li>
+						<li>generate items for enemies</li>
+						<li>make enemies drop items and give xp</li>
+						<li>fix raycasting</li>
+						<li>fix saving/loading</li>
+						<li>items, stats</li>
+						<li>ItemUnequipAction</li>
 						<li>enemies shouldnt attack eachother (faction system?)</li>
 						<li>pathfinding</li>
 					</ul>
@@ -50,14 +58,17 @@
 		<div id="column-right" class="column">
 			<div id="info-container-player" class="info-container moveable resizeable"></div>
 			<div id="info-container-other-life-wrap" class="moveable resizeable">
-				<strong>Enemies</strong>
+				<strong class="menu-title">Enemies</strong>
 				<div id="info-container-other-life" class="info-container"></div>
 			</div>
 			<div id="info-container-other-misc" class="info-container moveable resizeable">
-				<strong>Examine</strong>
+				<strong class="menu-title">Examine</strong>
 			</div>
 			<div id="info-container-inventory" class="info-container moveable resizeable">
-				<strong>Inventory</strong>
+				<strong class="menu-title">Inventory</strong>
+			</div>
+			<div id="info-container-equipment" class="info-container moveable resizeable">
+				<strong class="menu-title">Equipment</strong>
 			</div>
 		</div>
 		<script src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js"></script>
