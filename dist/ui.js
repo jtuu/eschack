@@ -72,9 +72,9 @@
 				y = e.touches[0].pageY;
 			}
 			if (dragging === "right") {
-				selected.style.width = selected.offsetWidth + (x - selected.offsetWidth) - selected.offsetLeft + "px";
+				selected.style.width = selected.offsetWidth + (x - selected.offsetWidth) - selected.offsetParent.offsetLeft - selected.offsetLeft + "px";
 			} else if (dragging === "bottom") {
-				selected.style.height = selected.offsetHeight + (y - selected.offsetHeight) - selected.offsetTop + "px";
+				selected.style.height = selected.offsetHeight + (y - selected.offsetHeight) - selected.offsetParent.offsetTop - selected.offsetTop + "px";
 			} else if (dragging === "body") {
 				selected.style.top = y - elemY + "px";
 				selected.style.left = x - elemX + "px";

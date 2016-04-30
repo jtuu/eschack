@@ -55,9 +55,14 @@ if (!Object.values) {
 		//set values from array input
 
 
-		Point.prototype.set = function set(arr) {
-			this.x = arr[0];
-			this.y = arr[1];
+		Point.prototype.set = function set(x, y) {
+			if (x.constructor === Array) {
+				this.x = x[0];
+				this.y = x[1];
+			} else {
+				this.x = x;
+				this.y = y;
+			}
 		};
 
 		//get get get get got got got got
@@ -324,9 +329,7 @@ if (!Object.values) {
 			}
 		};
 
-		//turn everything into null
-		//is this needed?
-		//does this even work?
+		//empty all tiles
 
 
 		TileGroup.prototype.clear = function clear() {
@@ -419,6 +422,7 @@ if (!Object.values) {
    */
 			this.id = objectCounter;
 			objectCounter += 1;
+
 			this.position = position;
 			this.bgColor = "magenta";
 			this.glyph = "⚠"; //cool warning sign character (?)
@@ -573,6 +577,38 @@ if (!Object.values) {
 		return Wall;
 	}(VisionBlocking(MoveBlocking(GameObject)));
 
+	var Stair = function (_GameObject) {
+		_inherits(Stair, _GameObject);
+
+		function Stair(position, direction) {
+			_classCallCheck(this, Stair);
+
+			var _this8 = _possibleConstructorReturn(this, _GameObject.call(this, position));
+
+			_this8.direction = direction;
+			_this8.bgColor = "hsl(0,0%,35%)";
+
+			if (_this8.direction === "up") {
+				_this8.glyph = "<";
+			} else if (_this8.direction === "down") {
+				_this8.glyph = ">";
+			}
+			_this8.color = "hsl(0,0%,75%)";
+			_this8.flavorName = _this8.direction + "stair";
+			return _this8;
+		}
+
+		Stair.prototype.update = function update() {
+			return 0;
+		};
+
+		Stair.prototype.toString = function toString() {
+			return "A staircase going " + this.direction;
+		};
+
+		return Stair;
+	}(GameObject);
+
 	//any living dead undead whatever creature
 	var Creature = function (_Hittable) {
 		_inherits(Creature, _Hittable);
@@ -582,18 +618,19 @@ if (!Object.values) {
 
 			//actions actually contains arrays of actions
 
-			var _this8 = _possibleConstructorReturn(this, _Hittable.call(this, position));
+			var _this9 = _possibleConstructorReturn(this, _Hittable.call(this, position));
 
-			_this8.actions = [];
+			_this9.actions = [];
 
-			var self = _this8;
-			_this8.stats = stats || {
+			var self = _this9;
+			_this9.stats = stats || {
 				"maxHP": 3,
 				"HP": 3,
 				"viewDistance": 5,
 				"moveSpeed": 10,
 				"inventorySize": 5,
 				get AC() {
+					//add up the defence values of all equipped armor
 					return Object.keys(self.equipment).filter(function (k) {
 						return self.equipment[k] && self.equipment[k].constructor === Armor;
 					}).reduce(function (p, c) {
@@ -601,9 +638,9 @@ if (!Object.values) {
 					}, 0);
 				}
 			};
-			_this8.inventory = [];
+			_this9.inventory = [];
 
-			_this8.equipment = {
+			_this9.equipment = {
 				"weapon": weapon || new Weapon("Fists"),
 				"head": null,
 				"body": null,
@@ -612,16 +649,16 @@ if (!Object.values) {
 				"feet": null
 			};
 
-			_this8.flavorName = "creature";
-			_this8.flavor = "It is mundane."; //flavor text used in examine
-			return _this8;
+			_this9.flavorName = "creature";
+			_this9.flavor = "It is mundane."; //flavor text used in examine
+			return _this9;
 		}
 
 		//oh boy
 
 
 		Creature.prototype.update = function update(logger) {
-			var _this9 = this;
+			var _this10 = this;
 
 			var time = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 
@@ -640,14 +677,14 @@ if (!Object.values) {
 
 					proposals.some(function (p) {
 						var action = p();
-						if (action.try(_this9, time)) {
+						if (action.try(_this10, time)) {
 							chosen = action;
 							return true;
 						} else {
 							return false;
 						}
 					});
-					elapsedTime += chosen.do(_this9);
+					elapsedTime += chosen.do(_this10);
 					updateCount++;
 				} catch (err) {
 					//console.warn("None of the proposed actions were suitable for " + this.constructor.name);
@@ -679,19 +716,19 @@ if (!Object.values) {
 		return Creature;
 	}(Hittable(MoveBlocking(GameObject)));
 
-	var Corpse = function (_GameObject) {
-		_inherits(Corpse, _GameObject);
+	var Corpse = function (_GameObject2) {
+		_inherits(Corpse, _GameObject2);
 
 		function Corpse(position) {
 			_classCallCheck(this, Corpse);
 
-			var _this10 = _possibleConstructorReturn(this, _GameObject.call(this, position));
+			var _this11 = _possibleConstructorReturn(this, _GameObject2.call(this, position));
 
-			_this10.bgColor = "hsl(0,40%,40%)";
-			_this10.glyph = "x"; //some block character
-			_this10.color = "hsl(0,40%,10%)";
-			_this10.flavorName = "corpse";
-			return _this10;
+			_this11.bgColor = "hsl(0,40%,40%)";
+			_this11.glyph = "x"; //some block character
+			_this11.color = "hsl(0,40%,10%)";
+			_this11.flavorName = "corpse";
+			return _this11;
 		}
 
 		Corpse.prototype.update = function update() {
@@ -707,28 +744,30 @@ if (!Object.values) {
 		function Player(position, stats) {
 			_classCallCheck(this, Player);
 
-			var _this11 = _possibleConstructorReturn(this, _Creature.call(this, position, stats, new Weapon("Dagger", 1, 5)));
+			var _this12 = _possibleConstructorReturn(this, _Creature.call(this, position, stats));
 
-			_this11.actions = [];
-			_this11.bgColor = "white";
-			_this11.glyph = "@";
-			_this11.color = "black";
+			_this12.actions = [];
+			_this12.bgColor = "white";
+			_this12.glyph = "@";
+			_this12.color = "black";
 
-			_this11.stats.maxHP = 50;
-			_this11.stats.HP = 50;
-			_this11.stats.viewDistance = 8;
-			_this11.stats.moveSpeed = 10;
+			_this12.stats.maxHP = 50;
+			_this12.stats.HP = 50;
+			_this12.stats.viewDistance = 8;
+			_this12.stats.moveSpeed = 10;
 			//this.stats.inventorySize = 15;
 
-			_this11.stats = stats || _this11.stats;
+			_this12.stats = stats || _this12.stats;
 
-			_this11.equipment.head = new Armor("head", "Bronze helmet", 1);
+			_this12.equipment.head = new Armor("head", "Bronze helmet", 1);
 
-			_this11.lifebar = new Lifebar(_this11.id, "Hero", document.getElementById("info-container-player"), _this11.stats.maxHP, _this11.stats.HP);
-			_this11.flavorName = "you";
-			_this11.flavor = "Hi mom!";
+			_this12.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
+
+			_this12.lifebar = new Lifebar(_this12.id, "Hero", document.getElementById("info-container-player"), _this12.stats.maxHP, _this12.stats.HP);
+			_this12.flavorName = "you";
+			_this12.flavor = "Hi mom!";
 			//todo: store username here?
-			return _this11;
+			return _this12;
 		}
 
 		return Player;
@@ -741,23 +780,23 @@ if (!Object.values) {
 		function Enemy(position, stats, weapon) {
 			_classCallCheck(this, Enemy);
 
-			var _this12 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats, weapon));
+			var _this13 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats, weapon));
 
-			_this12.actions = [];
-			_this12.bgColor = "hsl(30, 30%, 45%)";
-			_this12.glyph = "E";
-			_this12.color = "white";
+			_this13.actions = [];
+			_this13.bgColor = "hsl(30, 30%, 45%)";
+			_this13.glyph = "E";
+			_this13.color = "white";
 
-			_this12.stats.maxHP = 3;
-			_this12.stats.HP = 3;
-			_this12.stats.viewDistance = 7;
-			_this12.stats.moveSpeed = 9;
+			_this13.stats.maxHP = 3;
+			_this13.stats.HP = 3;
+			_this13.stats.viewDistance = 7;
+			_this13.stats.moveSpeed = 9;
 
-			_this12.stats = stats || _this12.stats;
+			_this13.stats = stats || _this13.stats;
 
-			_this12.flavorName = "the enemy";
-			_this12.flavor = "It has a fearsome visage.";
-			return _this12;
+			_this13.flavorName = "the enemy";
+			_this13.flavor = "It has a fearsome visage.";
+			return _this13;
 		}
 
 		Enemy.prototype.toString = function toString() {
@@ -771,16 +810,16 @@ if (!Object.values) {
 		return Enemy;
 	}(Creature);
 
-	var Item = function (_GameObject2) {
-		_inherits(Item, _GameObject2);
+	var Item = function (_GameObject3) {
+		_inherits(Item, _GameObject3);
 
 		function Item(position) {
 			_classCallCheck(this, Item);
 
-			var _this13 = _possibleConstructorReturn(this, _GameObject2.call(this, position));
+			var _this14 = _possibleConstructorReturn(this, _GameObject3.call(this, position));
 
-			_this13.canDrop = true;
-			return _this13;
+			_this14.canDrop = true;
+			return _this14;
 		}
 
 		Item.prototype.update = function update() {
@@ -796,22 +835,22 @@ if (!Object.values) {
 		function Jackalope(position) {
 			_classCallCheck(this, Jackalope);
 
-			var _this14 = _possibleConstructorReturn(this, _Enemy.call(this, position, null, new Weapon("Antlers", 2, 5)));
+			var _this15 = _possibleConstructorReturn(this, _Enemy.call(this, position, null, new Weapon("Antlers", 2, 5)));
 
-			_this14.bgColor = "hsl(35, 25%, 65%)";
-			_this14.glyph = "J";
-			_this14.color = "hsl(35, 35%, 5%)";
+			_this15.bgColor = "hsl(35, 25%, 65%)";
+			_this15.glyph = "J";
+			_this15.color = "hsl(35, 35%, 5%)";
 
-			_this14.equipment.weapon.canDrop = false;
+			_this15.equipment.weapon.canDrop = false;
 
-			_this14.stats.maxHP = 6;
-			_this14.stats.HP = 6;
-			_this14.stats.viewDistance = 7;
-			_this14.stats.moveSpeed = 8;
-			_this14.flavorName = "the jackalope";
-			_this14.flavor = "A large agressive rabbit with antlers on its head.";
-			_this14.createLifebar();
-			return _this14;
+			_this15.stats.maxHP = 6;
+			_this15.stats.HP = 6;
+			_this15.stats.viewDistance = 7;
+			_this15.stats.moveSpeed = 8;
+			_this15.flavorName = "the jackalope";
+			_this15.flavor = "A large agressive rabbit with antlers on its head.";
+			_this15.createLifebar();
+			return _this15;
 		}
 
 		return Jackalope;
@@ -823,22 +862,22 @@ if (!Object.values) {
 		function Honeybadger(position) {
 			_classCallCheck(this, Honeybadger);
 
-			var _this15 = _possibleConstructorReturn(this, _Enemy2.call(this, position, null, new Weapon("Claws", 4, 11)));
+			var _this16 = _possibleConstructorReturn(this, _Enemy2.call(this, position, null, new Weapon("Claws", 4, 11)));
 
-			_this15.bgColor = "hsl(25, 5%, 10%)";
-			_this15.glyph = "B";
-			_this15.color = "hsl(5, 5%, 90%)";
+			_this16.bgColor = "hsl(25, 5%, 10%)";
+			_this16.glyph = "B";
+			_this16.color = "hsl(5, 5%, 90%)";
 
-			_this15.equipment.weapon.canDrop = false;
+			_this16.equipment.weapon.canDrop = false;
 
-			_this15.stats.maxHP = 10;
-			_this15.stats.HP = 10;
-			_this15.stats.viewDistance = 7;
-			_this15.stats.moveSpeed = 10;
-			_this15.flavorName = "the honeybadger";
-			_this15.flavor = "Notorious for their ferocity.";
-			_this15.createLifebar();
-			return _this15;
+			_this16.stats.maxHP = 10;
+			_this16.stats.HP = 10;
+			_this16.stats.viewDistance = 7;
+			_this16.stats.moveSpeed = 10;
+			_this16.flavorName = "the honeybadger";
+			_this16.flavor = "Notorious for their ferocity.";
+			_this16.createLifebar();
+			return _this16;
 		}
 
 		return Honeybadger;
@@ -850,23 +889,23 @@ if (!Object.values) {
 		function Redcap(position) {
 			_classCallCheck(this, Redcap);
 
-			var _this16 = _possibleConstructorReturn(this, _Enemy3.call(this, position, null, null));
+			var _this17 = _possibleConstructorReturn(this, _Enemy3.call(this, position, null, null));
 
-			_this16.bgColor = "hsl(66, 10%, 70%)";
-			_this16.glyph = "^";
-			_this16.color = "hsl(0, 80%, 60%)";
+			_this17.bgColor = "hsl(66, 10%, 70%)";
+			_this17.glyph = "^";
+			_this17.color = "hsl(0, 80%, 60%)";
 
-			_this16.stats.maxHP = 10;
-			_this16.stats.HP = 10;
-			_this16.stats.viewDistance = 7;
-			_this16.stats.moveSpeed = 10;
-			_this16.flavorName = "the redcap";
-			_this16.flavor = "A malevolent murderous dwarf-like creature.";
-			_this16.createLifebar();
+			_this17.stats.maxHP = 10;
+			_this17.stats.HP = 10;
+			_this17.stats.viewDistance = 7;
+			_this17.stats.moveSpeed = 10;
+			_this17.flavorName = "the redcap";
+			_this17.flavor = "A malevolent murderous dwarf-like creature.";
+			_this17.createLifebar();
 
-			_this16.canWield = true;
-			_this16.canWear = true;
-			return _this16;
+			_this17.canWield = true;
+			_this17.canWear = true;
+			return _this17;
 		}
 
 		return Redcap;
@@ -881,18 +920,18 @@ if (!Object.values) {
 		function Weapon(name, damage, speed) {
 			_classCallCheck(this, Weapon);
 
-			var _this17 = _possibleConstructorReturn(this, _Item.call(this, null));
+			var _this18 = _possibleConstructorReturn(this, _Item.call(this, null));
 
-			_this17.slot = "weapon";
-			_this17.damage = damage || 1;
-			_this17.speed = speed || 10;
-			_this17.name = name;
+			_this18.slot = "weapon";
+			_this18.damage = damage || 1;
+			_this18.speed = speed || 10;
+			_this18.name = name;
 
-			_this17.glyph = "(";
-			_this17.color = "red";
-			_this17.bgColor = TILE_COLOR;
-			_this17.flavorName = _this17.name;
-			return _this17;
+			_this18.glyph = "(";
+			_this18.color = "red";
+			_this18.bgColor = TILE_COLOR;
+			_this18.flavorName = _this18.name;
+			return _this18;
 		}
 
 		Weapon.prototype.toString = function toString() {
@@ -908,17 +947,17 @@ if (!Object.values) {
 		function Armor(slot, name, defence) {
 			_classCallCheck(this, Armor);
 
-			var _this18 = _possibleConstructorReturn(this, _Item2.call(this, null));
+			var _this19 = _possibleConstructorReturn(this, _Item2.call(this, null));
 
-			_this18.slot = slot;
-			_this18.name = name;
-			_this18.defence = defence;
+			_this19.slot = slot;
+			_this19.name = name;
+			_this19.defence = defence;
 
-			_this18.glyph = "[";
-			_this18.color = "cyan";
-			_this18.bgColor = TILE_COLOR;
-			_this18.flavorName = _this18.name;
-			return _this18;
+			_this19.glyph = "[";
+			_this19.color = "cyan";
+			_this19.bgColor = TILE_COLOR;
+			_this19.flavorName = _this19.name;
+			return _this19;
 		}
 
 		Armor.prototype.toString = function toString() {
@@ -995,10 +1034,10 @@ if (!Object.values) {
 		function MoveAction(context, logger, movement) {
 			_classCallCheck(this, MoveAction);
 
-			var _this20 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
+			var _this21 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
 
-			_this20.movement = movement;
-			return _this20;
+			_this21.movement = movement;
+			return _this21;
 		}
 
 		MoveAction.prototype.try = function _try(actor, time) {
@@ -1028,10 +1067,10 @@ if (!Object.values) {
 		function AttackAction(context, logger, direction) {
 			_classCallCheck(this, AttackAction);
 
-			var _this21 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
+			var _this22 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
 
-			_this21.direction = direction;
-			return _this21;
+			_this22.direction = direction;
+			return _this22;
 		}
 
 		AttackAction.prototype.try = function _try(actor, time) {
@@ -1102,7 +1141,7 @@ if (!Object.values) {
 			actor.inventory.push(item);
 			targetTile.remove(item);
 			if (this.logger) {
-				this.logger.log(actor.flavorName + " picked up " + item.flavorName);
+				this.logger.log(actor.flavorName + " picked up " + item.toString());
 			}
 			return 10;
 		};
@@ -1116,10 +1155,10 @@ if (!Object.values) {
 		function ItemDropAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemDropAction);
 
-			var _this23 = _possibleConstructorReturn(this, _Action5.call(this, context, logger));
+			var _this24 = _possibleConstructorReturn(this, _Action5.call(this, context, logger));
 
-			_this23.inventorySlot = inventorySlot;
-			return _this23;
+			_this24.inventorySlot = inventorySlot;
+			return _this24;
 		}
 
 		ItemDropAction.prototype.try = function _try(actor, time) {
@@ -1136,6 +1175,7 @@ if (!Object.values) {
 			actor.inventory.splice(index, 1);
 			item.position = new (Function.prototype.bind.apply(Point, [null].concat(actor.position.get)))();
 			this.context.insert(item);
+			this.logger.log(actor.flavorName + " dropped " + item.toString());
 			return 10;
 		};
 
@@ -1148,10 +1188,10 @@ if (!Object.values) {
 		function ItemEquipAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemEquipAction);
 
-			var _this24 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
+			var _this25 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
 
-			_this24.inventorySlot = inventorySlot;
-			return _this24;
+			_this25.inventorySlot = inventorySlot;
+			return _this25;
 		}
 
 		ItemEquipAction.prototype.try = function _try(actor, time) {
@@ -1173,12 +1213,47 @@ if (!Object.values) {
 				actor.inventory.push(actor.equipment[item.slot]);
 				actor.equipment[item.slot] = null;
 			}
+			//splice item from inventory and put it in equipment
+			item = actor.inventory.splice(inventoryIndex, 1)[0];
+			actor.equipment[item.slot] = item;
 
-			actor.equipment[item.slot] = actor.inventory.splice(inventoryIndex, 1)[0];
+			this.logger.log(actor.flavorName + " equipped " + item.toString());
 			return 10;
 		};
 
 		return ItemEquipAction;
+	}(Action);
+
+	var StairAction = function (_Action7) {
+		_inherits(StairAction, _Action7);
+
+		function StairAction(context, logger) {
+			_classCallCheck(this, StairAction);
+
+			return _possibleConstructorReturn(this, _Action7.call(this, context, logger));
+		}
+
+		StairAction.prototype.try = function _try(actor, time) {
+			var tile = this.context.get(actor.position),
+			    isStair = tile && tile.contents.some(function (obj) {
+				return obj.constructor === Stair;
+			});
+			if (!isStair) {
+				this.logger.log("No stairs here");
+			}
+			return time % 10 === 0 && isStair;
+		};
+
+		StairAction.prototype.do = function _do(actor) {
+			var stair = this.context.get(actor.position).contents.find(function (obj) {
+				return obj.constructor === Stair;
+			});
+			actor.dungeonLevelChange = stair.direction;
+			this.logger.log(actor.flavorName + " went " + stair.direction + " the stairs");
+			return 10;
+		};
+
+		return StairAction;
 	}(Action);
 
 	var Lifebar = function () {
@@ -1225,7 +1300,7 @@ if (!Object.values) {
 		};
 
 		Lifebar.prototype.setStyle = function setStyle(style) {
-			var _this25 = this;
+			var _this27 = this;
 
 			var styles = {
 				"hilight": "hilighted",
@@ -1237,8 +1312,8 @@ if (!Object.values) {
 				Object.values(styles).filter(function (v) {
 					return v !== style;
 				}).forEach(function (f) {
-					_this25.bar.classList.remove(f);
-					_this25.label.classList.remove(f);
+					_this27.bar.classList.remove(f);
+					_this27.label.classList.remove(f);
 				});
 
 				this.bar.classList.add(style);
@@ -1307,7 +1382,10 @@ if (!Object.values) {
 					71: "pickup", //g
 
 					68: { use: "inventorydialog", act: "drop" }, //d
-					87: { use: "inventorydialog", act: "equip" } //w
+					87: { use: "inventorydialog", act: "equip" }, //w
+
+					60: "up", //<
+					62: "down" //>
 				};
 
 				this.actionMap = {
@@ -1336,7 +1414,9 @@ if (!Object.values) {
 						return new Vector(-1, -1);
 					},
 					"c": null,
-					"pickup": "pickup"
+					"pickup": "pickup",
+					"up": "stair",
+					"down": "stair"
 				};
 			} else if (map === "inventorydialog") {
 				this.using = "inventorydialog";
@@ -1381,19 +1461,20 @@ if (!Object.values) {
 			this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 			this.proposalMap["drop"] = [ItemDropAction, NullAction];
 			this.proposalMap["equip"] = [ItemEquipAction, NullAction];
+			this.proposalMap["stair"] = [StairAction, NullAction];
 		}
 
 		//decide actor logic
 
 
 		ActionManager.prototype.think = function think(actor, player) {
-			var _this26 = this;
+			var _this28 = this;
 
 			if (actor instanceof Enemy) {
 				var _ret = function () {
-					var fov = _this26.getFov(actor),
+					var fov = _this28.getFov(actor),
 					    instruction = null,
-					    shouldLog = _this26.getFov(player).has(actor.position);
+					    shouldLog = _this28.getFov(player).has(actor.position);
 					actor.target = fov.get(player.position);
 
 					if (!actor.target) {
@@ -1411,15 +1492,15 @@ if (!Object.values) {
 						var vector = Point.distance(actor.position, actor.target.position);
 						vector.reduce();
 						instruction = vector;
-						if (!actor.noticed && shouldLog) _this26.logger.log(actor.flavorName + " noticed " + player.flavorName);
+						if (!actor.noticed && shouldLog) _this28.logger.log(actor.flavorName + " noticed " + player.flavorName);
 						actor.noticed = true;
 					}
 
-					var proposals = _this26.proposalMap[instruction.constructor];
+					var proposals = _this28.proposalMap[instruction.constructor];
 					if (proposals) {
 						var methods = proposals.map(function (action) {
 							return function () {
-								return new action(_this26.board, shouldLog ? _this26.logger : null, instruction);
+								return new action(_this28.board, shouldLog ? _this28.logger : null, instruction);
 							};
 						});
 						actor.actions.push(methods);
@@ -1475,7 +1556,7 @@ if (!Object.values) {
 
 
 		ActionManager.prototype.delegateAction = function delegateAction(actor, instruction) {
-			var _this27 = this;
+			var _this29 = this;
 
 			if (!actor) {
 				return;
@@ -1503,7 +1584,7 @@ if (!Object.values) {
 				if (proposals) {
 					var methods = proposals.map(function (action) {
 						return function () {
-							return new action(_this27.board, _this27.logger, instruction);
+							return new action(_this29.board, _this29.logger, instruction);
 						};
 					});
 					actor.actions.push(methods);
@@ -1513,7 +1594,7 @@ if (!Object.values) {
 				}
 			} else if (instruction === null) {
 				actor.actions.push([function () {
-					return new NullAction(null, _this27.logger);
+					return new NullAction(null, _this29.logger);
 				}]);
 				return true;
 			}
@@ -1759,16 +1840,16 @@ if (!Object.values) {
 
 
 		Utils.initUIButtons = function initUIButtons(instance) {
-			var _this28 = this;
+			var _this30 = this;
 
 			document.getElementById("button-save").addEventListener("click", function (e) {
 				e.stopPropagation();
-				_this28.saveGame(instance);
+				_this30.saveGame(instance);
 			});
 
 			document.getElementById("button-delete").addEventListener("click", function (e) {
 				e.stopPropagation();
-				_this28.deleteSave();
+				_this30.deleteSave();
 			});
 		};
 
@@ -1898,8 +1979,8 @@ if (!Object.values) {
 					//main method
 
 
-					_class4.makeDungeon = function makeDungeon(options) {
-						var _this29 = this;
+					_class4.makeLevel = function makeLevel(player, options) {
+						var _this31 = this;
 
 						options = options || this.defaultOptions;
 						var matrix = [],
@@ -1912,8 +1993,19 @@ if (!Object.values) {
 							rooms[i] = this.makeRoom(options);
 						}
 
-						//place player in first room
-						objs.push(new Player(new Point(rooms[0].x + 1, rooms[0].y + 1)));
+						//set player to first room
+						player.position.set(rooms[0].x + 1, rooms[0].y + 1);
+						objs.push(player);
+
+						if (options.stairs.up) {
+							//put an upstairs on player
+							objs.push(new Stair(new Point(rooms[0].x + 1, rooms[0].y + 1), "up"));
+						}
+
+						if (options.stairs.down) {
+							//put a downstairs in "last" room
+							objs.push(new Stair(new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1), "down"));
+						}
 
 						//get midpoints
 						for (var _i2 in midPoints) {
@@ -1941,7 +2033,7 @@ if (!Object.values) {
 									matrix[_y][_x3].empty();
 								}
 							}
-							objs = objs.concat(_this29.insertEnemies(room, options));
+							objs = objs.concat(_this31.insertEnemies(room, options));
 						});
 
 						//carve out paths
@@ -1963,13 +2055,17 @@ if (!Object.values) {
 							}
 						}
 
-						return objs;
+						return { rooms: rooms, paths: paths, objs: objs };
 					};
 
 					_createClass(_class4, null, [{
 						key: "defaultOptions",
 						get: function get() {
 							return {
+								stairs: {
+									up: false,
+									down: true
+								},
 								size: {
 									w: 40,
 									h: 20
@@ -2033,7 +2129,7 @@ if (!Object.values) {
 
 
 		LogboxManager.prototype.log = function log(text) {
-			var _this30 = this;
+			var _this32 = this;
 
 			var type = arguments.length <= 1 || arguments[1] === undefined ? "default" : arguments[1];
 
@@ -2054,7 +2150,7 @@ if (!Object.values) {
 			} else {
 				this.rows[0].children[0].remove();
 				this.rows.forEach(function (row, index) {
-					row.appendChild(_this30.messages[_this30.messages.length - (_this30.rowCount - index)]);
+					row.appendChild(_this32.messages[_this32.messages.length - (_this32.rowCount - index)]);
 				});
 			}
 		};
@@ -2076,7 +2172,7 @@ if (!Object.values) {
 		}
 
 		InventoryManager.prototype.update = function update() {
-			var _this31 = this;
+			var _this33 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -2086,7 +2182,7 @@ if (!Object.values) {
 			this.inventory.forEach(function (item, key) {
 				var ele = document.createElement("div");
 				ele.innerHTML = Utils.alphabetMap[key] + " - " + item;
-				_this31.container.appendChild(ele);
+				_this33.container.appendChild(ele);
 			});
 		};
 
@@ -2106,7 +2202,7 @@ if (!Object.values) {
 		}
 
 		EquipmentManager.prototype.update = function update() {
-			var _this32 = this;
+			var _this34 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -2114,16 +2210,16 @@ if (!Object.values) {
 				});
 			}
 			Object.keys(this.equipment).filter(function (k) {
-				return _this32.equipment[k];
+				return _this34.equipment[k];
 			}).forEach(function (k) {
 				var parent = document.createElement("div");
 				var key = document.createElement("span");
 				var value = document.createElement("span");
 				key.innerHTML = k + ": ";
-				value.innerHTML = _this32.equipment[k];
+				value.innerHTML = _this34.equipment[k];
 				parent.appendChild(key);
 				parent.appendChild(value);
-				_this32.container.appendChild(parent);
+				_this34.container.appendChild(parent);
 			});
 		};
 
@@ -2175,8 +2271,8 @@ if (!Object.values) {
 
 	//the game
 	var Game = function () {
-		function Game(board, objs) {
-			var _this33 = this;
+		function Game(board, dungeon) {
+			var _this35 = this;
 
 			_classCallCheck(this, Game);
 
@@ -2185,24 +2281,25 @@ if (!Object.values) {
 			//global gametime
 			this.time = 0;
 
+			this.currentDungeonLevel = 0;
+			this.dungeonLevels = [];
+
 			this.board = board;
-			this.player = objs.find(function (v) {
-				return v;
-			});
+			this.player = dungeon.objs[0];
 
 			//map objs argument into this.objs by the objs creation id
-			this.objs = [];
-			objs.forEach(function (obj) {
-				return _this33.objs[obj.id] = obj;
-			});
+			//this.objs = [];
+			//objs.forEach(obj => this.objs[obj.id] = obj);
+
+			this.saveDungeonLevel(dungeon);
 
 			this.logic = new ActionManager(this.board, this.logger);
 
 			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this33.logic.delegateAction(_this33.player, _this33.keyHandler.get(e.keyCode))) {
-					_this33.update();
+				if (_this35.logic.delegateAction(_this35.player, _this35.keyHandler.get(e.which))) {
+					_this35.update();
 				}
 			});
 
@@ -2216,56 +2313,56 @@ if (!Object.values) {
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this33.board.bounds;
+				var bounds = _this35.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this33.player.fov,
-					    gamePoint = Utils.screenToGame(screenPoint, _this33.board.tileSize, _this33.board.spacing);
+					var fov = _this35.player.fov,
+					    gamePoint = Utils.screenToGame(screenPoint, _this35.board.tileSize, _this35.board.spacing);
 
 					//set cursor position
-					_this33.mouseHandler.cursorFromScreen(screenPoint);
+					_this35.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov && fov.has(gamePoint)) {
-						var targetTile = _this33.board.get(gamePoint);
+						var targetTile = _this35.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this33.objs.forEach(function (obj) {
+							_this35.dungeonLevels[_this35.currentDungeonLevel].objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this33.examineContainer.innerHTML = targetTile.top;
+							_this35.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this33.examineContainer.innerHTML = targetTile;
+							_this35.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this33.examineContainer.innerHTML = "You can't see that";
+						_this35.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this33.objs.forEach(function (obj) {
+						_this35.dungeonLevels[_this35.currentDungeonLevel].objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this33.objs[Number(id)];
+						var target = _this35.dungeonLevels[_this35.currentDungeonLevel].objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this33.mouseHandler.cursorFromGame(target.position);
-							_this33.examineContainer.innerHTML = target;
+							_this35.mouseHandler.cursorFromGame(target.position);
+							_this35.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
@@ -2275,40 +2372,136 @@ if (!Object.values) {
 			this.equipmentManager = new EquipmentManager(document.getElementById("info-container-equipment"), this.player.equipment);
 		}
 
+		Game.prototype.saveDungeonLevel = function saveDungeonLevel(dungeon) {
+			var _this36 = this;
+
+			var rooms = dungeon.rooms;
+			var paths = dungeon.paths;
+			var objs = dungeon.objs;
+			var img = new Image();
+			img.src = secondCanvas.toDataURL();
+			this.dungeonLevels[this.currentDungeonLevel] = {
+				objs: [],
+				rooms: rooms,
+				paths: paths,
+				map: img
+			};
+			objs.forEach(function (obj) {
+				return _this36.dungeonLevels[_this36.currentDungeonLevel].objs[obj.id] = obj;
+			});
+		};
+
+		Game.prototype.changeDungeonLevel = function changeDungeonLevel(level) {
+			var _this37 = this;
+
+			this.saveDungeonLevel(this.dungeonLevels[this.currentDungeonLevel]);
+			var dir = level > this.currentDungeonLevel ? "down" : "up";
+
+			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj, k) {
+				if (k === 0) {
+					return;
+				}
+				if (obj.lifebar) {
+					obj.lifebar.remove();
+				}
+			});
+
+			this.currentDungeonLevel = level;
+
+			mainCtx.clearRect(0, 0, w, h);
+			secondCtx.clearRect(0, 0, w, h);
+			this.board.clear();
+
+			var objs = [];
+			objs[0] = this.player;
+			//if level already exists load it else generate new
+			if (this.dungeonLevels[level]) {
+				objs = this.dungeonLevels[level].objs;
+				secondCtx.drawImage(this.dungeonLevels[level].map, 0, 0);
+				//put player in the last room if we're going up
+				if (dir === "up") {
+					this.player.position.set(this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].x + 1, this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].y + 1);
+				} else {
+					//or in the first room
+					this.player.position.set(this.dungeonLevels[level].rooms[0].x + 1, this.dungeonLevels[level].rooms[0].y + 1);
+				}
+			} else {
+				var options = Utils.DungeonGenerator.defaultOptions;
+				options.stairs.up = true;
+				var dungeon = Utils.DungeonGenerator.makeLevel(this.player, options);
+				objs = dungeon.objs;
+				this.dungeonLevels[level] = {
+					objs: [],
+					rooms: dungeon.rooms,
+					paths: dungeon.paths
+				};
+			}
+
+			//put objs in their id slots
+			objs.forEach(function (obj) {
+				return _this37.dungeonLevels[level].objs[obj.id] = obj;
+			});
+
+			//insert objs into the board
+			this.dungeonLevels[level].objs.forEach(function (obj) {
+				if (obj) {
+					_this37.board.insert(obj);
+				}
+			});
+
+			this.dungeonLevels[level].objs.forEach(function (obj) {
+				if (obj) {
+					_this37.logic.think(obj, _this37.player);
+				}
+			});
+		};
+
 		Game.prototype.update = function update() {
-			var _this34 = this;
+			var _this38 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
+
+			if (this.player.dungeonLevelChange) {
+				var level = this.currentDungeonLevel;
+				if (this.player.dungeonLevelChange === "up") {
+					level--;
+				} else if (this.player.dungeonLevelChange === "down") {
+					level++;
+				}
+				this.changeDungeonLevel(level);
+
+				delete this.player.dungeonLevelChange;
+			}
 
 			//contains the total durations of each objs actions for this turn
 			var objDurations = [];
 			for (var i = 0; i < tickCount; i++) {
 				this.time += TICK;
 
-				this.objs.forEach(function (obj, index) {
+				this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj, index) {
 					//skip player
-					if (index === 0) {
+					if (obj.type === "Player") {
 						return;
 					}
 
 					if (obj.isAlive) {
-						var _duration = obj.update(_this34.logger, _this34.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this38.logger, _this38.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this34.logic.think(obj, _this34.player);
+							_this38.logic.think(obj, _this38.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						//obj died during update
 						if (!obj.isAlive) {
-							_this34.board.remove(obj);
-							delete _this34.objs[obj.id];
+							_this38.board.remove(obj);
+							delete _this38.dungeonLevels[_this38.currentDungeonLevel].objs[obj.id];
 						}
 					} else {
-						_this34.board.remove(obj);
-						delete _this34.objs[obj.id];
+						_this38.board.remove(obj);
+						delete _this38.dungeonLevels[_this38.currentDungeonLevel].objs[obj.id];
 					}
 				});
 			}
@@ -2322,7 +2515,7 @@ if (!Object.values) {
 			this.player.fov = fov;
 
 			if (fov) {
-				this.objs.forEach(function (obj) {
+				this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj) {
 					if (obj instanceof Enemy) {
 						if (fov.has(obj.position)) {
 							obj.lifebar.show();
@@ -2341,20 +2534,20 @@ if (!Object.values) {
 		};
 
 		Game.prototype.start = function start() {
-			var _this35 = this;
+			var _this39 = this;
 
 			this.logger.log("Hello and welcome", "hilight");
-			this.objs.forEach(function (obj) {
+			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj) {
 				if (obj) {
-					_this35.board.insert(obj);
+					_this39.board.insert(obj);
 				}
 			});
 
 			var fov = this.logic.getFov(this.player);
 			this.player.fov = fov;
 
-			this.objs.forEach(function (obj) {
-				_this35.logic.think(obj, _this35.player);
+			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj) {
+				_this39.logic.think(obj, _this39.player);
 				if (obj instanceof Enemy) {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
@@ -2380,7 +2573,7 @@ if (!Object.values) {
 		spacing: 1,
 		w: 40,
 		h: 20
-	}), Utils.loadGame() || Utils.DungeonGenerator.makeDungeon());
+	}), Utils.loadGame() || Utils.DungeonGenerator.makeLevel(new Player(new Point(10, 10))));
 	Utils.initUIButtons(game);
 
 	if (env === "dev") {

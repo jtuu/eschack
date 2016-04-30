@@ -34,9 +34,14 @@ if (!Object.values) {
 		}
 
 		//set values from array input
-		set(arr) {
-			this.x = arr[0];
-			this.y = arr[1];
+		set(x,y) {
+			if(x.constructor === Array){
+				this.x = x[0];
+				this.y = x[1];
+			}else{
+				this.x = x;
+				this.y = y;
+			}
 		}
 
 		//get get get get got got got got
@@ -247,9 +252,7 @@ if (!Object.values) {
 			}
 		}
 
-		//turn everything into null
-		//is this needed?
-		//does this even work?
+		//empty all tiles
 		clear() {
 			this.matrix.forEach(row => row.forEach(tile => tile.empty()));
 		}
@@ -315,6 +318,7 @@ if (!Object.values) {
 			*/
 			this.id = objectCounter;
 			objectCounter += 1;
+			
 			this.position = position;
 			this.bgColor = "magenta";
 			this.glyph = "\u26a0"; //cool warning sign character (?)
@@ -409,6 +413,30 @@ if (!Object.values) {
 			return 0;
 		}
 	};
+	
+	const Stair = class Stair extends GameObject{
+		constructor(position, direction){
+			super(position);
+			this.direction = direction;
+			this.bgColor = "hsl(0,0%,35%)";
+			
+			if(this.direction === "up"){
+				this.glyph = "<";
+			}else if(this.direction === "down"){
+				this.glyph = ">";
+			}
+			this.color = "hsl(0,0%,75%)";
+			this.flavorName = this.direction+"stair";
+		}
+		
+		update(){
+			return 0;
+		}
+		
+		toString(){
+			return "A staircase going "+this.direction;
+		}
+	};
 
 
 	//any living dead undead whatever creature
@@ -426,6 +454,7 @@ if (!Object.values) {
 				"moveSpeed": 10,
 				"inventorySize": 5,
 				get AC(){
+					//add up the defence values of all equipped armor
 					return Object.keys(self.equipment)
 						.filter(k => self.equipment[k] && self.equipment[k].constructor === Armor)
 							.reduce((p, c) => self.equipment[c].defence + p, 0);
@@ -511,7 +540,7 @@ if (!Object.values) {
 
 	const Player = class Player extends Creature {
 		constructor(position, stats) {
-			super(position, stats, new Weapon("Dagger", 1, 5));
+			super(position, stats);
 			this.actions = [];
 			this.bgColor = "white";
 			this.glyph = "@";
@@ -526,6 +555,8 @@ if (!Object.values) {
 			this.stats = stats || this.stats;
 			
 			this.equipment.head = new Armor("head", "Bronze helmet", 1);
+			
+			this.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
 
 			this.lifebar = new Lifebar(this.id, "Hero", document.getElementById("info-container-player"), this.stats.maxHP, this.stats.HP);
 			this.flavorName = "you";
@@ -807,7 +838,7 @@ if (!Object.values) {
 			actor.inventory.push(item);
 			targetTile.remove(item);
 			if(this.logger){
-				this.logger.log(actor.flavorName + " picked up " + item.flavorName);
+				this.logger.log(actor.flavorName + " picked up " + item.toString());
 			}
 			return 10;
 		}
@@ -833,6 +864,7 @@ if (!Object.values) {
 			actor.inventory.splice(index, 1);
 			item.position = new Point(...actor.position.get);
 			this.context.insert(item);
+			this.logger.log(actor.flavorName + " dropped " + item.toString());
 			return 10;
 		}
 	};
@@ -862,8 +894,33 @@ if (!Object.values) {
 				actor.inventory.push(actor.equipment[item.slot]);
 				actor.equipment[item.slot] = null;
 			}
+			//splice item from inventory and put it in equipment
+			item = actor.inventory.splice(inventoryIndex, 1)[0];
+			actor.equipment[item.slot] = item;
 			
-			actor.equipment[item.slot] = actor.inventory.splice(inventoryIndex, 1)[0];
+			this.logger.log(actor.flavorName + " equipped " + item.toString());
+			return 10;
+		}
+	};
+	
+	const StairAction = class StairAction extends Action {
+		constructor(context, logger){
+			super(context, logger);
+		}
+		
+		try(actor, time){
+			let tile = this.context.get(actor.position),
+				isStair = tile && tile.contents.some(obj => obj.constructor === Stair);
+			if(!isStair){
+				this.logger.log("No stairs here");
+			}
+			return time % 10 === 0 && isStair;
+		}
+		
+		do(actor){
+			let stair = this.context.get(actor.position).contents.find(obj => obj.constructor === Stair);
+			actor.dungeonLevelChange = stair.direction;
+			this.logger.log(actor.flavorName + " went " + stair.direction + " the stairs");
 			return 10;
 		}
 	};
@@ -981,7 +1038,10 @@ if (!Object.values) {
 					71: "pickup", //g
 					
 					68: {use: "inventorydialog", act: "drop"}, //d
-					87: {use: "inventorydialog", act: "equip"} //w
+					87: {use: "inventorydialog", act: "equip"}, //w
+					
+					60: "up", //<
+					62: "down" //>
 				};
 
 				this.actionMap = {
@@ -994,7 +1054,9 @@ if (!Object.values) {
 					"sw": () => new Vector(-1, 1),
 					"nw": () => new Vector(-1, -1),
 					"c": null,
-					"pickup": "pickup"
+					"pickup": "pickup",
+					"up": "stair",
+					"down": "stair"
 				};
 				
 			}else if(map === "inventorydialog"){
@@ -1032,6 +1094,7 @@ if (!Object.values) {
 			this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 			this.proposalMap["drop"] = [ItemDropAction, NullAction];
 			this.proposalMap["equip"] = [ItemEquipAction, NullAction];
+			this.proposalMap["stair"] = [StairAction, NullAction];
 		}
 
 		//decide actor logic
@@ -1467,7 +1530,7 @@ if (!Object.values) {
 				}
 				
 				//main method
-				static makeDungeon(options){
+				static makeLevel(player, options){
 					options = options || this.defaultOptions;
 					let matrix = [],
 						objs = [],
@@ -1479,8 +1542,19 @@ if (!Object.values) {
 							rooms[i] = this.makeRoom(options);
 						}
 						
-						//place player in first room
-						objs.push(new Player(new Point(rooms[0].x+1, rooms[0].y+1)));
+						//set player to first room
+						player.position.set(rooms[0].x+1, rooms[0].y+1);
+						objs.push(player);
+
+						if(options.stairs.up){
+							//put an upstairs on player
+							objs.push(new Stair(new Point(rooms[0].x+1, rooms[0].y+1), "up"));
+						}
+						
+						if(options.stairs.down){
+							//put a downstairs in "last" room
+							objs.push(new Stair(new Point(rooms[options.rooms.count-1].x+1, rooms[options.rooms.count-1].y+1), "down"));
+						}
 
 						//get midpoints
 						for(let i in midPoints){
@@ -1530,11 +1604,15 @@ if (!Object.values) {
 							}
 						}
 						
-						return objs;
+						return {rooms, paths, objs};
 				}
 				
 				static get defaultOptions(){
 					return {
+						stairs: {
+							up: false,
+							down: true
+						},
 						size: {
 							w: 40,
 							h: 20
@@ -1703,26 +1781,31 @@ if (!Object.values) {
 
 	//the game
 	const Game = class Game {
-		constructor(board, objs) {
+		constructor(board, dungeon) {
 			
 			this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
 			//global gametime
 			this.time = 0;
 			
+			this.currentDungeonLevel = 0;
+			this.dungeonLevels = [];
+			
 			this.board = board;
-			this.player = objs.find(v=>v);
+			this.player = dungeon.objs[0];
 			
 			//map objs argument into this.objs by the objs creation id
-			this.objs = [];
-			objs.forEach(obj => this.objs[obj.id] = obj);
+			//this.objs = [];
+			//objs.forEach(obj => this.objs[obj.id] = obj);
+			
+			this.saveDungeonLevel(dungeon);
 
 			this.logic = new ActionManager(this.board, this.logger);
 
 			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", e => {
-				if (this.logic.delegateAction(this.player, this.keyHandler.get(e.keyCode))) {
+				if (this.logic.delegateAction(this.player, this.keyHandler.get(e.which))) {
 					this.update();
 				}
 			});
@@ -1755,7 +1838,7 @@ if (!Object.values) {
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							this.objs.forEach(obj => {
+							this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 							
@@ -1775,13 +1858,13 @@ if (!Object.values) {
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 					//reset all lifebars styles
-					this.objs.forEach(obj => {
+					this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
 						if (obj.lifebar) obj.lifebar.setStyle("default");
 					});
 					
 					//get lifebars owner
 					let id = e.target.id.match(/[0-9]+$/);
-					let target = this.objs[Number(id)];
+					let target = this.dungeonLevels[this.currentDungeonLevel].objs[Number(id)];
 
 					//set cursor to lifebars owner
 					if (target) {
@@ -1795,19 +1878,112 @@ if (!Object.values) {
 			this.inventoryManager = new InventoryManager(document.getElementById("info-container-inventory"), this.player.inventory);
 			this.equipmentManager = new EquipmentManager(document.getElementById("info-container-equipment"), this.player.equipment);
 		}
+		
+		saveDungeonLevel(dungeon){
+			let {rooms, paths, objs} = dungeon,
+				img = new Image();
+				img.src = secondCanvas.toDataURL();
+			this.dungeonLevels[this.currentDungeonLevel] = {
+				objs: [],
+				rooms: rooms,
+				paths: paths,
+				map: img
+			};
+			objs.forEach(obj => this.dungeonLevels[this.currentDungeonLevel].objs[obj.id] = obj);
+		}
+		
+		changeDungeonLevel(level){
+			this.saveDungeonLevel(this.dungeonLevels[this.currentDungeonLevel]);
+			let dir = level > this.currentDungeonLevel ? "down" : "up";
+			
+			this.dungeonLevels[this.currentDungeonLevel].objs.forEach((obj,k) => {
+				if(k === 0){
+					return;
+				}
+				if(obj.lifebar){
+					obj.lifebar.remove();
+				}
+			});
+			
+			this.currentDungeonLevel = level;
+			
+			mainCtx.clearRect(0, 0, w, h);
+			secondCtx.clearRect(0, 0, w, h);
+			this.board.clear();
+			
+			let objs = [];
+			objs[0] = this.player;
+			//if level already exists load it else generate new
+			if(this.dungeonLevels[level]){
+				objs = this.dungeonLevels[level].objs;
+				secondCtx.drawImage(this.dungeonLevels[level].map, 0, 0);
+				//put player in the last room if we're going up
+				if(dir === "up"){
+					this.player.position.set(
+						this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length-1].x+1,
+						this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length-1].y+1
+					);
+				}else{
+					//or in the first room
+					this.player.position.set(
+						this.dungeonLevels[level].rooms[0].x+1,
+						this.dungeonLevels[level].rooms[0].y+1
+					);
+				}
+			}else{
+				let options = Utils.DungeonGenerator.defaultOptions;
+				options.stairs.up = true;
+				let dungeon = Utils.DungeonGenerator.makeLevel(this.player, options);
+				objs = dungeon.objs;
+				this.dungeonLevels[level] = {
+					objs: [],
+					rooms: dungeon.rooms,
+					paths: dungeon.paths
+				};
+			}
+			
+			//put objs in their id slots
+			objs.forEach(obj => this.dungeonLevels[level].objs[obj.id] = obj);
+			
+			//insert objs into the board
+			this.dungeonLevels[level].objs.forEach(obj => {
+				if (obj) {
+					this.board.insert(obj);
+				}
+			});
+			
+			this.dungeonLevels[level].objs.forEach(obj => {
+				if (obj) {
+					this.logic.think(obj, this.player);
+				}
+			});
+
+		}
 
 		update() {
 			let duration = this.player.update(this.logger);
 			let tickCount = duration / TICK;
+			
+			if(this.player.dungeonLevelChange){
+				let level = this.currentDungeonLevel;
+				if(this.player.dungeonLevelChange === "up"){
+					level--;
+				}else if(this.player.dungeonLevelChange === "down"){
+					level++;
+				}
+				this.changeDungeonLevel(level);
+				
+				delete this.player.dungeonLevelChange;
+			}
 			
 			//contains the total durations of each objs actions for this turn
 			let objDurations = [];
 			for(let i = 0; i < tickCount; i++){
 				this.time += TICK;
 				
-				this.objs.forEach((obj, index) => {
+				this.dungeonLevels[this.currentDungeonLevel].objs.forEach((obj, index) => {
 					//skip player
-					if(index === 0){
+					if(obj.type === "Player"){
 						return;
 					}
 					
@@ -1823,11 +1999,11 @@ if (!Object.values) {
 						//obj died during update
 						if(!obj.isAlive){
 							this.board.remove(obj);
-							delete this.objs[obj.id];
+							delete this.dungeonLevels[this.currentDungeonLevel].objs[obj.id];
 						}
 					}else{
 						this.board.remove(obj);
-						delete this.objs[obj.id];
+						delete this.dungeonLevels[this.currentDungeonLevel].objs[obj.id];
 					}
 				});
 			}
@@ -1841,7 +2017,7 @@ if (!Object.values) {
 			this.player.fov = fov;
 			
 			if(fov){
-				this.objs.forEach(obj => {
+				this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
 					if(obj instanceof Enemy){
 						if(fov.has(obj.position)){
 							obj.lifebar.show();
@@ -1862,7 +2038,7 @@ if (!Object.values) {
 		start() {
 			
 			this.logger.log("Hello and welcome", "hilight");
-			this.objs.forEach(obj => {
+			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
 				if (obj) {
 					this.board.insert(obj);
 				}
@@ -1871,7 +2047,7 @@ if (!Object.values) {
 			let fov = this.logic.getFov(this.player);
 			this.player.fov = fov;
 			
-			this.objs.forEach(obj => {
+			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
 				this.logic.think(obj, this.player);
 				if(obj instanceof Enemy){
 					if(fov.has(obj.position)){
@@ -1897,7 +2073,7 @@ if (!Object.values) {
 			spacing: 1,
 			w: 40,
 			h: 20
-		}), Utils.loadGame() || Utils.DungeonGenerator.makeDungeon()
+		}), Utils.loadGame() || Utils.DungeonGenerator.makeLevel(new Player(new Point(10,10)))
 	);
 	Utils.initUIButtons(game);
 	
