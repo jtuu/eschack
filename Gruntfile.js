@@ -2,11 +2,33 @@ module.exports = function(grunt) {
 
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
+		'depend-concat':{
+			depends_doctag: {
+				options: {
+					method: {
+						type: 'doctag',
+						tag: 'depends'
+					}
+				},
+				src: ['src/js/**/*.js'],
+				dest: 'misc/eschack.js'
+			}
+		},
+		concat: {
+			dist: {
+				src: ['misc/eschack.js'],
+				dest: 'misc/eschack.js',
+				options: {
+					banner: '(function(global){\n "use strict";\n',
+					footer: '\n}(window));'
+				}
+			}
+		},
 		eslint: {
 			options: {
-				configFile: 'src/eslint.json'
+				configFile: 'misc/eslint.json'
 			},
-			target: ['src/eschack.js']
+			target: ['misc/eschack.js']
 		},
 		babel: {
 			options: {
@@ -15,7 +37,7 @@ module.exports = function(grunt) {
 			},
 			dist: {
 				files: {
-					'src/eschack-babel.js': 'src/eschack.js'
+					'misc/eschack-babel.js': 'misc/eschack.js'
 				}
 			},
 		},
@@ -44,7 +66,7 @@ module.exports = function(grunt) {
 				}
 			},
 			build: {
-				src: 'src/eschack-babel.js',
+				src: 'misc/eschack-babel.js',
 				dest: 'dist/eschack.min.js'
 			}
 		},
@@ -54,8 +76,8 @@ module.exports = function(grunt) {
 			},
 			dist: {
 				files: {
-					'dist/eschack.css': 'src/eschack.scss',
-					'dist/ui.css': 'src/ui.scss'
+					'dist/eschack.css': 'src/scss/eschack.scss',
+					'dist/ui.css': 'src/scss/ui.scss'
 				}
 			}
 		},
@@ -73,11 +95,11 @@ module.exports = function(grunt) {
 			compile: {
 				options: {
 					data: function(dest, src){
-						return require('./todo.json')
+						return require('./src/jade/todo.json')
 					}
 				},
 				files: {
-					'index.html': ['src/eschack.jade']
+					'index.html': ['src/jade/eschack.jade']
 				}
 			}
 		},
@@ -86,7 +108,7 @@ module.exports = function(grunt) {
 				options: {
 					preset: 'clock'
 				},
-				src: ['src/index.jade']
+				src: ['src/jade/index.jade']
 			}
 		},
 		prettify: {
@@ -107,15 +129,15 @@ module.exports = function(grunt) {
 		},
 		watch: {
 			html: {
-				files: ['src/eschack.jade', 'todo.json'],
+				files: ['src/jade/*'],
 				tasks: ['html']
 			},
 			sass: {
-				files: ['src/eschack.scss', 'src/ui.scss'],
+				files: ['src/scss/*'],
 				tasks: ['css']
 			},
 			js: {
-				files: ['src/eschack.js'],
+				files: ['src/js/**/*'],
 				tasks: ['js']
 			}
 		},
@@ -146,6 +168,8 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-prettify');
 	grunt.loadNpmTasks('grunt-sass');
 	grunt.loadNpmTasks('grunt-autoprefixer');
+	grunt.loadNpmTasks('grunt-depend-concat');
+	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-eslint');
 	grunt.loadNpmTasks('grunt-babel');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
@@ -154,7 +178,7 @@ module.exports = function(grunt) {
 	
 	grunt.registerTask('html', ['puglint', 'pug', 'prettify']);
 	grunt.registerTask('css', ['sass', 'autoprefixer']);
-	grunt.registerTask('js', ['eslint', 'babel', 'uglify']);
+	grunt.registerTask('js', ['depend-concat', 'concat', 'eslint', 'babel', 'uglify']);
 	
 	grunt.registerTask('default', ['html', 'css', 'js']);
 	
