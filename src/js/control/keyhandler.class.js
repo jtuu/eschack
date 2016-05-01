@@ -4,11 +4,11 @@ const KeyHandler = class KeyHandler {
 	constructor() {
 		this.use("default");
 	}
-	
+
 	use(map = "default"){
 		if(map ==="default"){
 			this.using = "default";
-			
+
 			this.keyCases = {
 				//numpad
 				104: "n",
@@ -19,7 +19,7 @@ const KeyHandler = class KeyHandler {
 				99: "se",
 				97: "sw",
 				103: "nw",
-				
+
 				//vi keys
 				75: "n", //k
 				76: "e", //l
@@ -31,12 +31,13 @@ const KeyHandler = class KeyHandler {
 				78: "se", //n
 
 				101: "c", //num5
-				
+
 				71: "pickup", //g
-				
+
 				68: {use: "inventorydialog", act: "drop"}, //d
 				87: {use: "inventorydialog", act: "equip"}, //w
-				
+				84: {use: "inventorydialog", act: "unequip"}, //t
+
 				60: "up", //<
 				62: "down" //>
 			};
@@ -55,7 +56,7 @@ const KeyHandler = class KeyHandler {
 				"up": "stair",
 				"down": "stair"
 			};
-			
+
 		}else if(map === "inventorydialog"){
 			this.using = "inventorydialog";
 			this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});

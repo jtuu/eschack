@@ -43,7 +43,7 @@ body {
 
 canvas {
 	display: block;
-	
+
 	&#canvas-second {
 		position: absolute;
 		top: 0;
@@ -65,42 +65,42 @@ canvas {
 	height: 200px;
 	background: $component-bg-color;
 	color: black;
-	
+
 	& .logbox-row {
 		width: 100%;
 		height: 10%;
 		padding-left: 10px;
 		box-sizing: border-box;
-		
+
 		&:after {
 			content: $nbsp;
 		}
-		
+
 		&:nth-child(even) {
 			background: $component-accent-color;
 		}
-		
+
 		& .logmsg {
-		
+
 			&.logmsg-default {
 			}
-			
+
 			&.logmsg-hilight {
 				color: hsl(294, 57%, 43%);
 			}
-			
+
 			&.logmsg-hit {
 				color: hsl(211, 75%, 40%);
 			}
-			
+
 			&.logmsg-damage {
 				color: hsl(36, 97%, 28%);
 			}
-			
+
 			&.logmsg-miss {
 				color: hsl(90, 2%, 33%)
 			}
-			
+
 			&.logmsg-death {
 				color: hsl(0, 83%, 50%);
 			}
@@ -113,7 +113,7 @@ canvas {
 	box-sizing: border-box;
 	max-width: calc(100% - 100px - #{$canvas-width});
 	position:relative;
-	
+
 	> * {
 		//padding: 20px 0 80px 0;
 	}
@@ -131,28 +131,28 @@ canvas {
 		overflow-y:auto;
 	}
 	&#info-container-other-misc{
-		top: 270px;
+		top: 250px;
 		width: 300px;
 		height: 150px;
 		border: $basic-border;
 	}
 	&#info-container-inventory {
-		top: 440px;
-		height: 300px;
+		top: 80px;
+		left: 330px;
+		height: 320px;
 		width: 200px;
 		border: $basic-border;
 	}
 	&#info-container-equipment {
-		left: 230px;
-		top: 440px;
+		top: 420px;
 		height: 200px;
-		width: 300px;
+		width: 520px;
 		border: $basic-border;
 	}
 }
 
 #info-container-other-life-wrap{
-	top: 90px;
+	top: 80px;
 	width: 300px;
 	height: 150px;
 	border: $basic-border;
@@ -172,7 +172,7 @@ canvas {
 		border: $basic-border;
 		vertical-align: top;
 	}
-	
+
 	& #settings {
 		min-width: 200px;
 	}
@@ -197,22 +197,22 @@ label{
 	position: relative;
 	overflow: hidden;
 	box-sizing: border-box;
-	
+
 	&:before {
 		background: $bar-secondary-color;
 	}
-	
+
 	&:after {
 		content: attr(data-content);
 		mix-blend-mode: difference;
 		filter: invert(1);
 		color: black;
 	}
-	
+
 	&.hilighted{
 		border: 1px solid $hilight-color;
 	}
-	
+
 	@for $i from 0 through 100 {
 		&.bar-size-#{$i} {
 			&:before {
@@ -258,7 +258,7 @@ $loaderSize: $blockSize * $blockCount + $blockMargin * 2;
 	height: $loaderSize;
 	margin-left: -$loaderSize/2;
 	margin-top: -$loaderSize/2;
-	
+
 	& .loader-block{
 		position: absolute;
 		top: 0;
@@ -269,9 +269,9 @@ $loaderSize: $blockSize * $blockCount + $blockMargin * 2;
 		height: $blockSize;
 		background: $startingColor;
 		animation: show $duration step-end infinite alternate, pulse $duration linear infinite alternate;
-		
+
 		$delay-mults: (1,2,3,5,2,7,6,4,0);
-		
+
 		@for $i from 1 through $blockCount * $blockCount{
 			&:nth-child(#{$i}){
 				$mult-x: ($i - 1) % $blockCount;

@@ -65,26 +65,26 @@ canvas {
   overflow-y: auto; }
 
 .info-container#info-container-other-misc {
-  top: 270px;
+  top: 250px;
   width: 300px;
   height: 150px;
   border: 1px solid black; }
 
 .info-container#info-container-inventory {
-  top: 440px;
-  height: 300px;
+  top: 80px;
+  left: 330px;
+  height: 320px;
   width: 200px;
   border: 1px solid black; }
 
 .info-container#info-container-equipment {
-  left: 230px;
-  top: 440px;
+  top: 420px;
   height: 200px;
-  width: 300px;
+  width: 520px;
   border: 1px solid black; }
 
 #info-container-other-life-wrap {
-  top: 90px;
+  top: 80px;
   width: 300px;
   height: 150px;
   border: 1px solid black; }

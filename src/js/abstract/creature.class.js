@@ -1,4 +1,4 @@
-/* 
+/*
 @depends ../abstract/gameobject.class.js
 @depends ../misc/mixins.js
 @depends ../objs/weapon.class.js
@@ -25,7 +25,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 						.reduce((p, c) => self.equipment[c].defence + p, 0);
 				}
 		};
-		
+
 		this.inventory = [];
 		this.equipment = {
 			"weapon": weapon || new Weapon("Fists"),
@@ -38,7 +38,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 
 		this.flavorName = "creature";
 		this.flavor = "It is mundane."; //flavor text used in examine
-		
+
 		this.xp = 1;
 	}
 
@@ -47,7 +47,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 
 		let updateCount = 0,
 			elapsedTime = 0;
-	
+
 		//go through all the possible actions given by actionmanager and
 		//test their logic in the gameobjects context
 		//they should already be in prioritized order so
@@ -56,7 +56,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 			//actually they contain functions that create the action instances so yeah
 			try {
 				let chosen;
-				
+
 				proposals.some(p => {
 					let action = p();
 					if(action.try(this, time)){
@@ -69,11 +69,11 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 				elapsedTime += chosen.do(this);
 				updateCount++;
 			} catch (err) {
-				//console.warn("None of the proposed actions were suitable for " + this.constructor.name);
-				//console.log(err);
+				// console.warn("None of the proposed actions were suitable for " + this.constructor.name);
+				// console.log(err);
 			}
 		});
-		
+
 		for(let i = 0; i < updateCount; i++){
 			this.actions.shift();
 		}
@@ -84,7 +84,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 	toString() {
 		return `${this.type}<br>${this.stats.HP} HP<br>${this.flavor}<br>${this.equipment.weapon.damage} ATT`;
 	}
-	
+
 	get items(){
 		let items = this.inventory.concat(Object.values(this.equipment)).filter(v => v);
 		return items;

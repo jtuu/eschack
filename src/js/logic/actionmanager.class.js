@@ -1,4 +1,4 @@
-/* 
+/*
 @depends ../core/vector.class.js
 @depends ../core/tilegroup.class.js
 @depends ../core/point.class.js
@@ -22,6 +22,7 @@ const ActionManager = class ActionManager {
 		this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 		this.proposalMap["drop"] = [ItemDropAction, NullAction];
 		this.proposalMap["equip"] = [ItemEquipAction, NullAction];
+		this.proposalMap["unequip"] = [ItemUnequipAction, NullAction];
 		this.proposalMap["stair"] = [StairAction, NullAction];
 	}
 
@@ -59,7 +60,7 @@ const ActionManager = class ActionManager {
 	}
 
 	getFov(actor) {
-		if(!actor)return;
+		if (!actor) return;
 		let [ax, ay] = actor.position.get,
 			range = actor.stats.viewDistance,
 			quarters = {
@@ -99,10 +100,10 @@ const ActionManager = class ActionManager {
 
 	//what does this do again? give actions to actors? or just the player?
 	delegateAction(actor, instruction) {
-		if(!actor){
+		if (!actor) {
 			return;
 		}
-		if(!actor.isAlive){
+		if (!actor.isAlive) {
 			let proposals = this.proposalMap[null];
 			let methods = proposals.map(action => () => new action(this.board, this.logger, instruction));
 			actor.actions.push(methods);
@@ -110,17 +111,25 @@ const ActionManager = class ActionManager {
 		}
 		if (instruction) {
 			let key = instruction;
-			if(typeof instruction === "function"){
+			if (typeof instruction === "function") {
 				instruction = instruction();
 				key = instruction.constructor;
-			}else if(typeof instruction === "string"){
+			} else if (typeof instruction === "string") {
 				[key, instruction] = instruction.split(":");
-				if(key === "drop" && !instruction){
-					this.logger.log("Which item to drop? [a-z]");
-					return false;
-				}else if(key === "equip" && !instruction){
-					this.logger.log("Which item to equip? [a-z]");
-					return false;
+				if (!instruction) {
+					switch (key) {
+						case "drop":
+							this.logger.log("Which item to drop? [a-z]");
+							return false;
+						case "equip":
+							this.logger.log("Which item to equip? [a-z]");
+							return false;
+						case "unequip":
+							this.logger.log("Which item to unequip? [a-z]");
+							return false;
+						default:
+							break;
+					}
 				}
 			}
 			let proposals = this.proposalMap[key];

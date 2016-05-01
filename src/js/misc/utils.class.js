@@ -1,4 +1,4 @@
-/* 
+/*
 @depends ../objs/stair.class.js
 @depends ../objs/wall.class.js
 @depends monsters/honeybadger.class.js
@@ -6,14 +6,18 @@
 @depends redcap.class.js
  */
 const Utils = class Utils {
-	
-	static get defaults(){
+
+	static get defaults() {
 		return {
-			weapon: () => new Weapon("Fists")
+			weapon: () => {
+				let weapon = new Weapon("Fists");
+				weapon.canDrop = false;
+				return weapon;
+			}
 		};
 	}
-	
-	static get exports(){
+
+	static get exports() {
 		return {
 			"instance": game,
 			"Creature": Creature,
@@ -28,8 +32,8 @@ const Utils = class Utils {
 			"Wall": Wall
 		};
 	}
-	
-	static get alphabetMap(){
+
+	static get alphabetMap() {
 		return ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 	}
 
@@ -163,8 +167,8 @@ const Utils = class Utils {
 		//merge upper and lower
 		return upper.concat(lower);
 	}
-	
-	static saveGame(instance){
+
+	static saveGame(instance) {
 		let save = {};
 		//all we need is the objs
 		//in Game.start they will get inserted
@@ -175,7 +179,7 @@ const Utils = class Utils {
 		localStorage.setItem(saveName, LZString.compress(JSON.stringify(save)));
 		console.log("Game saved");
 	}
-	
+
 	static loadGame() {
 		let save = JSON.parse(LZString.decompress(localStorage.getItem(saveName)) || null);
 
@@ -204,24 +208,24 @@ const Utils = class Utils {
 			return null;
 		}
 	}
-	
+
 	static deleteSave() {
 		localStorage.removeItem(saveName);
 		console.log("Savedata deleted");
 	};
-	
+
 	//convert screen coordinates to game coordinates
-	static screenToGame(point, tileSize, spacing){
+	static screenToGame(point, tileSize, spacing) {
 		return new Point(Math.floor(point.x / (tileSize + spacing)), Math.floor(point.y / (tileSize + spacing)));
 	}
-	
+
 	//convert game coordinates to screen coordinates
-	static gameToScreen(point, tileSize, spacing){
+	static gameToScreen(point, tileSize, spacing) {
 		return new Point(point.x * (tileSize + spacing), point.y * (tileSize + spacing));
 	}
-	
+
 	//convert screen coordinates to conform to tiles
-	static screenToTiles(point, tileSize, spacing){
+	static screenToTiles(point, tileSize, spacing) {
 		return Utils.gameToScreen(Utils.screenToGame(point, tileSize, spacing), tileSize, spacing);
 	}
 
@@ -230,66 +234,66 @@ const Utils = class Utils {
 			global[key] = exports[key];
 		}
 	}
-	
-	static generateRandomWeapon(){
-		let materials = ["Bronze","Iron","Steel"],
-			types = ["Dagger","Sword","Axe","Pikestaff"];
-		
+
+	static generateRandomWeapon() {
+		let materials = ["Bronze", "Iron", "Steel"],
+			types = ["Dagger", "Sword", "Axe", "Pikestaff"];
+
 		let name = materials[Math.round(Math.random() * (materials.length - 1))] +
-				" " + types[Math.round(Math.random() * (types.length - 1))];
-		
+			" " + types[Math.round(Math.random() * (types.length - 1))];
+
 		return new Weapon(name, Math.round(Math.random() * 5 + 1), Math.round(Math.random() * 6 + 4));
 	}
-	
+
 	//use this to generate maps
 	//(actually it generates array of objs which then get inserted by Game)
-	static get DungeonGenerator(){
-		return class{
-			static makeRoom(options){
+	static get DungeonGenerator() {
+		return class {
+			static makeRoom(options) {
 				let room = {};
-				
+
 				room.w = ~~(Math.random() * (options.rooms.size.max.w - options.rooms.size.min.w) + options.rooms.size.min.w);
 				room.h = ~~(Math.random() * (options.rooms.size.max.h - options.rooms.size.min.h) + options.rooms.size.min.h);
 				room.x = ~~(Math.random() * (options.size.w - room.w));
 				room.y = ~~(Math.random() * (options.size.h - room.h));
-				
+
 				return room;
 			}
-			
-			static makePoint(options){
+
+			static makePoint(options) {
 				return {
 					x: ~~(Math.random() * options.size.w),
 					y: ~~(Math.random() * options.size.h)
 				};
 			}
-			
-			static makePaths(rooms, midPoints, options){
+
+			static makePaths(rooms, midPoints, options) {
 				let paths = [];
-				
+
 				//connect rooms to midpoints
-				for(let i = 0; i < options.paths.count; i++){
+				for (let i = 0; i < options.paths.count; i++) {
 					let path = {},
 						dest = midPoints[i % options.paths.count % options.midPoints.count];
-						
+
 					path.x1 = rooms[i].x + ~~(Math.random() * rooms[i].w);
 					path.y1 = rooms[i].y + ~~(Math.random() * rooms[i].h);
 
 					path.x2 = dest.x;
 					path.y2 = rooms[i].y + ~~(Math.random() * rooms[i].h);
-					
+
 					path.x3 = dest.x;
 					path.y3 = dest.y;
 
 					paths.push(path);
 				}
-				
+
 				//connect midpoints together
 				for (let i = 1; i < options.midPoints.count; i++) {
 					let path = {};
 
 					path.x1 = midPoints[i - 1].x;
 					path.y1 = midPoints[i - 1].y;
-					
+
 					path.x2 = midPoints[i].x;
 					path.y2 = midPoints[i - 1].y;
 
@@ -298,18 +302,18 @@ const Utils = class Utils {
 
 					paths.push(path);
 				}
-				
+
 				return paths;
 			}
-			
+
 			//try to spawn some enemies within room
-			static insertEnemies(room, options){
+			static insertEnemies(room, options) {
 				let enemyList = [Jackalope, Honeybadger, Redcap];
 				let enemies = [];
-				for(let x = room.x + room.w; x > room.x; x--){
-					for(let y = room.y + room.h; y > room.y; y--){
-						if(Math.random() < options.enemies.spawnChance){
-							let enemy = enemyList[Math.round(Math.random()*(enemyList.length-1))];
+				for (let x = room.x + room.w; x > room.x; x--) {
+					for (let y = room.y + room.h; y > room.y; y--) {
+						if (Math.random() < options.enemies.spawnChance) {
+							let enemy = enemyList[Math.round(Math.random() * (enemyList.length - 1))];
 							enemy = new enemy(new Point(x, y));
 							enemy = this.generateEquipment(enemy);
 							enemies.push(enemy);
@@ -318,96 +322,100 @@ const Utils = class Utils {
 				}
 				return enemies;
 			}
-			
-			static generateEquipment(enemy){
-				if(enemy.canWield){
+
+			static generateEquipment(enemy) {
+				if (enemy.canWield) {
 					enemy.equipment.weapon = Utils.generateRandomWeapon();
 				}
-				if(enemy.canWear){
-					
+				if (enemy.canWear) {
+
 				}
 				return enemy;
 			}
-			
+
 			//main method
-			static makeLevel(player, options){
+			static makeLevel(player, options) {
 				options = options || this.defaultOptions;
 				let matrix = [],
 					objs = [],
 					rooms = Array(options.rooms.count).fill(),
 					midPoints = Array(options.midPoints.count).fill();
-					
-					//get rooms
-					for(let i in rooms){
-						rooms[i] = this.makeRoom(options);
-					}
-					
-					//set player to first room
-					player.position.set(rooms[0].x+1, rooms[0].y+1);
-					objs.push(player);
 
-					if(options.stairs.up){
-						//put an upstairs on player
-						objs.push(new Stair(new Point(rooms[0].x+1, rooms[0].y+1), "up"));
-					}
-					
-					if(options.stairs.down){
-						//put a downstairs in "last" room
-						objs.push(new Stair(new Point(rooms[options.rooms.count-1].x+1, rooms[options.rooms.count-1].y+1), "down"));
-					}
+				//get rooms
+				for (let i in rooms) {
+					rooms[i] = this.makeRoom(options);
+				}
 
-					//get midpoints
-					for(let i in midPoints){
-						midPoints[i] = this.makePoint(options);
+				//set player to first room
+				player.position.set(rooms[0].x + 1, rooms[0].y + 1);
+				objs.push(player);
+
+				if (options.stairs.up) {
+					//put an upstairs on player
+					objs.push(new Stair(new Point(rooms[0].x + 1, rooms[0].y + 1), "up"));
+				}
+
+				if (options.stairs.down) {
+					//put a downstairs in "last" room
+					objs.push(new Stair(new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1), "down"));
+				}
+
+				//get midpoints
+				for (let i in midPoints) {
+					midPoints[i] = this.makePoint(options);
+				}
+
+				//get paths
+				let paths = this.makePaths(rooms, midPoints, options);
+
+				//fill matrix with walls
+				for (let y = 0; y < options.size.h; y++) {
+					matrix[y] = [];
+					for (let x = 0; x < options.size.w; x++) {
+						let tile = new Tile(new Point(x, y));
+						tile.add(new Wall(new Point(x, y)));
+						matrix[y][x] = tile;
 					}
-					
-					//get paths
-					let paths = this.makePaths(rooms, midPoints, options);
-					
-					//fill matrix with walls
-					for (let y = 0; y < options.size.h; y++) {
-						matrix[y] = [];
-						for (let x = 0; x < options.size.w; x++) {
-							let tile = new Tile(new Point(x, y));
-							tile.add(new Wall(new Point(x, y)));
-							matrix[y][x] = tile;
-						}
-					}
-					
-					//carve out rooms
-					//and try put some enemies in them
-					rooms.forEach(room => {
-						for(let x = room.x + room.w; x > room.x; x--){
-							for(let y = room.y + room.h; y > room.y; y--){
-								matrix[y][x].empty();
-							}
-						}
-						objs = objs.concat(this.insertEnemies(room, options));
-					});
-					
-					//carve out paths
-					paths.forEach(path => {
-						for(let i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1; i0++){
-							matrix[path.y1][i0].empty();
-						}
-						for(let i0 = Math.min(path.y2, path.y3), i1 = Math.max(path.y2, path.y3); i0 < i1; i0++){
-							matrix[i0][path.x2].empty();
-						}
-					});
-					
-					//get objs
-					for (let y = 0; y < options.size.h; y++) {
-						for (let x = 0; x < options.size.w; x++) {
-							if(!matrix[y][x].isEmpty){
-								objs.push(matrix[y][x].top);
-							}
+				}
+
+				//carve out rooms
+				//and try put some enemies in them
+				rooms.forEach(room => {
+					for (let x = room.x + room.w; x > room.x; x--) {
+						for (let y = room.y + room.h; y > room.y; y--) {
+							matrix[y][x].empty();
 						}
 					}
-					
-					return {rooms, paths, objs};
+					objs = objs.concat(this.insertEnemies(room, options));
+				});
+
+				//carve out paths
+				paths.forEach(path => {
+					for (let i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1; i0++) {
+						matrix[path.y1][i0].empty();
+					}
+					for (let i0 = Math.min(path.y2, path.y3), i1 = Math.max(path.y2, path.y3); i0 < i1; i0++) {
+						matrix[i0][path.x2].empty();
+					}
+				});
+
+				//get objs
+				for (let y = 0; y < options.size.h; y++) {
+					for (let x = 0; x < options.size.w; x++) {
+						if (!matrix[y][x].isEmpty) {
+							objs.push(matrix[y][x].top);
+						}
+					}
+				}
+
+				return {
+					rooms,
+					paths,
+					objs
+				};
 			}
-			
-			static get defaultOptions(){
+
+			static get defaultOptions() {
 				return {
 					stairs: {
 						up: false,
@@ -443,13 +451,13 @@ const Utils = class Utils {
 			}
 		};
 	}
-	
-	static initUIButtons(instance){
+
+	static initUIButtons(instance) {
 		document.getElementById("button-save").addEventListener("click", e => {
 			e.stopPropagation();
 			this.saveGame(instance);
 		});
-		
+
 		document.getElementById("button-delete").addEventListener("click", e => {
 			e.stopPropagation();
 			this.deleteSave();

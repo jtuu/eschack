@@ -425,7 +425,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return Armor;
 	}(Item);
-	/* 
+	/*
  @depends ../abstract/gameobject.class.js
  @depends ../misc/mixins.js
  @depends ../objs/weapon.class.js
@@ -511,8 +511,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					elapsedTime += chosen.do(_this9);
 					updateCount++;
 				} catch (err) {
-					//console.warn("None of the proposed actions were suitable for " + this.constructor.name);
-					//console.log(err);
+					// console.warn("None of the proposed actions were suitable for " + this.constructor.name);
+					// console.log(err);
 				}
 			});
 
@@ -539,6 +539,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return Creature;
 	}(Hittable(MoveBlocking(GameObject)));
+
 	/* @depends gameobject.class.js */
 	var DungeonFeature = function (_GameObject2) {
 		_inherits(DungeonFeature, _GameObject2);
@@ -664,6 +665,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 					68: { use: "inventorydialog", act: "drop" }, //d
 					87: { use: "inventorydialog", act: "equip" }, //w
+					84: { use: "inventorydialog", act: "unequip" }, //t
 
 					60: "up", //<
 					62: "down" //>
@@ -728,6 +730,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return KeyHandler;
 	}();
+
 	/* @depends ../abstract/dungeonfeature.class.js */
 	var Stair = function (_GameObject3) {
 		_inherits(Stair, _GameObject3);
@@ -865,7 +868,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return Redcap;
 	}(Enemy);
-	/* 
+	/*
  @depends ../objs/stair.class.js
  @depends ../objs/wall.class.js
  @depends monsters/honeybadger.class.js
@@ -1126,7 +1129,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			get: function get() {
 				return {
 					weapon: function weapon() {
-						return new Weapon("Fists");
+						var weapon = new Weapon("Fists");
+						weapon.canDrop = false;
+						return weapon;
 					}
 				};
 			}
@@ -1323,7 +1328,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 							}
 						}
 
-						return { rooms: rooms, paths: paths, objs: objs };
+						return {
+							rooms: rooms,
+							paths: paths,
+							objs: objs
+						};
 					};
 
 					_createClass(_class4, null, [{
@@ -1371,6 +1380,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return Utils;
 	}();
+
 	/* @depends ../misc/utils.class.js */
 	//handle mouse stuff and examine cursor
 	var MouseHandler = function () {
@@ -1462,11 +1472,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			}
 			Object.keys(this.equipment).filter(function (k) {
 				return _this19.equipment[k];
-			}).forEach(function (k) {
+			}).forEach(function (k, i) {
 				var parent = document.createElement("div");
 				var key = document.createElement("span");
 				var value = document.createElement("span");
-				key.innerHTML = k + ": ";
+				key.innerHTML = Utils.alphabetMap[i] + " - " + k + ": ";
 				value.innerHTML = _this19.equipment[k];
 				parent.appendChild(key);
 				parent.appendChild(value);
@@ -1476,6 +1486,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return EquipmentManager;
 	}();
+
 	//manages the inventory UI component
 	var InventoryManager = function () {
 		function InventoryManager(inventoryBox, inventory) {
@@ -1865,6 +1876,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		}
 
 		AttackAction.prototype.try = function _try(actor, time) {
+			if (!actor.equipment.weapon) {
+				actor.equipment.weapon = Utils.defaults.weapon();
+			}
 			this.duration = actor.equipment.weapon.speed;
 			if (time % this.duration !== 0) {
 				return false;
@@ -1880,10 +1894,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			var target = new (Function.prototype.bind.apply(Point, [null].concat(actor.position.get)))();
 			target.moveBy(this.direction);
 			target = this.context.get(target);
-
-			if (!actor.equipment.weapon) {
-				actor.equipment.weapon = Utils.defaults.weapon();
-			}
 
 			var damage = Math.max(actor.equipment.weapon.damage - target.top.stats.AC, 0);
 
@@ -1908,6 +1918,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return AttackAction;
 	}(Action);
+
 	/* @depends ../../abstract/action.class.js */
 	var ItemDropAction = function (_Action2) {
 		_inherits(ItemDropAction, _Action2);
@@ -1941,56 +1952,112 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return ItemDropAction;
 	}(Action);
-	/* @depends ../../abstract/action.class.js */
-	var ItemEquipAction = function (_Action3) {
-		_inherits(ItemEquipAction, _Action3);
+	/*
+ @depends ../../abstract/action.class.js
+ */
+	var ItemUnequipAction = function (_Action3) {
+		_inherits(ItemUnequipAction, _Action3);
+
+		function ItemUnequipAction(context, logger, equipmentSlot) {
+			_classCallCheck(this, ItemUnequipAction);
+
+			var _this28 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
+
+			_this28.equipmentSlot = equipmentSlot;
+			return _this28;
+		}
+
+		ItemUnequipAction.prototype.try = function _try(actor, time) {
+			var keyIndex = Utils.alphabetMap.indexOf(this.equipmentSlot),
+			    hasItem = Object.keys(actor.equipment).filter(function (k) {
+				return actor.equipment[k] !== null;
+			}).some(function (k, i) {
+				return i === keyIndex;
+			});
+			if (!hasItem) {
+				this.logger.log("No such item");
+				return false;
+			}
+			return time % 10 === 0 && hasItem && actor.isAlive;
+		};
+
+		ItemUnequipAction.prototype.do = function _do(actor) {
+			var keyIndex = Utils.alphabetMap.indexOf(this.equipmentSlot),
+			    itemSlot = Object.keys(actor.equipment).filter(function (k) {
+				return actor.equipment[k] !== null;
+			}).find(function (k, i) {
+				return i === keyIndex;
+			}),
+			    item = actor.equipment[itemSlot];
+
+			if (item.canDrop) {
+				actor.inventory.push(item);
+			}
+			actor.equipment[itemSlot] = null;
+
+			this.logger.log(actor.flavorName + " unequipped " + item.toString());
+			return 10;
+		};
+
+		return ItemUnequipAction;
+	}(Action);
+
+	/*
+ @depends ../../abstract/action.class.js
+ @depends ../logic/actions/itemunequipaction.class.js
+ */
+	var ItemEquipAction = function (_Action4) {
+		_inherits(ItemEquipAction, _Action4);
 
 		function ItemEquipAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemEquipAction);
 
-			var _this28 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
+			var _this29 = _possibleConstructorReturn(this, _Action4.call(this, context, logger));
 
-			_this28.inventorySlot = inventorySlot;
-			return _this28;
+			_this29.inventorySlot = inventorySlot;
+			return _this29;
 		}
 
 		ItemEquipAction.prototype.try = function _try(actor, time) {
 			var hasItem = !!actor.inventory[Utils.alphabetMap.indexOf(this.inventorySlot)];
 			if (!hasItem) {
 				this.logger.log("No such item");
+				return false;
 			}
 			return time % 10 === 0 && hasItem && actor.isAlive;
 		};
 
 		ItemEquipAction.prototype.do = function _do(actor) {
 			var inventoryIndex = Utils.alphabetMap.indexOf(this.inventorySlot),
-			    item = actor.inventory[inventoryIndex];
+			    item = actor.inventory[inventoryIndex],
+			    duration = 0;
 
 			//if already has something equipped in that slot
 			//remove it into inventory
 			//actually this should be an unequipaction
 			if (actor.equipment[item.slot]) {
-				actor.inventory.push(actor.equipment[item.slot]);
-				actor.equipment[item.slot] = null;
+				var action = new ItemUnequipAction(null, this.logger, this.inventorySlot);
+				duration += action.do(actor);
 			}
 			//splice item from inventory and put it in equipment
 			item = actor.inventory.splice(inventoryIndex, 1)[0];
 			actor.equipment[item.slot] = item;
 
 			this.logger.log(actor.flavorName + " equipped " + item.toString());
-			return 10;
+			return duration + 10;
 		};
 
 		return ItemEquipAction;
 	}(Action);
+
 	/* @depends ../../abstract/action.class.js */
-	var ItemPickupAction = function (_Action4) {
-		_inherits(ItemPickupAction, _Action4);
+	var ItemPickupAction = function (_Action5) {
+		_inherits(ItemPickupAction, _Action5);
 
 		function ItemPickupAction(context, logger) {
 			_classCallCheck(this, ItemPickupAction);
 
-			return _possibleConstructorReturn(this, _Action4.call(this, context, logger));
+			return _possibleConstructorReturn(this, _Action5.call(this, context, logger));
 		}
 
 		ItemPickupAction.prototype.try = function _try(actor, time) {
@@ -2017,16 +2084,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 	/* @depends ../../abstract/action.class.js */
 	//the act of moving something somewhere
 	//menu logic not done yet but maybe this could be used for menus too
-	var MoveAction = function (_Action5) {
-		_inherits(MoveAction, _Action5);
+	var MoveAction = function (_Action6) {
+		_inherits(MoveAction, _Action6);
 
 		function MoveAction(context, logger, movement) {
 			_classCallCheck(this, MoveAction);
 
-			var _this30 = _possibleConstructorReturn(this, _Action5.call(this, context, logger));
+			var _this31 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
 
-			_this30.movement = movement;
-			return _this30;
+			_this31.movement = movement;
+			return _this31;
 		}
 
 		MoveAction.prototype.try = function _try(actor, time) {
@@ -2051,13 +2118,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 	}(Action);
 	/* @depends ../../abstract/action.class.js */
 	//doesnt do anything
-	var NullAction = function (_Action6) {
-		_inherits(NullAction, _Action6);
+	var NullAction = function (_Action7) {
+		_inherits(NullAction, _Action7);
 
 		function NullAction(context, logger) {
 			_classCallCheck(this, NullAction);
 
-			return _possibleConstructorReturn(this, _Action6.call(this, context, logger));
+			return _possibleConstructorReturn(this, _Action7.call(this, context, logger));
 		}
 
 		NullAction.prototype.try = function _try(actor, time) {
@@ -2071,13 +2138,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		return NullAction;
 	}(Action);
 	/* @depends ../../abstract/action.class.js */
-	var StairAction = function (_Action7) {
-		_inherits(StairAction, _Action7);
+	var StairAction = function (_Action8) {
+		_inherits(StairAction, _Action8);
 
 		function StairAction(context, logger) {
 			_classCallCheck(this, StairAction);
 
-			return _possibleConstructorReturn(this, _Action7.call(this, context, logger));
+			return _possibleConstructorReturn(this, _Action8.call(this, context, logger));
 		}
 
 		StairAction.prototype.try = function _try(actor, time) {
@@ -2102,7 +2169,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return StairAction;
 	}(Action);
-	/* 
+	/*
  @depends ../core/vector.class.js
  @depends ../core/tilegroup.class.js
  @depends ../core/point.class.js
@@ -2128,6 +2195,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 			this.proposalMap["drop"] = [ItemDropAction, NullAction];
 			this.proposalMap["equip"] = [ItemEquipAction, NullAction];
+			this.proposalMap["unequip"] = [ItemUnequipAction, NullAction];
 			this.proposalMap["stair"] = [StairAction, NullAction];
 		}
 
@@ -2135,13 +2203,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		ActionManager.prototype.think = function think(actor, player) {
-			var _this33 = this;
+			var _this34 = this;
 
 			if (actor instanceof Enemy) {
 				var _ret2 = function () {
-					var fov = _this33.getFov(actor),
+					var fov = _this34.getFov(actor),
 					    instruction = null,
-					    shouldLog = _this33.getFov(player).has(actor.position);
+					    shouldLog = _this34.getFov(player).has(actor.position);
 					actor.target = fov.get(player.position);
 
 					if (!actor.target || !player.isAlive) {
@@ -2159,15 +2227,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						var vector = Point.distance(actor.position, actor.target.position);
 						vector.reduce();
 						instruction = vector;
-						if (!actor.noticed && shouldLog) _this33.logger.log(actor.flavorName + " noticed " + player.flavorName);
+						if (!actor.noticed && shouldLog) _this34.logger.log(actor.flavorName + " noticed " + player.flavorName);
 						actor.noticed = true;
 					}
 
-					var proposals = _this33.proposalMap[instruction.constructor];
+					var proposals = _this34.proposalMap[instruction.constructor];
 					if (proposals) {
 						var methods = proposals.map(function (action) {
 							return function () {
-								return new action(_this33.board, shouldLog ? _this33.logger : null, instruction);
+								return new action(_this34.board, shouldLog ? _this34.logger : null, instruction);
 							};
 						});
 						actor.actions.push(methods);
@@ -2223,7 +2291,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		ActionManager.prototype.delegateAction = function delegateAction(actor, instruction) {
-			var _this34 = this;
+			var _this35 = this;
 
 			if (!actor) {
 				return;
@@ -2232,7 +2300,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				var proposals = this.proposalMap[null];
 				var methods = proposals.map(function (action) {
 					return function () {
-						return new action(_this34.board, _this34.logger, instruction);
+						return new action(_this35.board, _this35.logger, instruction);
 					};
 				});
 				actor.actions.push(methods);
@@ -2249,19 +2317,27 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					key = _instruction$split[0];
 					instruction = _instruction$split[1];
 
-					if (key === "drop" && !instruction) {
-						this.logger.log("Which item to drop? [a-z]");
-						return false;
-					} else if (key === "equip" && !instruction) {
-						this.logger.log("Which item to equip? [a-z]");
-						return false;
+					if (!instruction) {
+						switch (key) {
+							case "drop":
+								this.logger.log("Which item to drop? [a-z]");
+								return false;
+							case "equip":
+								this.logger.log("Which item to equip? [a-z]");
+								return false;
+							case "unequip":
+								this.logger.log("Which item to unequip? [a-z]");
+								return false;
+							default:
+								break;
+						}
 					}
 				}
 				var _proposals = this.proposalMap[key];
 				if (_proposals) {
 					var _methods = _proposals.map(function (action) {
 						return function () {
-							return new action(_this34.board, _this34.logger, instruction);
+							return new action(_this35.board, _this35.logger, instruction);
 						};
 					});
 					actor.actions.push(_methods);
@@ -2271,7 +2347,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				}
 			} else if (instruction === null) {
 				actor.actions.push([function () {
-					return new NullAction(null, _this34.logger);
+					return new NullAction(null, _this35.logger);
 				}]);
 				return true;
 			}
@@ -2280,6 +2356,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return ActionManager;
 	}();
+
 	/* 
  @depends globals.js
  @depends ../ui/equipmentmanager.class.js
@@ -2293,7 +2370,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 	//the game
 	var Game = function () {
 		function Game(board, dungeon) {
-			var _this35 = this;
+			var _this36 = this;
 
 			_classCallCheck(this, Game);
 
@@ -2319,8 +2396,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this35.logic.delegateAction(_this35.player, _this35.keyHandler.get(e.which))) {
-					_this35.update();
+				if (_this36.logic.delegateAction(_this36.player, _this36.keyHandler.get(e.which))) {
+					_this36.update();
 				}
 			});
 
@@ -2334,56 +2411,56 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this35.board.bounds;
+				var bounds = _this36.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this35.player.fov,
-					    gamePoint = Utils.screenToGame(screenPoint, _this35.board.tileSize, _this35.board.spacing);
+					var fov = _this36.player.fov,
+					    gamePoint = Utils.screenToGame(screenPoint, _this36.board.tileSize, _this36.board.spacing);
 
 					//set cursor position
-					_this35.mouseHandler.cursorFromScreen(screenPoint);
+					_this36.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov && fov.has(gamePoint)) {
-						var targetTile = _this35.board.get(gamePoint);
+						var targetTile = _this36.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this35.dungeonLevels[_this35.currentDungeonLevel].objs.forEach(function (obj) {
+							_this36.dungeonLevels[_this36.currentDungeonLevel].objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this35.examineContainer.innerHTML = targetTile.top;
+							_this36.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this35.examineContainer.innerHTML = targetTile;
+							_this36.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this35.examineContainer.innerHTML = "You can't see that";
+						_this36.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this35.dungeonLevels[_this35.currentDungeonLevel].objs.forEach(function (obj) {
+						_this36.dungeonLevels[_this36.currentDungeonLevel].objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this35.dungeonLevels[_this35.currentDungeonLevel].objs[Number(id)];
+						var target = _this36.dungeonLevels[_this36.currentDungeonLevel].objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this35.mouseHandler.cursorFromGame(target.position);
-							_this35.examineContainer.innerHTML = target;
+							_this36.mouseHandler.cursorFromGame(target.position);
+							_this36.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
@@ -2394,7 +2471,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		}
 
 		Game.prototype.saveDungeonLevel = function saveDungeonLevel(dungeon) {
-			var _this36 = this;
+			var _this37 = this;
 
 			var rooms = dungeon.rooms;
 			var paths = dungeon.paths;
@@ -2408,12 +2485,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				map: img
 			};
 			objs.forEach(function (obj) {
-				return _this36.dungeonLevels[_this36.currentDungeonLevel].objs[obj.id] = obj;
+				return _this37.dungeonLevels[_this37.currentDungeonLevel].objs[obj.id] = obj;
 			});
 		};
 
 		Game.prototype.changeDungeonLevel = function changeDungeonLevel(level) {
-			var _this37 = this;
+			var _this38 = this;
 
 			this.saveDungeonLevel(this.dungeonLevels[this.currentDungeonLevel]);
 			var dir = level > this.currentDungeonLevel ? "down" : "up";
@@ -2460,25 +2537,25 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 			//put objs in their id slots
 			objs.forEach(function (obj) {
-				return _this37.dungeonLevels[level].objs[obj.id] = obj;
+				return _this38.dungeonLevels[level].objs[obj.id] = obj;
 			});
 
 			//insert objs into the board
 			this.dungeonLevels[level].objs.forEach(function (obj) {
 				if (obj) {
-					_this37.board.insert(obj);
+					_this38.board.insert(obj);
 				}
 			});
 
 			this.dungeonLevels[level].objs.forEach(function (obj) {
 				if (obj) {
-					_this37.logic.think(obj, _this37.player);
+					_this38.logic.think(obj, _this38.player);
 				}
 			});
 		};
 
 		Game.prototype.update = function update() {
-			var _this38 = this;
+			var _this39 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
@@ -2509,22 +2586,22 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					}
 
 					if (obj.isAlive) {
-						var _duration = obj.update(_this38.logger, _this38.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this39.logger, _this39.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this38.logic.think(obj, _this38.player);
+							_this39.logic.think(obj, _this39.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						//obj died during update
 						if (!obj.isAlive) {
-							_this38.board.remove(obj);
-							delete _this38.dungeonLevels[_this38.currentDungeonLevel].objs[obj.id];
+							_this39.board.remove(obj);
+							delete _this39.dungeonLevels[_this39.currentDungeonLevel].objs[obj.id];
 						}
 					} else {
-						_this38.board.remove(obj);
-						delete _this38.dungeonLevels[_this38.currentDungeonLevel].objs[obj.id];
+						_this39.board.remove(obj);
+						delete _this39.dungeonLevels[_this39.currentDungeonLevel].objs[obj.id];
 					}
 				});
 			}
@@ -2552,12 +2629,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		};
 
 		Game.prototype.start = function start() {
-			var _this39 = this;
+			var _this40 = this;
 
 			this.logger.log("Hello and welcome", "hilight");
 			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj) {
 				if (obj) {
-					_this39.board.insert(obj);
+					_this40.board.insert(obj);
 				}
 			});
 
@@ -2565,7 +2642,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			this.player.fov = fov;
 
 			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj) {
-				_this39.logic.think(obj, _this39.player);
+				_this40.logic.think(obj, _this40.player);
 				if (obj instanceof Enemy) {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
@@ -2590,30 +2667,30 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Player(position, stats) {
 			_classCallCheck(this, Player);
 
-			var _this40 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
+			var _this41 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
 
-			_this40.actions = [];
-			_this40.bgColor = "white";
-			_this40.glyph = "@";
-			_this40.color = "black";
+			_this41.actions = [];
+			_this41.bgColor = "white";
+			_this41.glyph = "@";
+			_this41.color = "black";
 
-			_this40.stats.maxHP = 50;
-			_this40.stats.HP = 50;
-			_this40.stats.viewDistance = 8;
-			_this40.stats.moveSpeed = 10;
+			_this41.stats.maxHP = 50;
+			_this41.stats.HP = 50;
+			_this41.stats.viewDistance = 8;
+			_this41.stats.moveSpeed = 10;
 			//this.stats.inventorySize = 15;
 
-			_this40.stats = stats || _this40.stats;
+			_this41.stats = stats || _this41.stats;
 
-			_this40.equipment.head = new Armor("head", "Bronze helmet", 1);
+			_this41.equipment.head = new Armor("head", "Bronze helmet", 1);
 
-			_this40.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
+			_this41.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
 
-			_this40.lifebar = new Lifebar(_this40.id, "Hero", document.getElementById("info-container-player"), _this40.stats.maxHP, _this40.stats.HP);
-			_this40.flavorName = "you";
-			_this40.flavor = "Hi mom!";
+			_this41.lifebar = new Lifebar(_this41.id, "Hero", document.getElementById("info-container-player"), _this41.stats.maxHP, _this41.stats.HP);
+			_this41.flavorName = "you";
+			_this41.flavor = "Hi mom!";
 			//todo: store username here?
-			return _this40;
+			return _this41;
 		}
 
 		return Player;

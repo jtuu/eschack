@@ -298,7 +298,7 @@ const Armor = class Armor extends Item{
 		return `${this.name} (${this.defence})`;
 	}
 };
-/* 
+/*
 @depends ../abstract/gameobject.class.js
 @depends ../misc/mixins.js
 @depends ../objs/weapon.class.js
@@ -325,7 +325,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 						.reduce((p, c) => self.equipment[c].defence + p, 0);
 				}
 		};
-		
+
 		this.inventory = [];
 		this.equipment = {
 			"weapon": weapon || new Weapon("Fists"),
@@ -338,7 +338,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 
 		this.flavorName = "creature";
 		this.flavor = "It is mundane."; //flavor text used in examine
-		
+
 		this.xp = 1;
 	}
 
@@ -347,7 +347,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 
 		let updateCount = 0,
 			elapsedTime = 0;
-	
+
 		//go through all the possible actions given by actionmanager and
 		//test their logic in the gameobjects context
 		//they should already be in prioritized order so
@@ -356,7 +356,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 			//actually they contain functions that create the action instances so yeah
 			try {
 				let chosen;
-				
+
 				proposals.some(p => {
 					let action = p();
 					if(action.try(this, time)){
@@ -369,11 +369,11 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 				elapsedTime += chosen.do(this);
 				updateCount++;
 			} catch (err) {
-				//console.warn("None of the proposed actions were suitable for " + this.constructor.name);
-				//console.log(err);
+				// console.warn("None of the proposed actions were suitable for " + this.constructor.name);
+				// console.log(err);
 			}
 		});
-		
+
 		for(let i = 0; i < updateCount; i++){
 			this.actions.shift();
 		}
@@ -384,12 +384,13 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 	toString() {
 		return `${this.type}<br>${this.stats.HP} HP<br>${this.flavor}<br>${this.equipment.weapon.damage} ATT`;
 	}
-	
+
 	get items(){
 		let items = this.inventory.concat(Object.values(this.equipment)).filter(v => v);
 		return items;
 	}
 };
+
 /* @depends gameobject.class.js */
 const DungeonFeature = class DungeonFeature extends GameObject{
 	constructor(position){
@@ -455,11 +456,11 @@ const KeyHandler = class KeyHandler {
 	constructor() {
 		this.use("default");
 	}
-	
+
 	use(map = "default"){
 		if(map ==="default"){
 			this.using = "default";
-			
+
 			this.keyCases = {
 				//numpad
 				104: "n",
@@ -470,7 +471,7 @@ const KeyHandler = class KeyHandler {
 				99: "se",
 				97: "sw",
 				103: "nw",
-				
+
 				//vi keys
 				75: "n", //k
 				76: "e", //l
@@ -482,12 +483,13 @@ const KeyHandler = class KeyHandler {
 				78: "se", //n
 
 				101: "c", //num5
-				
+
 				71: "pickup", //g
-				
+
 				68: {use: "inventorydialog", act: "drop"}, //d
 				87: {use: "inventorydialog", act: "equip"}, //w
-				
+				84: {use: "inventorydialog", act: "unequip"}, //t
+
 				60: "up", //<
 				62: "down" //>
 			};
@@ -506,7 +508,7 @@ const KeyHandler = class KeyHandler {
 				"up": "stair",
 				"down": "stair"
 			};
-			
+
 		}else if(map === "inventorydialog"){
 			this.using = "inventorydialog";
 			this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
@@ -530,6 +532,7 @@ const KeyHandler = class KeyHandler {
 		return this.actionMap[this.keyCases[key]];
 	}
 };
+
 /* @depends ../abstract/dungeonfeature.class.js */
 const Stair = class Stair extends GameObject{
 	constructor(position, direction){
@@ -627,7 +630,7 @@ const Redcap = class Redcap extends Enemy {
 		this.canWear = true;
 	}
 };
-/* 
+/*
 @depends ../objs/stair.class.js
 @depends ../objs/wall.class.js
 @depends monsters/honeybadger.class.js
@@ -635,14 +638,18 @@ const Redcap = class Redcap extends Enemy {
 @depends redcap.class.js
  */
 const Utils = class Utils {
-	
-	static get defaults(){
+
+	static get defaults() {
 		return {
-			weapon: () => new Weapon("Fists")
+			weapon: () => {
+				let weapon = new Weapon("Fists");
+				weapon.canDrop = false;
+				return weapon;
+			}
 		};
 	}
-	
-	static get exports(){
+
+	static get exports() {
 		return {
 			"instance": game,
 			"Creature": Creature,
@@ -657,8 +664,8 @@ const Utils = class Utils {
 			"Wall": Wall
 		};
 	}
-	
-	static get alphabetMap(){
+
+	static get alphabetMap() {
 		return ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 	}
 
@@ -792,8 +799,8 @@ const Utils = class Utils {
 		//merge upper and lower
 		return upper.concat(lower);
 	}
-	
-	static saveGame(instance){
+
+	static saveGame(instance) {
 		let save = {};
 		//all we need is the objs
 		//in Game.start they will get inserted
@@ -804,7 +811,7 @@ const Utils = class Utils {
 		localStorage.setItem(saveName, LZString.compress(JSON.stringify(save)));
 		console.log("Game saved");
 	}
-	
+
 	static loadGame() {
 		let save = JSON.parse(LZString.decompress(localStorage.getItem(saveName)) || null);
 
@@ -833,24 +840,24 @@ const Utils = class Utils {
 			return null;
 		}
 	}
-	
+
 	static deleteSave() {
 		localStorage.removeItem(saveName);
 		console.log("Savedata deleted");
 	};
-	
+
 	//convert screen coordinates to game coordinates
-	static screenToGame(point, tileSize, spacing){
+	static screenToGame(point, tileSize, spacing) {
 		return new Point(Math.floor(point.x / (tileSize + spacing)), Math.floor(point.y / (tileSize + spacing)));
 	}
-	
+
 	//convert game coordinates to screen coordinates
-	static gameToScreen(point, tileSize, spacing){
+	static gameToScreen(point, tileSize, spacing) {
 		return new Point(point.x * (tileSize + spacing), point.y * (tileSize + spacing));
 	}
-	
+
 	//convert screen coordinates to conform to tiles
-	static screenToTiles(point, tileSize, spacing){
+	static screenToTiles(point, tileSize, spacing) {
 		return Utils.gameToScreen(Utils.screenToGame(point, tileSize, spacing), tileSize, spacing);
 	}
 
@@ -859,66 +866,66 @@ const Utils = class Utils {
 			global[key] = exports[key];
 		}
 	}
-	
-	static generateRandomWeapon(){
-		let materials = ["Bronze","Iron","Steel"],
-			types = ["Dagger","Sword","Axe","Pikestaff"];
-		
+
+	static generateRandomWeapon() {
+		let materials = ["Bronze", "Iron", "Steel"],
+			types = ["Dagger", "Sword", "Axe", "Pikestaff"];
+
 		let name = materials[Math.round(Math.random() * (materials.length - 1))] +
-				" " + types[Math.round(Math.random() * (types.length - 1))];
-		
+			" " + types[Math.round(Math.random() * (types.length - 1))];
+
 		return new Weapon(name, Math.round(Math.random() * 5 + 1), Math.round(Math.random() * 6 + 4));
 	}
-	
+
 	//use this to generate maps
 	//(actually it generates array of objs which then get inserted by Game)
-	static get DungeonGenerator(){
-		return class{
-			static makeRoom(options){
+	static get DungeonGenerator() {
+		return class {
+			static makeRoom(options) {
 				let room = {};
-				
+
 				room.w = ~~(Math.random() * (options.rooms.size.max.w - options.rooms.size.min.w) + options.rooms.size.min.w);
 				room.h = ~~(Math.random() * (options.rooms.size.max.h - options.rooms.size.min.h) + options.rooms.size.min.h);
 				room.x = ~~(Math.random() * (options.size.w - room.w));
 				room.y = ~~(Math.random() * (options.size.h - room.h));
-				
+
 				return room;
 			}
-			
-			static makePoint(options){
+
+			static makePoint(options) {
 				return {
 					x: ~~(Math.random() * options.size.w),
 					y: ~~(Math.random() * options.size.h)
 				};
 			}
-			
-			static makePaths(rooms, midPoints, options){
+
+			static makePaths(rooms, midPoints, options) {
 				let paths = [];
-				
+
 				//connect rooms to midpoints
-				for(let i = 0; i < options.paths.count; i++){
+				for (let i = 0; i < options.paths.count; i++) {
 					let path = {},
 						dest = midPoints[i % options.paths.count % options.midPoints.count];
-						
+
 					path.x1 = rooms[i].x + ~~(Math.random() * rooms[i].w);
 					path.y1 = rooms[i].y + ~~(Math.random() * rooms[i].h);
 
 					path.x2 = dest.x;
 					path.y2 = rooms[i].y + ~~(Math.random() * rooms[i].h);
-					
+
 					path.x3 = dest.x;
 					path.y3 = dest.y;
 
 					paths.push(path);
 				}
-				
+
 				//connect midpoints together
 				for (let i = 1; i < options.midPoints.count; i++) {
 					let path = {};
 
 					path.x1 = midPoints[i - 1].x;
 					path.y1 = midPoints[i - 1].y;
-					
+
 					path.x2 = midPoints[i].x;
 					path.y2 = midPoints[i - 1].y;
 
@@ -927,18 +934,18 @@ const Utils = class Utils {
 
 					paths.push(path);
 				}
-				
+
 				return paths;
 			}
-			
+
 			//try to spawn some enemies within room
-			static insertEnemies(room, options){
+			static insertEnemies(room, options) {
 				let enemyList = [Jackalope, Honeybadger, Redcap];
 				let enemies = [];
-				for(let x = room.x + room.w; x > room.x; x--){
-					for(let y = room.y + room.h; y > room.y; y--){
-						if(Math.random() < options.enemies.spawnChance){
-							let enemy = enemyList[Math.round(Math.random()*(enemyList.length-1))];
+				for (let x = room.x + room.w; x > room.x; x--) {
+					for (let y = room.y + room.h; y > room.y; y--) {
+						if (Math.random() < options.enemies.spawnChance) {
+							let enemy = enemyList[Math.round(Math.random() * (enemyList.length - 1))];
 							enemy = new enemy(new Point(x, y));
 							enemy = this.generateEquipment(enemy);
 							enemies.push(enemy);
@@ -947,96 +954,100 @@ const Utils = class Utils {
 				}
 				return enemies;
 			}
-			
-			static generateEquipment(enemy){
-				if(enemy.canWield){
+
+			static generateEquipment(enemy) {
+				if (enemy.canWield) {
 					enemy.equipment.weapon = Utils.generateRandomWeapon();
 				}
-				if(enemy.canWear){
-					
+				if (enemy.canWear) {
+
 				}
 				return enemy;
 			}
-			
+
 			//main method
-			static makeLevel(player, options){
+			static makeLevel(player, options) {
 				options = options || this.defaultOptions;
 				let matrix = [],
 					objs = [],
 					rooms = Array(options.rooms.count).fill(),
 					midPoints = Array(options.midPoints.count).fill();
-					
-					//get rooms
-					for(let i in rooms){
-						rooms[i] = this.makeRoom(options);
-					}
-					
-					//set player to first room
-					player.position.set(rooms[0].x+1, rooms[0].y+1);
-					objs.push(player);
 
-					if(options.stairs.up){
-						//put an upstairs on player
-						objs.push(new Stair(new Point(rooms[0].x+1, rooms[0].y+1), "up"));
-					}
-					
-					if(options.stairs.down){
-						//put a downstairs in "last" room
-						objs.push(new Stair(new Point(rooms[options.rooms.count-1].x+1, rooms[options.rooms.count-1].y+1), "down"));
-					}
+				//get rooms
+				for (let i in rooms) {
+					rooms[i] = this.makeRoom(options);
+				}
 
-					//get midpoints
-					for(let i in midPoints){
-						midPoints[i] = this.makePoint(options);
+				//set player to first room
+				player.position.set(rooms[0].x + 1, rooms[0].y + 1);
+				objs.push(player);
+
+				if (options.stairs.up) {
+					//put an upstairs on player
+					objs.push(new Stair(new Point(rooms[0].x + 1, rooms[0].y + 1), "up"));
+				}
+
+				if (options.stairs.down) {
+					//put a downstairs in "last" room
+					objs.push(new Stair(new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1), "down"));
+				}
+
+				//get midpoints
+				for (let i in midPoints) {
+					midPoints[i] = this.makePoint(options);
+				}
+
+				//get paths
+				let paths = this.makePaths(rooms, midPoints, options);
+
+				//fill matrix with walls
+				for (let y = 0; y < options.size.h; y++) {
+					matrix[y] = [];
+					for (let x = 0; x < options.size.w; x++) {
+						let tile = new Tile(new Point(x, y));
+						tile.add(new Wall(new Point(x, y)));
+						matrix[y][x] = tile;
 					}
-					
-					//get paths
-					let paths = this.makePaths(rooms, midPoints, options);
-					
-					//fill matrix with walls
-					for (let y = 0; y < options.size.h; y++) {
-						matrix[y] = [];
-						for (let x = 0; x < options.size.w; x++) {
-							let tile = new Tile(new Point(x, y));
-							tile.add(new Wall(new Point(x, y)));
-							matrix[y][x] = tile;
-						}
-					}
-					
-					//carve out rooms
-					//and try put some enemies in them
-					rooms.forEach(room => {
-						for(let x = room.x + room.w; x > room.x; x--){
-							for(let y = room.y + room.h; y > room.y; y--){
-								matrix[y][x].empty();
-							}
-						}
-						objs = objs.concat(this.insertEnemies(room, options));
-					});
-					
-					//carve out paths
-					paths.forEach(path => {
-						for(let i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1; i0++){
-							matrix[path.y1][i0].empty();
-						}
-						for(let i0 = Math.min(path.y2, path.y3), i1 = Math.max(path.y2, path.y3); i0 < i1; i0++){
-							matrix[i0][path.x2].empty();
-						}
-					});
-					
-					//get objs
-					for (let y = 0; y < options.size.h; y++) {
-						for (let x = 0; x < options.size.w; x++) {
-							if(!matrix[y][x].isEmpty){
-								objs.push(matrix[y][x].top);
-							}
+				}
+
+				//carve out rooms
+				//and try put some enemies in them
+				rooms.forEach(room => {
+					for (let x = room.x + room.w; x > room.x; x--) {
+						for (let y = room.y + room.h; y > room.y; y--) {
+							matrix[y][x].empty();
 						}
 					}
-					
-					return {rooms, paths, objs};
+					objs = objs.concat(this.insertEnemies(room, options));
+				});
+
+				//carve out paths
+				paths.forEach(path => {
+					for (let i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1; i0++) {
+						matrix[path.y1][i0].empty();
+					}
+					for (let i0 = Math.min(path.y2, path.y3), i1 = Math.max(path.y2, path.y3); i0 < i1; i0++) {
+						matrix[i0][path.x2].empty();
+					}
+				});
+
+				//get objs
+				for (let y = 0; y < options.size.h; y++) {
+					for (let x = 0; x < options.size.w; x++) {
+						if (!matrix[y][x].isEmpty) {
+							objs.push(matrix[y][x].top);
+						}
+					}
+				}
+
+				return {
+					rooms,
+					paths,
+					objs
+				};
 			}
-			
-			static get defaultOptions(){
+
+			static get defaultOptions() {
 				return {
 					stairs: {
 						up: false,
@@ -1072,19 +1083,20 @@ const Utils = class Utils {
 			}
 		};
 	}
-	
-	static initUIButtons(instance){
+
+	static initUIButtons(instance) {
 		document.getElementById("button-save").addEventListener("click", e => {
 			e.stopPropagation();
 			this.saveGame(instance);
 		});
-		
+
 		document.getElementById("button-delete").addEventListener("click", e => {
 			e.stopPropagation();
 			this.deleteSave();
 		});
 	}
 };
+
 /* @depends ../misc/utils.class.js */
 //handle mouse stuff and examine cursor
 const MouseHandler = class MouseHandler {
@@ -1136,8 +1148,8 @@ mainCtx.font = "20px Consolas";
 mainCtx.textAlign = "center";
 
 let objectCounter = 0;
-const EquipmentManager = class EquipmentManager{
-	constructor(equipmentBox, equipment){
+const EquipmentManager = class EquipmentManager {
+	constructor(equipmentBox, equipment) {
 		this.wrapper = equipmentBox;
 		this.equipment = equipment;
 		let container = document.createElement("div");
@@ -1145,16 +1157,16 @@ const EquipmentManager = class EquipmentManager{
 		this.container = container;
 		this.wrapper.appendChild(this.container);
 	}
-	
-	update(){
+
+	update() {
 		if (!!this.container.children.length) {
 			Array.from(this.container.children).forEach(item => item.remove());
 		}
-		Object.keys(this.equipment).filter(k => this.equipment[k]).forEach(k => {
+		Object.keys(this.equipment).filter(k => this.equipment[k]).forEach((k, i) => {
 			let parent = document.createElement("div");
 			let key = document.createElement("span");
 			let value = document.createElement("span");
-			key.innerHTML = k + ": ";
+			key.innerHTML = Utils.alphabetMap[i] + " - " + k + ": ";
 			value.innerHTML = this.equipment[k];
 			parent.appendChild(key);
 			parent.appendChild(value);
@@ -1162,6 +1174,7 @@ const EquipmentManager = class EquipmentManager{
 		});
 	}
 };
+
 //manages the inventory UI component
 const InventoryManager = class InventoryManager{
 	constructor(inventoryBox, inventory){
@@ -1460,13 +1473,16 @@ const AttackAction = class AttackAction extends Action {
 	}
 
 	try (actor, time) {
+		if(!actor.equipment.weapon){
+			actor.equipment.weapon = Utils.defaults.weapon();
+		}
 		this.duration = actor.equipment.weapon.speed;
 		if(time % this.duration !== 0){
 			return false;
 		}
 		let target = new Point(...actor.position.get);
 		target.moveBy(this.direction);
-		
+
 		let tile = this.context.get(target);
 		return tile && tile.top && tile.top.isHittable && actor.isAlive;
 	}
@@ -1475,13 +1491,9 @@ const AttackAction = class AttackAction extends Action {
 		let target = new Point(...actor.position.get);
 		target.moveBy(this.direction);
 		target = this.context.get(target);
-		
-		if(!actor.equipment.weapon){
-			actor.equipment.weapon = Utils.defaults.weapon();
-		}
-		
+
 		let damage = Math.max(actor.equipment.weapon.damage - target.top.stats.AC, 0);
-		
+
 		if(this.logger){
 			this.logger.log(`${actor.flavorName} hit ${target.top.flavorName} for ${damage} damage with ${actor.equipment.weapon}`, (actor.constructor === Player ? "hit" : "damage"));
 		}
@@ -1501,6 +1513,7 @@ const AttackAction = class AttackAction extends Action {
 		return this.duration;
 	}
 };
+
 /* @depends ../../abstract/action.class.js */
 const ItemDropAction = class ItemDropAction extends Action {
 	constructor(context, logger, inventorySlot){
@@ -1526,40 +1539,80 @@ const ItemDropAction = class ItemDropAction extends Action {
 		return 10;
 	}
 };
-/* @depends ../../abstract/action.class.js */
-const ItemEquipAction = class ItemEquipAction extends Action {
-	constructor(context, logger, inventorySlot){
+/*
+@depends ../../abstract/action.class.js
+*/
+const ItemUnequipAction = class ItemUnequipAction extends Action {
+	constructor(context, logger, equipmentSlot) {
 		super(context, logger);
-		this.inventorySlot = inventorySlot;
+		this.equipmentSlot = equipmentSlot;
 	}
-	
-	try(actor, time){
-		let hasItem = !!actor.inventory[Utils.alphabetMap.indexOf(this.inventorySlot)];
-		if(!hasItem){
+
+	try (actor, time) {
+		let keyIndex = Utils.alphabetMap.indexOf(this.equipmentSlot),
+			hasItem = Object.keys(actor.equipment).filter(k => actor.equipment[k] !== null).some((k, i) => i === keyIndex);
+		if (!hasItem) {
 			this.logger.log("No such item");
+			return false;
 		}
 		return time % 10 === 0 && hasItem && actor.isAlive;
 	}
-	
-	do(actor){
+
+	do(actor) {
+		let keyIndex = Utils.alphabetMap.indexOf(this.equipmentSlot),
+			itemSlot = Object.keys(actor.equipment).filter(k => actor.equipment[k] !== null).find((k, i) => i === keyIndex),
+			item = actor.equipment[itemSlot];
+
+		if (item.canDrop) {
+			actor.inventory.push(item);
+		}
+		actor.equipment[itemSlot] = null;
+
+		this.logger.log(actor.flavorName + " unequipped " + item.toString());
+		return 10;
+	}
+};
+
+/*
+@depends ../../abstract/action.class.js
+@depends ../logic/actions/itemunequipaction.class.js
+*/
+const ItemEquipAction = class ItemEquipAction extends Action {
+	constructor(context, logger, inventorySlot) {
+		super(context, logger);
+		this.inventorySlot = inventorySlot;
+	}
+
+	try (actor, time) {
+		let hasItem = !!actor.inventory[Utils.alphabetMap.indexOf(this.inventorySlot)];
+		if (!hasItem) {
+			this.logger.log("No such item");
+			return false;
+		}
+		return time % 10 === 0 && hasItem && actor.isAlive;
+	}
+
+	do(actor) {
 		let inventoryIndex = Utils.alphabetMap.indexOf(this.inventorySlot),
-			item = actor.inventory[inventoryIndex];
-			
+			item = actor.inventory[inventoryIndex],
+			duration = 0;
+
 		//if already has something equipped in that slot
 		//remove it into inventory
 		//actually this should be an unequipaction
-		if(actor.equipment[item.slot]){
-			actor.inventory.push(actor.equipment[item.slot]);
-			actor.equipment[item.slot] = null;
+		if (actor.equipment[item.slot]) {
+			let action = new ItemUnequipAction(null, this.logger, this.inventorySlot);
+			duration += action.do(actor);
 		}
 		//splice item from inventory and put it in equipment
 		item = actor.inventory.splice(inventoryIndex, 1)[0];
 		actor.equipment[item.slot] = item;
-		
+
 		this.logger.log(actor.flavorName + " equipped " + item.toString());
-		return 10;
+		return duration + 10;
 	}
 };
+
 /* @depends ../../abstract/action.class.js */
 const ItemPickupAction = class ItemPickupAction extends Action {
 	constructor(context, logger){
@@ -1645,7 +1698,7 @@ const StairAction = class StairAction extends Action {
 		return 10;
 	}
 };
-/* 
+/*
 @depends ../core/vector.class.js
 @depends ../core/tilegroup.class.js
 @depends ../core/point.class.js
@@ -1669,6 +1722,7 @@ const ActionManager = class ActionManager {
 		this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 		this.proposalMap["drop"] = [ItemDropAction, NullAction];
 		this.proposalMap["equip"] = [ItemEquipAction, NullAction];
+		this.proposalMap["unequip"] = [ItemUnequipAction, NullAction];
 		this.proposalMap["stair"] = [StairAction, NullAction];
 	}
 
@@ -1706,7 +1760,7 @@ const ActionManager = class ActionManager {
 	}
 
 	getFov(actor) {
-		if(!actor)return;
+		if (!actor) return;
 		let [ax, ay] = actor.position.get,
 			range = actor.stats.viewDistance,
 			quarters = {
@@ -1746,10 +1800,10 @@ const ActionManager = class ActionManager {
 
 	//what does this do again? give actions to actors? or just the player?
 	delegateAction(actor, instruction) {
-		if(!actor){
+		if (!actor) {
 			return;
 		}
-		if(!actor.isAlive){
+		if (!actor.isAlive) {
 			let proposals = this.proposalMap[null];
 			let methods = proposals.map(action => () => new action(this.board, this.logger, instruction));
 			actor.actions.push(methods);
@@ -1757,17 +1811,25 @@ const ActionManager = class ActionManager {
 		}
 		if (instruction) {
 			let key = instruction;
-			if(typeof instruction === "function"){
+			if (typeof instruction === "function") {
 				instruction = instruction();
 				key = instruction.constructor;
-			}else if(typeof instruction === "string"){
+			} else if (typeof instruction === "string") {
 				[key, instruction] = instruction.split(":");
-				if(key === "drop" && !instruction){
-					this.logger.log("Which item to drop? [a-z]");
-					return false;
-				}else if(key === "equip" && !instruction){
-					this.logger.log("Which item to equip? [a-z]");
-					return false;
+				if (!instruction) {
+					switch (key) {
+						case "drop":
+							this.logger.log("Which item to drop? [a-z]");
+							return false;
+						case "equip":
+							this.logger.log("Which item to equip? [a-z]");
+							return false;
+						case "unequip":
+							this.logger.log("Which item to unequip? [a-z]");
+							return false;
+						default:
+							break;
+					}
 				}
 			}
 			let proposals = this.proposalMap[key];
@@ -1785,6 +1847,7 @@ const ActionManager = class ActionManager {
 		return false;
 	}
 };
+
 /* 
 @depends globals.js
 @depends ../ui/equipmentmanager.class.js
