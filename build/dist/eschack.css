@@ -37,12 +37,20 @@ canvas {
       content: " "; }
     #logbox .logbox-row:nth-child(even) {
       background: #d9d9d9; }
+    #logbox .logbox-row .logmsg.logmsg-default {
+      color: black; }
+    #logbox .logbox-row .logmsg.logmsg-junk1 {
+      color: #4d4d4d; }
+    #logbox .logbox-row .logmsg.logmsg-junk2 {
+      color: gray; }
+    #logbox .logbox-row .logmsg.logmsg-threat1 {
+      color: #8f743d; }
     #logbox .logbox-row .logmsg.logmsg-hilight {
       color: #a02fac; }
     #logbox .logbox-row .logmsg.logmsg-hit {
       color: #1a63b3; }
     #logbox .logbox-row .logmsg.logmsg-damage {
-      color: #8d5502; }
+      color: #ad5f1a; }
     #logbox .logbox-row .logmsg.logmsg-miss {
       color: #545652; }
     #logbox .logbox-row .logmsg.logmsg-death {
@@ -56,50 +64,104 @@ canvas {
 
 .info-container#info-container-player {
   top: 10px;
-  height: 50px;
-  border: 1px solid black; }
+  height: 200px;
+  border: 1px solid black;
+  width: 340px; }
+  .info-container#info-container-player .player-stat-row {
+    display: inline-block;
+    width: 50%; }
+    .info-container#info-container-player .player-stat-row .player-stat-name {
+      display: inline-block;
+      width: 70px; }
+      .info-container#info-container-player .player-stat-row .player-stat-name:after {
+        content: ":"; }
+    .info-container#info-container-player .player-stat-row .player-stat-value {
+      display: inline-block; }
+
+.info-container#info-container-game {
+  top: 10px;
+  height: 200px;
+  border: 1px solid black;
+  left: 370px;
+  width: 160px; }
+  .info-container#info-container-game .game-stat-row {
+    margin-left: 10px; }
+    .info-container#info-container-game .game-stat-row#game-stat-dungeonName {
+      font-weight: bold;
+      line-height: 2em; }
+      .info-container#info-container-game .game-stat-row#game-stat-dungeonName .game-stat-name {
+        width: 0; }
+    .info-container#info-container-game .game-stat-row .game-stat-name {
+      display: inline-block;
+      width: 70px; }
+    .info-container#info-container-game .game-stat-row .game-stat-value {
+      display: inline-block; }
+  .info-container#info-container-game .game-stat-row:not(#game-stat-dungeonName) .game-stat-name:after {
+    content: ":"; }
 
 .info-container#info-container-other-life {
   width: 100%;
   height: calc(100% - 23px);
   overflow-y: auto; }
 
-.info-container#info-container-other-misc {
-  top: 270px;
-  width: 300px;
+#info-container-other-life-wrap {
+  width: 240px;
+  top: 230px;
   height: 150px;
   border: 1px solid black; }
 
+.info-container#info-container-other-misc {
+  width: 240px;
+  top: 400px;
+  height: 150px;
+  border: 1px solid black; }
+  .info-container#info-container-other-misc .examine-container {
+    padding: 10px;
+    height: calc(100% - 50px);
+    overflow-y: auto; }
+
 .info-container#info-container-inventory {
-  top: 440px;
-  height: 300px;
-  width: 200px;
+  left: 270px;
+  top: 230px;
+  height: 320px;
+  width: 260px;
   border: 1px solid black; }
 
 .info-container#info-container-equipment {
-  left: 230px;
-  top: 440px;
+  top: 570px;
   height: 200px;
-  width: 300px;
+  width: 520px;
   border: 1px solid black; }
-
-#info-container-other-life-wrap {
-  top: 90px;
-  width: 300px;
-  height: 150px;
-  border: 1px solid black; }
+  .info-container#info-container-equipment .equipment-row .equipment-key {
+    display: inline-block;
+    width: 40px; }
+    .info-container#info-container-equipment .equipment-row .equipment-key:after {
+      content: " - "; }
+  .info-container#info-container-equipment .equipment-row .equipment-slot {
+    display: inline-block;
+    width: 70px; }
+  .info-container#info-container-equipment .equipment-row .equipment-item {
+    display: inline-block; }
+    .info-container#info-container-equipment .equipment-row .equipment-item:before {
+      content: ": "; }
 
 .menu-title {
   background: black;
   color: darkgrey;
   display: block; }
 
-#bottom-row > * {
+#bottom-row > div {
   display: inline-block;
   margin: 10px;
   padding: 10px;
   border: 1px solid black;
-  vertical-align: top; }
+  vertical-align: top;
+  width: 45%; }
+  #bottom-row > div > h3 {
+    margin: 0; }
+  #bottom-row > div .content {
+    height: 150px;
+    overflow-y: auto; }
 
 #bottom-row #settings {
   min-width: 200px; }
@@ -113,7 +175,7 @@ label {
 .bar {
   height: 20px;
   width: 100px;
-  background: black;
+  background: #dc6565;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -133,12 +195,9 @@ label {
     left: 0;
     right: 0; }
   .bar:before {
-    background: white; }
+    background: #b3d7b2; }
   .bar:after {
     content: attr(data-content);
-    mix-blend-mode: difference;
-    -webkit-filter: invert(1);
-            filter: invert(1);
     color: black; }
   .bar.hilighted {
     border: 1px solid yellow; }
@@ -428,30 +487,30 @@ codepen.io/Vestride/pen/vHzyk
               animation-delay: 0s; }
 
 @-webkit-keyframes pulse {
-  from,
-  40% {
+  40%,
+  from {
     background: #fdfdfd; }
   to {
     background: #dadada; } }
 
 @keyframes pulse {
-  from,
-  40% {
+  40%,
+  from {
     background: #fdfdfd; }
   to {
     background: #dadada; } }
 
 @-webkit-keyframes show {
-  from,
-  40% {
+  40%,
+  from {
     opacity: 0; }
   41%,
   to {
     opacity: 1; } }
 
 @keyframes show {
-  from,
-  40% {
+  40%,
+  from {
     opacity: 0; }
   41%,
   to {
