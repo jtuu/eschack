@@ -28,7 +28,7 @@ module.exports = function(grunt) {
 			options: {
 				configFile: 'misc/eslint.json'
 			},
-			target: ['misc/eschack.js']
+			target: ['src/js/**/*.js']
 		},
 		babel: {
 			options: {
@@ -175,13 +175,13 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-surge');
-	
+
 	grunt.registerTask('html', ['puglint', 'pug', 'prettify']);
 	grunt.registerTask('css', ['sass', 'autoprefixer']);
-	grunt.registerTask('js', ['depend-concat', 'concat', 'eslint', 'babel', 'uglify']);
-	
+	grunt.registerTask('js', ['eslint', 'depend-concat', 'concat', 'babel', 'uglify']);
+
 	grunt.registerTask('default', ['html', 'css', 'js']);
-	
+
 	grunt.registerTask('predeploy', ['default', 'copy:index', 'copy:dist']);
 	grunt.registerTask('deploy', ['predeploy', 'surge']);
 };

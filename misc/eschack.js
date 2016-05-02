@@ -29,6 +29,31 @@ const Action = class Action {
 		console.warn("Unimplemented method '" + arguments.callee + "' in " + this.constructor.name);
 	}
 };
+//Object.values polyfill
+if (!Object.values) {
+	Object.values = obj => Object.keys(obj).map(key => obj[key]);
+}
+
+//should these be scopewide?
+const env = "prod",
+	TICK = 1,
+	saveName = "eschack_save",
+	mainCanvas = document.getElementById("canvas-main"),
+	secondCanvas = document.getElementById("canvas-second"),
+	w = 1040,
+	h = 520,
+	TILE_COLOR = "hsla(244,3%,55%,1)",
+	BASE_XP = 1.3,
+	BASE_XP_GROWTH = 1.4;
+mainCanvas.width = secondCanvas.width = w;
+mainCanvas.height = secondCanvas.height = h;
+const mainCtx = mainCanvas.getContext("2d"),
+	secondCtx = secondCanvas.getContext("2d");
+mainCtx.font = "20px Consolas";
+mainCtx.textAlign = "center";
+
+let objectCounter = 0;
+
 //just a xy point
 const Point = class Point {
 	constructor(x, y) {
@@ -142,11 +167,10 @@ const GameObject = class GameObject {
 	}
 };
 const Lifebar = class Lifebar {
-	constructor(id, name, container, max, value) {
+	constructor(id, name, container, stats) {
 		this.id = id;
 		this.name = name;
-		this.max = max;
-		this.value = value || max;
+		this.stats = stats;
 
 		this.container = container;
 
@@ -170,11 +194,11 @@ const Lifebar = class Lifebar {
 		if (!isNaN(value)) {
 			this.value = value;
 		}
-		this.bar.setAttribute("data-content", this.value + "/" + this.max);
+		this.bar.setAttribute("data-content", this.stats.HP + "/" + this.stats.maxHP);
 
 		//approximate visual size, range [0...100]
 		//do we need more precision? is this too much precision?
-		let sizeClass = "bar-size-" + Math.max(Math.floor(this.value / this.max * 100), 0);
+		let sizeClass = "bar-size-" + Math.max(Math.floor(this.stats.HP / this.stats.maxHP * 100), 0);
 		if (this.bar.className.match(/size/)) {
 			this.bar.className = this.bar.className.replace(/bar-size-[0-9]{1,3}/, sizeClass);
 		} else {
@@ -216,6 +240,7 @@ const Lifebar = class Lifebar {
 		this.label.style.display = "";
 	}
 };
+
 /* @depends ../ui/lifebar.class.js */
 const MoveBlocking = Base => class extends Base{
 	get isMoveBlocking(){
@@ -299,6 +324,7 @@ const Armor = class Armor extends Item{
 	}
 };
 /*
+@depends ../core/globals.js
 @depends ../abstract/gameobject.class.js
 @depends ../misc/mixins.js
 @depends ../objs/weapon.class.js
@@ -321,12 +347,14 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 			"STR": 1,
 			"INT": 1,
 			"DEX": 1,
-			get AC(){
+			"XP": 0,
+			"XL": 1,
+			get AC() {
 				//add up the defence values of all equipped armor
 				return Object.keys(self.equipment)
 					.filter(k => self.equipment[k] && self.equipment[k].constructor === Armor)
-						.reduce((p, c) => self.equipment[c].defence + p, 0);
-				}
+					.reduce((p, c) => self.equipment[c].defence + p, 0);
+			}
 		};
 
 		this.inventory = [];
@@ -342,7 +370,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 		this.flavorName = "creature";
 		this.flavor = "It is mundane."; //flavor text used in examine
 
-		this.xp = 1;
+		this.killcount = 0;
 	}
 
 	//oh boy
@@ -362,10 +390,10 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 
 				proposals.some(p => {
 					let action = p();
-					if(action.try(this, time)){
+					if (action.try(this, time)) {
 						chosen = action;
 						return true;
-					}else{
+					} else {
 						return false;
 					}
 				});
@@ -377,18 +405,39 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 			}
 		});
 
-		for(let i = 0; i < updateCount; i++){
+		for (let i = 0; i < updateCount; i++) {
 			this.actions.shift();
 		}
 
 		return elapsedTime;
 	}
 
+	gainXP(amount) {
+		this.stats.XP += amount;
+
+		if (this.stats.XP >= BASE_XP * Math.pow(this.stats.XL + 1, BASE_XP_GROWTH)) {
+			return this.levelUp();
+		}
+		return false;
+	}
+
+	levelUp() {
+		this.stats.XL++;
+		let possibleStats = ["maxHP", "STR", "INT", "DEX"],
+			chosenStat = possibleStats[Math.floor(Math.random() * possibleStats.length)];
+
+		this.stats[chosenStat]++;
+		if(chosenStat === "maxHP"){
+			this.lifebar.set();
+		}
+		return chosenStat;
+	}
+
 	toString() {
 		return `${this.type}<br>${this.stats.HP} HP<br>${this.flavor}<br>${this.equipment.weapon.damage} ATT`;
 	}
 
-	get items(){
+	get items() {
 		let items = this.inventory.concat(Object.values(this.equipment)).filter(v => v);
 		return items;
 	}
@@ -414,6 +463,7 @@ const Enemy = class Enemy extends Creature {
 		this.stats.HP = 3;
 		this.stats.viewDistance = 7;
 		this.stats.moveSpeed = 9;
+		this.stats.XP = 1;
 
 		this.stats = stats || this.stats;
 
@@ -422,13 +472,14 @@ const Enemy = class Enemy extends Creature {
 	}
 
 	toString() {
-		return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.equipment.weapon.damage + " ATT<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.");
+		return this.type + "<br>" + this.stats.XL + " HP<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.") + "<br>" + this.flavor;
 	}
-	
+
 	createLifebar(){
-		this.lifebar = new Lifebar(this.id, this.type, document.getElementById("info-container-other-life"), this.stats.maxHP, this.stats.HP);
+		this.lifebar = new Lifebar(this.id, this.type, document.getElementById("info-container-other-life"), this.stats);
 	}
 };
+
 const Vector = class Vector {
 	constructor(u, v) {
 		//if no arguments, use random values in [-1, 0, 1]
@@ -881,6 +932,28 @@ const Utils = class Utils {
 		return new Weapon(name, Math.round(Math.random() * 5 + 1), Math.round(Math.random() * 6 + 4));
 	}
 
+	static get DamageCalculator() {
+		return class {
+			static get constants() {
+				return {
+					baseAC: 0.1,
+					defenderStrEffectiveness: 10,
+					attackerStatEffectiveness: 2
+				};
+			}
+
+			static get physical() {
+				return {
+					melee: (attacker, defender) => {
+						let effectiveAC = (defender.stats.AC + this.constants.baseAC) * (1 + defender.stats.STR / this.constants.defenderStrEffectiveness),
+							effectiveDmg = attacker.equipment.weapon.damage + (attacker.stats.STR + attacker.stats.DEX) / 2 / this.constants.attackerStatEffectiveness;
+						return Math.max(Math.floor(effectiveDmg - effectiveAC), 0);
+					}
+				};
+			}
+		};
+	}
+
 	//use this to generate maps
 	//(actually it generates array of objs which then get inserted by Game)
 	static get DungeonGenerator() {
@@ -1130,28 +1203,6 @@ const MouseHandler = class MouseHandler {
 		this.cursor.style.left = x  + "px";
 	}
 };
-//Object.values polyfill
-if (!Object.values) {
-	Object.values = obj => Object.keys(obj).map(key => obj[key]);
-}
-
-//should these be scopewide?
-const env = "prod",
-	TICK = 1,
-	saveName = "eschack_save",
-	mainCanvas = document.getElementById("canvas-main"),
-	secondCanvas = document.getElementById("canvas-second"),
-	w = 1040,
-	h = 520,
-	TILE_COLOR = "hsla(244,3%,55%,1)";
-mainCanvas.width = secondCanvas.width = w;
-mainCanvas.height = secondCanvas.height = h;
-const mainCtx = mainCanvas.getContext("2d"),
-	secondCtx = secondCanvas.getContext("2d");
-mainCtx.font = "20px Consolas";
-mainCtx.textAlign = "center";
-
-let objectCounter = 0;
 const EquipmentManager = class EquipmentManager {
 	constructor(equipmentBox, equipment) {
 		this.wrapper = equipmentBox;
@@ -1253,55 +1304,97 @@ const LogboxManager = class LogboxManager {
 	}
 };
 const StatsManager = class StatsManager {
-  constructor(playerWrap, gameCont, playerStats, gameStats){
-    this.playerWrap = playerWrap;
-    this.gameCont = gameCont;
-    this.playerStats = playerStats;
-    this.gameStats = gameStats;
+	constructor(playerWrap, gameCont, playerStats, gameStats) {
+		this.playerWrap = playerWrap;
+		this.gameCont = gameCont;
+		this.playerStats = playerStats;
+		this.gameStats = gameStats;
 
-    this.usedPlayerStats = {
-      "STR": "STR",
-      "INT": "INT",
-      "DEX": "DEX",
-      "viewDistance": "vision",
-      "moveSpeed": "speed"
-    };
+		//map stats keys to displayed strings
+		this.usedPlayerStats = {
+			"STR": "STR",
+			"INT": "INT",
+			"DEX": "DEX",
+			"viewDistance": "Vision",
+			"moveSpeed": "Speed",
+      "AC": "AC",
+			"XL": "XL",
+			"XP": "XP"
+		};
 
-    this.create();
-  }
+		this.usedGameStats = {
+			"dungeonName": "",
+			"time": "Time",
+			"currentDungeonLevel": "Depth",
+      "score": "Score"
+		};
 
-  create(){
-    let playerStatCont = document.createElement("div");
-    playerStatCont.style.padding = "10px";
-    this.playerStatCont = playerStatCont;
-    this.playerWrap.appendChild(this.playerStatCont);
+		this.create();
+	}
 
-    this.playerStatElements = {};
+	create() {
+		let playerStatCont = document.createElement("div");
+		playerStatCont.style.padding = "10px";
+		this.playerStatCont = playerStatCont;
+		this.playerWrap.appendChild(this.playerStatCont);
 
-    Object.keys(this.usedPlayerStats).forEach(key => {
-      let parent = document.createElement("div"),
-        stat = document.createElement("div"),
-        value = document.createElement("div");
+		this.playerStatElements = {};
 
-      parent.className = "player-stat-row";
-      stat.className = "player-stat-name";
-      value.className = "player-stat-value";
+		Object.keys(this.usedPlayerStats).forEach(key => {
+			let parent = document.createElement("div"),
+				stat = document.createElement("div"),
+				value = document.createElement("div");
 
-      stat.innerHTML = this.usedPlayerStats[key];
-      value.innerHTML = this.playerStats[key];
-      parent.appendChild(stat);
-      parent.appendChild(value);
-      this.playerStatCont.appendChild(parent);
+			parent.className = "player-stat-row";
+			stat.className = "player-stat-name";
+			value.className = "player-stat-value";
 
-      this.playerStatElements[key] = {stat, value};
-    });
-  }
+			stat.innerHTML = this.usedPlayerStats[key];
+			value.innerHTML = this.playerStats[key];
+			parent.appendChild(stat);
+			parent.appendChild(value);
+			this.playerStatCont.appendChild(parent);
 
-  update(){
-    Object.keys(this.usedPlayerStats).forEach(key => {
-      this.playerStatElements[key].value.innerHTML = this.playerStats[key];
-    });
-  }
+			this.playerStatElements[key] = {
+				stat,
+				value
+			};
+		});
+
+		this.gameStatElements = {};
+
+		Object.keys(this.usedGameStats).forEach(key => {
+			let parent = document.createElement("div"),
+				stat = document.createElement("div"),
+				value = document.createElement("div");
+
+			parent.className = "game-stat-row";
+			stat.className = "game-stat-name";
+			value.className = "game-stat-value";
+
+			parent.id = "game-stat-" + key;
+
+			stat.innerHTML = this.usedGameStats[key];
+			value.innerHTML = this.gameStats[key];
+			parent.appendChild(stat);
+			parent.appendChild(value);
+			this.gameCont.appendChild(parent);
+
+			this.gameStatElements[key] = {
+				stat,
+				value
+			};
+		});
+	}
+
+	update() {
+		Object.keys(this.usedPlayerStats).forEach(key => {
+			this.playerStatElements[key].value.innerHTML = this.playerStats[key];
+		});
+		Object.keys(this.usedGameStats).forEach(key => {
+			this.gameStatElements[key].value.innerHTML = this.gameStats[key];
+		});
+	}
 };
 
 /* 
@@ -1539,11 +1632,11 @@ const AttackAction = class AttackAction extends Action {
 	}
 
 	try (actor, time) {
-		if(!actor.equipment.weapon){
+		if (!actor.equipment.weapon) {
 			actor.equipment.weapon = Utils.defaults.weapon();
 		}
 		this.duration = actor.equipment.weapon.speed;
-		if(time % this.duration !== 0){
+		if (time % this.duration !== 0) {
 			return false;
 		}
 		let target = new Point(...actor.position.get);
@@ -1558,16 +1651,21 @@ const AttackAction = class AttackAction extends Action {
 		target.moveBy(this.direction);
 		target = this.context.get(target);
 
-		let damage = Math.max(actor.equipment.weapon.damage - target.top.stats.AC, 0);
+		let damage = Utils.DamageCalculator.physical.melee(actor, target.top);
 
-		if(this.logger){
+		if (this.logger) {
 			this.logger.log(`${actor.flavorName} hit ${target.top.flavorName} for ${damage} damage with ${actor.equipment.weapon}`, (actor.constructor === Player ? "hit" : "damage"));
 		}
 		let died = target.top.takeDamage(damage, this.logger);
 		if (died) {
+			actor.killcount++;
+			let leveledUpStat = actor.gainXP(target.top.stats.XP);
+			if (leveledUpStat) {
+				this.logger.log(actor.flavorName + " leveled up and gained a point in " + leveledUpStat, "hilight");
+			}
 			//drop all items and corpse
 			target.top.items.forEach(item => {
-				if(item.canDrop){
+				if (item.canDrop) {
 					item.position = new Point(...target.top.position.get);
 					target.add(item);
 				}
@@ -1634,7 +1732,7 @@ const ItemUnequipAction = class ItemUnequipAction extends Action {
 		}
 		actor.equipment[itemSlot] = null;
 
-		this.logger.log(actor.flavorName + " unequipped " + item.toString());
+		this.logger.log(actor.flavorName + " unequipped " + item.toString(), "junk1");
 		return 10;
 	}
 };
@@ -1674,7 +1772,7 @@ const ItemEquipAction = class ItemEquipAction extends Action {
 		item = actor.inventory.splice(inventoryIndex, 1)[0];
 		actor.equipment[item.slot] = item;
 
-		this.logger.log(actor.flavorName + " equipped " + item.toString());
+		this.logger.log(actor.flavorName + " equipped " + item.toString(), "junk1");
 		return duration + 10;
 	}
 };
@@ -1684,22 +1782,23 @@ const ItemPickupAction = class ItemPickupAction extends Action {
 	constructor(context, logger){
 		super(context, logger);
 	}
-	
+
 	try(actor, time){
 		return time % 10 === 0 && actor.inventory.length < actor.stats.inventorySize && this.context.get(actor.position).contents.some(obj => obj instanceof Item) && actor.isAlive;
 	}
-	
+
 	do(actor){
 		let targetTile = this.context.get(actor.position),
 			item = targetTile.contents.find(obj => obj instanceof Item);
 		actor.inventory.push(item);
 		targetTile.remove(item);
 		if(this.logger){
-			this.logger.log(actor.flavorName + " picked up " + item.toString());
+			this.logger.log(actor.flavorName + " picked up " + item.toString(), "junk1");
 		}
 		return 10;
 	}
 };
+
 /* @depends ../../abstract/action.class.js */
 //the act of moving something somewhere
 //menu logic not done yet but maybe this could be used for menus too
@@ -1747,7 +1846,7 @@ const StairAction = class StairAction extends Action {
 	constructor(context, logger){
 		super(context, logger);
 	}
-	
+
 	try(actor, time){
 		let tile = this.context.get(actor.position),
 			isStair = tile && tile.contents.some(obj => obj.constructor === Stair);
@@ -1756,14 +1855,15 @@ const StairAction = class StairAction extends Action {
 		}
 		return time % 10 === 0 && isStair && actor.isAlive;
 	}
-	
+
 	do(actor){
 		let stair = this.context.get(actor.position).contents.find(obj => obj.constructor === Stair);
 		actor.dungeonLevelChange = stair.direction;
-		this.logger.log(actor.flavorName + " went " + stair.direction + " the stairs");
+		this.logger.log(actor.flavorName + " went " + stair.direction + " the stairs", "junk2");
 		return 10;
 	}
 };
+
 /*
 @depends ../core/vector.class.js
 @depends ../core/tilegroup.class.js
@@ -1813,7 +1913,7 @@ const ActionManager = class ActionManager {
 				let vector = Point.distance(actor.position, actor.target.position);
 				vector.reduce();
 				instruction = vector;
-				if (!actor.noticed && shouldLog) this.logger.log(actor.flavorName + " noticed " + player.flavorName);
+				if (!actor.noticed && shouldLog) this.logger.log(actor.flavorName + " noticed " + player.flavorName, "threat1");
 				actor.noticed = true;
 			}
 
@@ -1931,18 +2031,26 @@ const Game = class Game {
 
 		this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
-		//global gametime
-		this.time = 0;
+		let self = this;
+		this.stats = {
+			time: 0,
+			dungeonName: "Dungeon of Esc",
+			currentDungeonLevel: 0,
+			get score() {
+				return Math.round(
+					(
+						(self.player.killcount + 1) * (self.stats.currentDungeonLevel + 1)
+					) / (
+						(self.stats.time) / 1000 + 1
+					)
+				);
+			}
+		};
 
-		this.currentDungeonLevel = 0;
 		this.dungeonLevels = [];
 
 		this.board = board;
 		this.player = dungeon.objs[0];
-
-		//map objs argument into this.objs by the objs creation id
-		//this.objs = [];
-		//objs.forEach(obj => this.objs[obj.id] = obj);
 
 		this.saveDungeonLevel(dungeon);
 
@@ -1978,13 +2086,13 @@ const Game = class Game {
 				this.mouseHandler.cursorFromScreen(screenPoint);
 
 				//if hovering over a tile that is seen
-				if(fov && fov.has(gamePoint)){
+				if (fov && fov.has(gamePoint)) {
 					let targetTile = this.board.get(gamePoint);
 
 					//if tile is not empty
 					if (targetTile && targetTile.top) {
 						//reset all lifebars styles
-						this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
+						this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
@@ -2004,13 +2112,13 @@ const Game = class Game {
 				//hovering over a lifebar
 			} else if (e.target.classList.contains("bar-lifebar")) {
 				//reset all lifebars styles
-				this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
+				this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
 					if (obj.lifebar) obj.lifebar.setStyle("default");
 				});
 
 				//get lifebars owner
 				let id = e.target.id.match(/[0-9]+$/);
-				let target = this.dungeonLevels[this.currentDungeonLevel].objs[Number(id)];
+				let target = this.dungeonLevels[this.stats.currentDungeonLevel].objs[Number(id)];
 
 				//set cursor to lifebars owner
 				if (target) {
@@ -2031,39 +2139,43 @@ const Game = class Game {
 		);
 		this.statsManager = new StatsManager(
 			document.getElementById("info-container-player"),
-			null,
+			document.getElementById("info-container-game"),
 			this.player.stats,
-			null
+			this.stats
 		);
 	}
 
-	saveDungeonLevel(dungeon){
-		let {rooms, paths, objs} = dungeon,
-			img = new Image();
-			img.src = secondCanvas.toDataURL();
-		this.dungeonLevels[this.currentDungeonLevel] = {
+	saveDungeonLevel(dungeon) {
+		let {
+			rooms,
+			paths,
+			objs
+		} = dungeon,
+		img = new Image();
+		img.src = secondCanvas.toDataURL();
+		this.dungeonLevels[this.stats.currentDungeonLevel] = {
 			objs: [],
 			rooms: rooms,
 			paths: paths,
 			map: img
 		};
-		objs.forEach(obj => this.dungeonLevels[this.currentDungeonLevel].objs[obj.id] = obj);
+		objs.forEach(obj => this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id] = obj);
 	}
 
-	changeDungeonLevel(level){
-		this.saveDungeonLevel(this.dungeonLevels[this.currentDungeonLevel]);
-		let dir = level > this.currentDungeonLevel ? "down" : "up";
+	changeDungeonLevel(level) {
+		this.saveDungeonLevel(this.dungeonLevels[this.stats.currentDungeonLevel]);
+		let dir = level > this.stats.currentDungeonLevel ? "down" : "up";
 
-		this.dungeonLevels[this.currentDungeonLevel].objs.forEach((obj,k) => {
-			if(k === 0){
+		this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach((obj, k) => {
+			if (k === 0) {
 				return;
 			}
-			if(obj.lifebar){
+			if (obj.lifebar) {
 				obj.lifebar.remove();
 			}
 		});
 
-		this.currentDungeonLevel = level;
+		this.stats.currentDungeonLevel = level;
 
 		mainCtx.clearRect(0, 0, w, h);
 		secondCtx.clearRect(0, 0, w, h);
@@ -2072,23 +2184,23 @@ const Game = class Game {
 		let objs = [];
 		objs[0] = this.player;
 		//if level already exists load it else generate new
-		if(this.dungeonLevels[level]){
+		if (this.dungeonLevels[level]) {
 			objs = this.dungeonLevels[level].objs;
 			secondCtx.drawImage(this.dungeonLevels[level].map, 0, 0);
 			//put player in the last room if we're going up
-			if(dir === "up"){
+			if (dir === "up") {
 				this.player.position.set(
-					this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length-1].x+1,
-					this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length-1].y+1
+					this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].x + 1,
+					this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].y + 1
 				);
-			}else{
+			} else {
 				//or in the first room
 				this.player.position.set(
-					this.dungeonLevels[level].rooms[0].x+1,
-					this.dungeonLevels[level].rooms[0].y+1
+					this.dungeonLevels[level].rooms[0].x + 1,
+					this.dungeonLevels[level].rooms[0].y + 1
 				);
 			}
-		}else{
+		} else {
 			let options = Utils.DungeonGenerator.defaultOptions;
 			options.stairs.up = true;
 			let dungeon = Utils.DungeonGenerator.makeLevel(this.player, options);
@@ -2122,34 +2234,34 @@ const Game = class Game {
 		let duration = this.player.update(this.logger);
 		let tickCount = duration / TICK;
 
-		if(this.player.dungeonLevelChange){
-			let level = this.currentDungeonLevel;
-			if(this.player.dungeonLevelChange === "up"){
+		if (this.player.dungeonLevelChange) {
+			let level = this.stats.currentDungeonLevel;
+			if (this.player.dungeonLevelChange === "up") {
 				level--;
-			}else if(this.player.dungeonLevelChange === "down"){
+			} else if (this.player.dungeonLevelChange === "down") {
 				level++;
 			}
 			this.changeDungeonLevel(level);
 
 			delete this.player.dungeonLevelChange;
-		}else if(!this.player.isAlive){
+		} else if (!this.player.isAlive) {
 			this.board.remove(this.player);
 		}
 
 		//contains the total durations of each objs actions for this turn
 		let objDurations = [];
-		for(let i = 0; i < tickCount; i++){
-			this.time += TICK;
+		for (let i = 0; i < tickCount; i++) {
+			this.stats.time += TICK;
 
-			this.dungeonLevels[this.currentDungeonLevel].objs.forEach((obj, index) => {
+			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach((obj, index) => {
 				//skip player
-				if(obj.type === "Player"){
+				if (obj.type === "Player") {
 					return;
 				}
 
-				if(obj.isAlive){
-					let duration = obj.update(this.logger, this.time + (objDurations[obj.id] || 0));
-					if(duration > 0){
+				if (obj.isAlive) {
+					let duration = obj.update(this.logger, this.stats.time + (objDurations[obj.id] || 0));
+					if (duration > 0) {
 						//if action was excecuted we generate new ones and
 						//forward the time for this obj
 						this.logic.think(obj, this.player);
@@ -2157,13 +2269,13 @@ const Game = class Game {
 					}
 
 					//obj died during update
-					if(!obj.isAlive){
+					if (!obj.isAlive) {
 						this.board.remove(obj);
-						delete this.dungeonLevels[this.currentDungeonLevel].objs[obj.id];
+						delete this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id];
 					}
-				}else{
+				} else {
 					this.board.remove(obj);
-					delete this.dungeonLevels[this.currentDungeonLevel].objs[obj.id];
+					delete this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id];
 				}
 			});
 		}
@@ -2171,12 +2283,12 @@ const Game = class Game {
 		let fov = this.logic.getFov(this.player);
 		this.player.fov = fov;
 
-		if(fov){
-			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
-				if(obj instanceof Enemy){
-					if(fov.has(obj.position)){
+		if (fov) {
+			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
+				if (obj instanceof Enemy) {
+					if (fov.has(obj.position)) {
 						obj.lifebar.show();
-					}else{
+					} else {
 						obj.lifebar.hide();
 					}
 				}
@@ -2194,7 +2306,7 @@ const Game = class Game {
 	start() {
 
 		this.logger.log("Hello and welcome", "hilight");
-		this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
+		this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
 			if (obj) {
 				this.board.insert(obj);
 			}
@@ -2203,12 +2315,12 @@ const Game = class Game {
 		let fov = this.logic.getFov(this.player);
 		this.player.fov = fov;
 
-		this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
+		this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
 			this.logic.think(obj, this.player);
-			if(obj instanceof Enemy){
-				if(fov.has(obj.position)){
+			if (obj instanceof Enemy) {
+				if (fov.has(obj.position)) {
 					obj.lifebar.show();
-				}else{
+				} else {
 					obj.lifebar.hide();
 				}
 			}
@@ -2235,19 +2347,20 @@ const Player = class Player extends Creature {
 		this.stats.viewDistance = 8;
 		this.stats.moveSpeed = 10;
 		//this.stats.inventorySize = 15;
-		
+
 		this.stats = stats || this.stats;
-		
+
 		this.equipment.head = new Armor("head", "Bronze helmet", 1);
-		
+
 		this.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
 
-		this.lifebar = new Lifebar(this.id, "Hero", document.getElementById("info-container-player"), this.stats.maxHP, this.stats.HP);
+		this.lifebar = new Lifebar(this.id, "Hero", document.getElementById("info-container-player"), this.stats);
 		this.flavorName = "you";
 		this.flavor = "Hi mom!";
 		//todo: store username here?
 	}
 };
+
 /*
 @depends ../core/game.class.js
 @depends ../objs/player.class.js

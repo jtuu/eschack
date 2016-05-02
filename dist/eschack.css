@@ -37,12 +37,20 @@ canvas {
       content: " "; }
     #logbox .logbox-row:nth-child(even) {
       background: #d9d9d9; }
+    #logbox .logbox-row .logmsg.logmsg-default {
+      color: black; }
+    #logbox .logbox-row .logmsg.logmsg-junk1 {
+      color: #4d4d4d; }
+    #logbox .logbox-row .logmsg.logmsg-junk2 {
+      color: gray; }
+    #logbox .logbox-row .logmsg.logmsg-threat1 {
+      color: #8f743d; }
     #logbox .logbox-row .logmsg.logmsg-hilight {
       color: #a02fac; }
     #logbox .logbox-row .logmsg.logmsg-hit {
       color: #1a63b3; }
     #logbox .logbox-row .logmsg.logmsg-damage {
-      color: #8d5502; }
+      color: #ad5f1a; }
     #logbox .logbox-row .logmsg.logmsg-miss {
       color: #545652; }
     #logbox .logbox-row .logmsg.logmsg-death {
@@ -76,27 +84,41 @@ canvas {
   border: 1px solid black;
   left: 370px;
   width: 160px; }
+  .info-container#info-container-game .game-stat-row {
+    margin-left: 10px; }
+    .info-container#info-container-game .game-stat-row#game-stat-dungeonName {
+      font-weight: bold;
+      line-height: 2em; }
+      .info-container#info-container-game .game-stat-row#game-stat-dungeonName .game-stat-name {
+        width: 0; }
+    .info-container#info-container-game .game-stat-row .game-stat-name {
+      display: inline-block;
+      width: 70px; }
+    .info-container#info-container-game .game-stat-row .game-stat-value {
+      display: inline-block; }
+  .info-container#info-container-game .game-stat-row:not(#game-stat-dungeonName) .game-stat-name:after {
+    content: ":"; }
 
 .info-container#info-container-other-life {
   width: 100%;
   height: calc(100% - 23px);
   overflow-y: auto; }
 
-.info-container#info-container-other-misc {
+#info-container-other-life-wrap {
   width: 240px;
   top: 230px;
+  height: 150px;
+  border: 1px solid black; }
+
+.info-container#info-container-other-misc {
+  width: 240px;
+  top: 400px;
   height: 150px;
   border: 1px solid black; }
   .info-container#info-container-other-misc .examine-container {
     padding: 10px;
     height: calc(100% - 50px);
     overflow-y: auto; }
-
-#info-container-other-life-wrap {
-  width: 240px;
-  top: 400px;
-  height: 150px;
-  border: 1px solid black; }
 
 .info-container#info-container-inventory {
   left: 270px;

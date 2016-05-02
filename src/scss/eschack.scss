@@ -67,7 +67,18 @@ canvas {
 			background: $component-accent-color;
 		}
 		& .logmsg {
-			&.logmsg-default {}
+			&.logmsg-default {
+				color: black;
+			}
+			&.logmsg-junk1 {
+				color: hsl(0, 0%, 30%);
+			}
+			&.logmsg-junk2 {
+				color: hsl(0, 0%, 50%);
+			}
+			&.logmsg-threat1 {
+				color: hsl(40, 40%, 40%);
+			}
 			&.logmsg-hilight {
 				color: hsl(294, 57%, 43%);
 			}
@@ -75,7 +86,7 @@ canvas {
 				color: hsl(211, 75%, 40%);
 			}
 			&.logmsg-damage {
-				color: hsl(36, 97%, 28%);
+				color: hsl(28, 74%, 39%)
 			}
 			&.logmsg-miss {
 				color: hsl(90, 2%, 33%);
@@ -127,12 +138,41 @@ $info-containers-margin: 20;
 		border: $basic-border;
 		left: 370px;
 		width: 160px;
+		& .game-stat-row{
+			margin-left: 10px;
+			&#game-stat-dungeonName{
+				font-weight: bold;
+				line-height: 2em;
+				& .game-stat-name{
+					width:0;
+				}
+			}
+			& .game-stat-name{
+				display: inline-block;
+				width: 70px;
+			}
+			& .game-stat-value{
+				display: inline-block;
+			}
+		}
+		& .game-stat-row:not(#game-stat-dungeonName) .game-stat-name{
+			&:after{
+				content:":";
+			}
+		}
 	}
 	&#info-container-other-life {
 		width: 100%;
 		height: calc(100% - 23px);
 		overflow-y: auto;
 	}
+}
+#info-container-other-life-wrap {
+	width: 240px;
+	@include InfoContainersTopCalc(150, "left");
+	border: $basic-border;
+}
+.info-container {
 	&#info-container-other-misc {
 		width: 240px;
 		@include InfoContainersTopCalc(150, "left");
@@ -143,13 +183,6 @@ $info-containers-margin: 20;
 			overflow-y: auto;
 		}
 	}
-}
-#info-container-other-life-wrap {
-	width: 240px;
-	@include InfoContainersTopCalc(150, "left");
-	border: $basic-border;
-}
-.info-container {
 	&#info-container-inventory {
 		left: 270px;
 		@include InfoContainersTopCalc(320, "right");

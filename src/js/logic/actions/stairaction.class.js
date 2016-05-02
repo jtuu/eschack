@@ -3,7 +3,7 @@ const StairAction = class StairAction extends Action {
 	constructor(context, logger){
 		super(context, logger);
 	}
-	
+
 	try(actor, time){
 		let tile = this.context.get(actor.position),
 			isStair = tile && tile.contents.some(obj => obj.constructor === Stair);
@@ -12,11 +12,11 @@ const StairAction = class StairAction extends Action {
 		}
 		return time % 10 === 0 && isStair && actor.isAlive;
 	}
-	
+
 	do(actor){
 		let stair = this.context.get(actor.position).contents.find(obj => obj.constructor === Stair);
 		actor.dungeonLevelChange = stair.direction;
-		this.logger.log(actor.flavorName + " went " + stair.direction + " the stairs");
+		this.logger.log(actor.flavorName + " went " + stair.direction + " the stairs", "junk2");
 		return 10;
 	}
 };

@@ -50,6 +50,35 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return Action;
 	}();
+	//Object.values polyfill
+	if (!Object.values) {
+		Object.values = function (obj) {
+			return Object.keys(obj).map(function (key) {
+				return obj[key];
+			});
+		};
+	}
+
+	//should these be scopewide?
+	var env = "prod",
+	    TICK = 1,
+	    saveName = "eschack_save",
+	    mainCanvas = document.getElementById("canvas-main"),
+	    secondCanvas = document.getElementById("canvas-second"),
+	    w = 1040,
+	    h = 520,
+	    TILE_COLOR = "hsla(244,3%,55%,1)",
+	    BASE_XP = 1.3,
+	    BASE_XP_GROWTH = 1.4;
+	mainCanvas.width = secondCanvas.width = w;
+	mainCanvas.height = secondCanvas.height = h;
+	var mainCtx = mainCanvas.getContext("2d"),
+	    secondCtx = secondCanvas.getContext("2d");
+	mainCtx.font = "20px Consolas";
+	mainCtx.textAlign = "center";
+
+	var objectCounter = 0;
+
 	//just a xy point
 	var Point = function () {
 		function Point(x, y) {
@@ -189,13 +218,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		return GameObject;
 	}();
 	var Lifebar = function () {
-		function Lifebar(id, name, container, max, value) {
+		function Lifebar(id, name, container, stats) {
 			_classCallCheck(this, Lifebar);
 
 			this.id = id;
 			this.name = name;
-			this.max = max;
-			this.value = value || max;
+			this.stats = stats;
 
 			this.container = container;
 
@@ -219,11 +247,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			if (!isNaN(value)) {
 				this.value = value;
 			}
-			this.bar.setAttribute("data-content", this.value + "/" + this.max);
+			this.bar.setAttribute("data-content", this.stats.HP + "/" + this.stats.maxHP);
 
 			//approximate visual size, range [0...100]
 			//do we need more precision? is this too much precision?
-			var sizeClass = "bar-size-" + Math.max(Math.floor(this.value / this.max * 100), 0);
+			var sizeClass = "bar-size-" + Math.max(Math.floor(this.stats.HP / this.stats.maxHP * 100), 0);
 			if (this.bar.className.match(/size/)) {
 				this.bar.className = this.bar.className.replace(/bar-size-[0-9]{1,3}/, sizeClass);
 			} else {
@@ -273,6 +301,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return Lifebar;
 	}();
+
 	/* @depends ../ui/lifebar.class.js */
 	var MoveBlocking = function MoveBlocking(Base) {
 		return function (_Base) {
@@ -426,6 +455,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		return Armor;
 	}(Item);
 	/*
+ @depends ../core/globals.js
  @depends ../abstract/gameobject.class.js
  @depends ../misc/mixins.js
  @depends ../objs/weapon.class.js
@@ -454,6 +484,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				"STR": 1,
 				"INT": 1,
 				"DEX": 1,
+				"XP": 0,
+				"XL": 1,
 				get AC() {
 					//add up the defence values of all equipped armor
 					return Object.keys(self.equipment).filter(function (k) {
@@ -477,7 +509,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			_this8.flavorName = "creature";
 			_this8.flavor = "It is mundane."; //flavor text used in examine
 
-			_this8.xp = 1;
+			_this8.killcount = 0;
 			return _this8;
 		}
 
@@ -524,6 +556,27 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			}
 
 			return elapsedTime;
+		};
+
+		Creature.prototype.gainXP = function gainXP(amount) {
+			this.stats.XP += amount;
+
+			if (this.stats.XP >= BASE_XP * Math.pow(this.stats.XL + 1, BASE_XP_GROWTH)) {
+				return this.levelUp();
+			}
+			return false;
+		};
+
+		Creature.prototype.levelUp = function levelUp() {
+			this.stats.XL++;
+			var possibleStats = ["maxHP", "STR", "INT", "DEX"],
+			    chosenStat = possibleStats[Math.floor(Math.random() * possibleStats.length)];
+
+			this.stats[chosenStat]++;
+			if (chosenStat === "maxHP") {
+				this.lifebar.set();
+			}
+			return chosenStat;
 		};
 
 		Creature.prototype.toString = function toString() {
@@ -574,6 +627,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			_this11.stats.HP = 3;
 			_this11.stats.viewDistance = 7;
 			_this11.stats.moveSpeed = 9;
+			_this11.stats.XP = 1;
 
 			_this11.stats = stats || _this11.stats;
 
@@ -583,15 +637,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		}
 
 		Enemy.prototype.toString = function toString() {
-			return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.equipment.weapon.damage + " ATT<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.");
+			return this.type + "<br>" + this.stats.XL + " HP<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.") + "<br>" + this.flavor;
 		};
 
 		Enemy.prototype.createLifebar = function createLifebar() {
-			this.lifebar = new Lifebar(this.id, this.type, document.getElementById("info-container-other-life"), this.stats.maxHP, this.stats.HP);
+			this.lifebar = new Lifebar(this.id, this.type, document.getElementById("info-container-other-life"), this.stats);
 		};
 
 		return Enemy;
 	}(Creature);
+
 	var Vector = function () {
 		function Vector(u, v) {
 			_classCallCheck(this, Vector);
@@ -1110,10 +1165,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			return new Weapon(name, Math.round(Math.random() * 5 + 1), Math.round(Math.random() * 6 + 4));
 		};
 
-		//use this to generate maps
-		//(actually it generates array of objs which then get inserted by Game)
-
-
 		Utils.initUIButtons = function initUIButtons(instance) {
 			var _this17 = this;
 
@@ -1162,14 +1213,53 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				return ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 			}
 		}, {
-			key: "DungeonGenerator",
+			key: "DamageCalculator",
 			get: function get() {
 				return function () {
 					function _class4() {
 						_classCallCheck(this, _class4);
 					}
 
-					_class4.makeRoom = function makeRoom(options) {
+					_createClass(_class4, null, [{
+						key: "constants",
+						get: function get() {
+							return {
+								baseAC: 0.1,
+								defenderStrEffectiveness: 10,
+								attackerStatEffectiveness: 2
+							};
+						}
+					}, {
+						key: "physical",
+						get: function get() {
+							var _this18 = this;
+
+							return {
+								melee: function melee(attacker, defender) {
+									var effectiveAC = (defender.stats.AC + _this18.constants.baseAC) * (1 + defender.stats.STR / _this18.constants.defenderStrEffectiveness),
+									    effectiveDmg = attacker.equipment.weapon.damage + (attacker.stats.STR + attacker.stats.DEX) / 2 / _this18.constants.attackerStatEffectiveness;
+									return Math.max(Math.floor(effectiveDmg - effectiveAC), 0);
+								}
+							};
+						}
+					}]);
+
+					return _class4;
+				}();
+			}
+
+			//use this to generate maps
+			//(actually it generates array of objs which then get inserted by Game)
+
+		}, {
+			key: "DungeonGenerator",
+			get: function get() {
+				return function () {
+					function _class5() {
+						_classCallCheck(this, _class5);
+					}
+
+					_class5.makeRoom = function makeRoom(options) {
 						var room = {};
 
 						room.w = ~ ~(Math.random() * (options.rooms.size.max.w - options.rooms.size.min.w) + options.rooms.size.min.w);
@@ -1180,14 +1270,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						return room;
 					};
 
-					_class4.makePoint = function makePoint(options) {
+					_class5.makePoint = function makePoint(options) {
 						return {
 							x: ~ ~(Math.random() * options.size.w),
 							y: ~ ~(Math.random() * options.size.h)
 						};
 					};
 
-					_class4.makePaths = function makePaths(rooms, midPoints, options) {
+					_class5.makePaths = function makePaths(rooms, midPoints, options) {
 						var paths = [];
 
 						//connect rooms to midpoints
@@ -1229,7 +1319,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					//try to spawn some enemies within room
 
 
-					_class4.insertEnemies = function insertEnemies(room, options) {
+					_class5.insertEnemies = function insertEnemies(room, options) {
 						var enemyList = [Jackalope, Honeybadger, Redcap];
 						var enemies = [];
 						for (var x = room.x + room.w; x > room.x; x--) {
@@ -1245,7 +1335,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						return enemies;
 					};
 
-					_class4.generateEquipment = function generateEquipment(enemy) {
+					_class5.generateEquipment = function generateEquipment(enemy) {
 						if (enemy.canWield) {
 							enemy.equipment.weapon = Utils.generateRandomWeapon();
 						}
@@ -1256,8 +1346,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					//main method
 
 
-					_class4.makeLevel = function makeLevel(player, options) {
-						var _this18 = this;
+					_class5.makeLevel = function makeLevel(player, options) {
+						var _this19 = this;
 
 						options = options || this.defaultOptions;
 						var matrix = [],
@@ -1310,7 +1400,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 									matrix[_y][_x3].empty();
 								}
 							}
-							objs = objs.concat(_this18.insertEnemies(room, options));
+							objs = objs.concat(_this19.insertEnemies(room, options));
 						});
 
 						//carve out paths
@@ -1339,7 +1429,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						};
 					};
 
-					_createClass(_class4, null, [{
+					_createClass(_class5, null, [{
 						key: "defaultOptions",
 						get: function get() {
 							return {
@@ -1377,7 +1467,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						}
 					}]);
 
-					return _class4;
+					return _class5;
 				}();
 			}
 		}]);
@@ -1428,32 +1518,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return MouseHandler;
 	}();
-	//Object.values polyfill
-	if (!Object.values) {
-		Object.values = function (obj) {
-			return Object.keys(obj).map(function (key) {
-				return obj[key];
-			});
-		};
-	}
-
-	//should these be scopewide?
-	var env = "prod",
-	    TICK = 1,
-	    saveName = "eschack_save",
-	    mainCanvas = document.getElementById("canvas-main"),
-	    secondCanvas = document.getElementById("canvas-second"),
-	    w = 1040,
-	    h = 520,
-	    TILE_COLOR = "hsla(244,3%,55%,1)";
-	mainCanvas.width = secondCanvas.width = w;
-	mainCanvas.height = secondCanvas.height = h;
-	var mainCtx = mainCanvas.getContext("2d"),
-	    secondCtx = secondCanvas.getContext("2d");
-	mainCtx.font = "20px Consolas";
-	mainCtx.textAlign = "center";
-
-	var objectCounter = 0;
 	var EquipmentManager = function () {
 		function EquipmentManager(equipmentBox, equipment) {
 			_classCallCheck(this, EquipmentManager);
@@ -1467,7 +1531,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		}
 
 		EquipmentManager.prototype.update = function update() {
-			var _this19 = this;
+			var _this20 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -1475,7 +1539,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				});
 			}
 			Object.keys(this.equipment).filter(function (k) {
-				return _this19.equipment[k];
+				return _this20.equipment[k];
 			}).forEach(function (k, i) {
 				var parent = document.createElement("div"),
 				    key = document.createElement("div"),
@@ -1489,12 +1553,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 				key.innerHTML = Utils.alphabetMap[i];
 				slot.innerHTML = k;
-				value.innerHTML = _this19.equipment[k];
+				value.innerHTML = _this20.equipment[k];
 
 				parent.appendChild(key);
 				parent.appendChild(slot);
 				parent.appendChild(value);
-				_this19.container.appendChild(parent);
+				_this20.container.appendChild(parent);
 			});
 		};
 
@@ -1515,7 +1579,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		}
 
 		InventoryManager.prototype.update = function update() {
-			var _this20 = this;
+			var _this21 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -1525,7 +1589,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			this.inventory.forEach(function (item, key) {
 				var ele = document.createElement("div");
 				ele.innerHTML = Utils.alphabetMap[key] + " - " + item;
-				_this20.container.appendChild(ele);
+				_this21.container.appendChild(ele);
 			});
 		};
 
@@ -1556,7 +1620,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		LogboxManager.prototype.log = function log(text) {
-			var _this21 = this;
+			var _this22 = this;
 
 			var type = arguments.length <= 1 || arguments[1] === undefined ? "default" : arguments[1];
 
@@ -1577,7 +1641,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			} else {
 				this.rows[0].children[0].remove();
 				this.rows.forEach(function (row, index) {
-					row.appendChild(_this21.messages[_this21.messages.length - (_this21.rowCount - index)]);
+					row.appendChild(_this22.messages[_this22.messages.length - (_this22.rowCount - index)]);
 				});
 			}
 		};
@@ -1593,19 +1657,30 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			this.playerStats = playerStats;
 			this.gameStats = gameStats;
 
+			//map stats keys to displayed strings
 			this.usedPlayerStats = {
 				"STR": "STR",
 				"INT": "INT",
 				"DEX": "DEX",
-				"viewDistance": "vision",
-				"moveSpeed": "speed"
+				"viewDistance": "Vision",
+				"moveSpeed": "Speed",
+				"AC": "AC",
+				"XL": "XL",
+				"XP": "XP"
+			};
+
+			this.usedGameStats = {
+				"dungeonName": "",
+				"time": "Time",
+				"currentDungeonLevel": "Depth",
+				"score": "Score"
 			};
 
 			this.create();
 		}
 
 		StatsManager.prototype.create = function create() {
-			var _this22 = this;
+			var _this23 = this;
 
 			var playerStatCont = document.createElement("div");
 			playerStatCont.style.padding = "10px";
@@ -1623,21 +1698,52 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				stat.className = "player-stat-name";
 				value.className = "player-stat-value";
 
-				stat.innerHTML = _this22.usedPlayerStats[key];
-				value.innerHTML = _this22.playerStats[key];
+				stat.innerHTML = _this23.usedPlayerStats[key];
+				value.innerHTML = _this23.playerStats[key];
 				parent.appendChild(stat);
 				parent.appendChild(value);
-				_this22.playerStatCont.appendChild(parent);
+				_this23.playerStatCont.appendChild(parent);
 
-				_this22.playerStatElements[key] = { stat: stat, value: value };
+				_this23.playerStatElements[key] = {
+					stat: stat,
+					value: value
+				};
+			});
+
+			this.gameStatElements = {};
+
+			Object.keys(this.usedGameStats).forEach(function (key) {
+				var parent = document.createElement("div"),
+				    stat = document.createElement("div"),
+				    value = document.createElement("div");
+
+				parent.className = "game-stat-row";
+				stat.className = "game-stat-name";
+				value.className = "game-stat-value";
+
+				parent.id = "game-stat-" + key;
+
+				stat.innerHTML = _this23.usedGameStats[key];
+				value.innerHTML = _this23.gameStats[key];
+				parent.appendChild(stat);
+				parent.appendChild(value);
+				_this23.gameCont.appendChild(parent);
+
+				_this23.gameStatElements[key] = {
+					stat: stat,
+					value: value
+				};
 			});
 		};
 
 		StatsManager.prototype.update = function update() {
-			var _this23 = this;
+			var _this24 = this;
 
 			Object.keys(this.usedPlayerStats).forEach(function (key) {
-				_this23.playerStatElements[key].value.innerHTML = _this23.playerStats[key];
+				_this24.playerStatElements[key].value.innerHTML = _this24.playerStats[key];
+			});
+			Object.keys(this.usedGameStats).forEach(function (key) {
+				_this24.gameStatElements[key].value.innerHTML = _this24.gameStats[key];
 			});
 		};
 
@@ -1732,7 +1838,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 	//todo: use some kind of EmptyTile object instead of null?
 	var TileGroup = function () {
 		function TileGroup(matrix, options) {
-			var _this24 = this;
+			var _this25 = this;
 
 			_classCallCheck(this, TileGroup);
 
@@ -1764,13 +1870,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			if (this.origin.x >= 0) {
 				//pad x
 				this.matrix.forEach(function (row, y) {
-					return _this24.matrix[y] = Array(_this24.origin.x).concat(_this24.matrix[y]);
+					return _this25.matrix[y] = Array(_this25.origin.x).concat(_this25.matrix[y]);
 				});
 			} else {
 				//shift x
 				this.matrix.forEach(function (row, y) {
-					for (var i = 0; i < -_this24.origin.x; i++) {
-						_this24.matrix[y].shift();
+					for (var i = 0; i < -_this25.origin.x; i++) {
+						_this25.matrix[y].shift();
 					}
 				});
 			}
@@ -1794,14 +1900,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		TileGroup.prototype.update = function update() {
-			var _this25 = this;
+			var _this26 = this;
 
 			this.matrix.forEach(function (row, y) {
 				return row.forEach(function (tile, x) {
 					if (tile && !tile.isEmpty) {
 						var temp = tile.top;
 						tile.contents.shift();
-						_this25.insert(temp);
+						_this26.insert(temp);
 					}
 				});
 			});
@@ -1872,7 +1978,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		TileGroup.prototype.draw = function draw() {
-			var _this26 = this;
+			var _this27 = this;
 
 			this.matrix.forEach(function (row, y) {
 				return row.forEach(function (tile, x) {
@@ -1883,14 +1989,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 						if (tile.isEmpty) {
 							//default
-							mainCtx.fillStyle = _this26.baseColor;
-							mainCtx.fillRect(tx * (_this26.tileSize + _this26.spacing), ty * (_this26.tileSize + _this26.spacing), _this26.tileSize, _this26.tileSize);
+							mainCtx.fillStyle = _this27.baseColor;
+							mainCtx.fillRect(tx * (_this27.tileSize + _this27.spacing), ty * (_this27.tileSize + _this27.spacing), _this27.tileSize, _this27.tileSize);
 						} else {
 							//draw gameobject
 							mainCtx.fillStyle = tile.top.bgColor;
-							mainCtx.fillRect(tx * (_this26.tileSize + _this26.spacing), ty * (_this26.tileSize + _this26.spacing), _this26.tileSize, _this26.tileSize);
+							mainCtx.fillRect(tx * (_this27.tileSize + _this27.spacing), ty * (_this27.tileSize + _this27.spacing), _this27.tileSize, _this27.tileSize);
 							mainCtx.fillStyle = tile.top.color;
-							mainCtx.fillText(tile.top.glyph, tx * (_this26.tileSize + _this26.spacing) + _this26.tileSize / 2, ty * (_this26.tileSize + _this26.spacing) + _this26.tileSize / 1.5);
+							mainCtx.fillText(tile.top.glyph, tx * (_this27.tileSize + _this27.spacing) + _this27.tileSize / 2, ty * (_this27.tileSize + _this27.spacing) + _this27.tileSize / 1.5);
 						}
 					}
 				});
@@ -1918,13 +2024,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Corpse(position) {
 			_classCallCheck(this, Corpse);
 
-			var _this27 = _possibleConstructorReturn(this, _GameObject4.call(this, position));
+			var _this28 = _possibleConstructorReturn(this, _GameObject4.call(this, position));
 
-			_this27.bgColor = "hsl(0,40%,40%)";
-			_this27.glyph = "x"; //some block character
-			_this27.color = "hsl(0,40%,10%)";
-			_this27.flavorName = "corpse";
-			return _this27;
+			_this28.bgColor = "hsl(0,40%,40%)";
+			_this28.glyph = "x"; //some block character
+			_this28.color = "hsl(0,40%,10%)";
+			_this28.flavorName = "corpse";
+			return _this28;
 		}
 
 		Corpse.prototype.update = function update() {
@@ -1943,10 +2049,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function AttackAction(context, logger, direction) {
 			_classCallCheck(this, AttackAction);
 
-			var _this28 = _possibleConstructorReturn(this, _Action.call(this, context, logger));
+			var _this29 = _possibleConstructorReturn(this, _Action.call(this, context, logger));
 
-			_this28.direction = direction;
-			return _this28;
+			_this29.direction = direction;
+			return _this29;
 		}
 
 		AttackAction.prototype.try = function _try(actor, time) {
@@ -1969,13 +2075,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			target.moveBy(this.direction);
 			target = this.context.get(target);
 
-			var damage = Math.max(actor.equipment.weapon.damage - target.top.stats.AC, 0);
+			var damage = Utils.DamageCalculator.physical.melee(actor, target.top);
 
 			if (this.logger) {
 				this.logger.log(actor.flavorName + " hit " + target.top.flavorName + " for " + damage + " damage with " + actor.equipment.weapon, actor.constructor === Player ? "hit" : "damage");
 			}
 			var died = target.top.takeDamage(damage, this.logger);
 			if (died) {
+				actor.killcount++;
+				var leveledUpStat = actor.gainXP(target.top.stats.XP);
+				if (leveledUpStat) {
+					this.logger.log(actor.flavorName + " leveled up and gained a point in " + leveledUpStat, "hilight");
+				}
 				//drop all items and corpse
 				target.top.items.forEach(function (item) {
 					if (item.canDrop) {
@@ -2000,10 +2111,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function ItemDropAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemDropAction);
 
-			var _this29 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
+			var _this30 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
 
-			_this29.inventorySlot = inventorySlot;
-			return _this29;
+			_this30.inventorySlot = inventorySlot;
+			return _this30;
 		}
 
 		ItemDropAction.prototype.try = function _try(actor, time) {
@@ -2035,10 +2146,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function ItemUnequipAction(context, logger, equipmentSlot) {
 			_classCallCheck(this, ItemUnequipAction);
 
-			var _this30 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
+			var _this31 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
 
-			_this30.equipmentSlot = equipmentSlot;
-			return _this30;
+			_this31.equipmentSlot = equipmentSlot;
+			return _this31;
 		}
 
 		ItemUnequipAction.prototype.try = function _try(actor, time) {
@@ -2069,7 +2180,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			}
 			actor.equipment[itemSlot] = null;
 
-			this.logger.log(actor.flavorName + " unequipped " + item.toString());
+			this.logger.log(actor.flavorName + " unequipped " + item.toString(), "junk1");
 			return 10;
 		};
 
@@ -2086,10 +2197,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function ItemEquipAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemEquipAction);
 
-			var _this31 = _possibleConstructorReturn(this, _Action4.call(this, context, logger));
+			var _this32 = _possibleConstructorReturn(this, _Action4.call(this, context, logger));
 
-			_this31.inventorySlot = inventorySlot;
-			return _this31;
+			_this32.inventorySlot = inventorySlot;
+			return _this32;
 		}
 
 		ItemEquipAction.prototype.try = function _try(actor, time) {
@@ -2117,7 +2228,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			item = actor.inventory.splice(inventoryIndex, 1)[0];
 			actor.equipment[item.slot] = item;
 
-			this.logger.log(actor.flavorName + " equipped " + item.toString());
+			this.logger.log(actor.flavorName + " equipped " + item.toString(), "junk1");
 			return duration + 10;
 		};
 
@@ -2148,13 +2259,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			actor.inventory.push(item);
 			targetTile.remove(item);
 			if (this.logger) {
-				this.logger.log(actor.flavorName + " picked up " + item.toString());
+				this.logger.log(actor.flavorName + " picked up " + item.toString(), "junk1");
 			}
 			return 10;
 		};
 
 		return ItemPickupAction;
 	}(Action);
+
 	/* @depends ../../abstract/action.class.js */
 	//the act of moving something somewhere
 	//menu logic not done yet but maybe this could be used for menus too
@@ -2164,10 +2276,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function MoveAction(context, logger, movement) {
 			_classCallCheck(this, MoveAction);
 
-			var _this33 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
+			var _this34 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
 
-			_this33.movement = movement;
-			return _this33;
+			_this34.movement = movement;
+			return _this34;
 		}
 
 		MoveAction.prototype.try = function _try(actor, time) {
@@ -2237,12 +2349,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				return obj.constructor === Stair;
 			});
 			actor.dungeonLevelChange = stair.direction;
-			this.logger.log(actor.flavorName + " went " + stair.direction + " the stairs");
+			this.logger.log(actor.flavorName + " went " + stair.direction + " the stairs", "junk2");
 			return 10;
 		};
 
 		return StairAction;
 	}(Action);
+
 	/*
  @depends ../core/vector.class.js
  @depends ../core/tilegroup.class.js
@@ -2277,13 +2390,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		ActionManager.prototype.think = function think(actor, player) {
-			var _this36 = this;
+			var _this37 = this;
 
 			if (actor instanceof Enemy) {
 				var _ret2 = function () {
-					var fov = _this36.getFov(actor),
+					var fov = _this37.getFov(actor),
 					    instruction = null,
-					    shouldLog = _this36.getFov(player).has(actor.position);
+					    shouldLog = _this37.getFov(player).has(actor.position);
 					actor.target = fov.get(player.position);
 
 					if (!actor.target || !player.isAlive) {
@@ -2301,15 +2414,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						var vector = Point.distance(actor.position, actor.target.position);
 						vector.reduce();
 						instruction = vector;
-						if (!actor.noticed && shouldLog) _this36.logger.log(actor.flavorName + " noticed " + player.flavorName);
+						if (!actor.noticed && shouldLog) _this37.logger.log(actor.flavorName + " noticed " + player.flavorName, "threat1");
 						actor.noticed = true;
 					}
 
-					var proposals = _this36.proposalMap[instruction.constructor];
+					var proposals = _this37.proposalMap[instruction.constructor];
 					if (proposals) {
 						var methods = proposals.map(function (action) {
 							return function () {
-								return new action(_this36.board, shouldLog ? _this36.logger : null, instruction);
+								return new action(_this37.board, shouldLog ? _this37.logger : null, instruction);
 							};
 						});
 						actor.actions.push(methods);
@@ -2365,7 +2478,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		ActionManager.prototype.delegateAction = function delegateAction(actor, instruction) {
-			var _this37 = this;
+			var _this38 = this;
 
 			if (!actor) {
 				return;
@@ -2374,7 +2487,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				var proposals = this.proposalMap[null];
 				var methods = proposals.map(function (action) {
 					return function () {
-						return new action(_this37.board, _this37.logger, instruction);
+						return new action(_this38.board, _this38.logger, instruction);
 					};
 				});
 				actor.actions.push(methods);
@@ -2411,7 +2524,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				if (_proposals) {
 					var _methods = _proposals.map(function (action) {
 						return function () {
-							return new action(_this37.board, _this37.logger, instruction);
+							return new action(_this38.board, _this38.logger, instruction);
 						};
 					});
 					actor.actions.push(_methods);
@@ -2421,7 +2534,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				}
 			} else if (instruction === null) {
 				actor.actions.push([function () {
-					return new NullAction(null, _this37.logger);
+					return new NullAction(null, _this38.logger);
 				}]);
 				return true;
 			}
@@ -2445,24 +2558,26 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 	//the game
 	var Game = function () {
 		function Game(board, dungeon) {
-			var _this38 = this;
+			var _this39 = this;
 
 			_classCallCheck(this, Game);
 
 			this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
-			//global gametime
-			this.time = 0;
+			var self = this;
+			this.stats = {
+				time: 0,
+				dungeonName: "Dungeon of Esc",
+				currentDungeonLevel: 0,
+				get score() {
+					return Math.round((self.player.killcount + 1) * (self.stats.currentDungeonLevel + 1) / (self.stats.time / 1000 + 1));
+				}
+			};
 
-			this.currentDungeonLevel = 0;
 			this.dungeonLevels = [];
 
 			this.board = board;
 			this.player = dungeon.objs[0];
-
-			//map objs argument into this.objs by the objs creation id
-			//this.objs = [];
-			//objs.forEach(obj => this.objs[obj.id] = obj);
 
 			this.saveDungeonLevel(dungeon);
 
@@ -2471,8 +2586,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this38.logic.delegateAction(_this38.player, _this38.keyHandler.get(e.keyCode))) {
-					_this38.update();
+				if (_this39.logic.delegateAction(_this39.player, _this39.keyHandler.get(e.keyCode))) {
+					_this39.update();
 				}
 			});
 
@@ -2486,56 +2601,56 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this38.board.bounds;
+				var bounds = _this39.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this38.player.fov,
-					    gamePoint = Utils.screenToGame(screenPoint, _this38.board.tileSize, _this38.board.spacing);
+					var fov = _this39.player.fov,
+					    gamePoint = Utils.screenToGame(screenPoint, _this39.board.tileSize, _this39.board.spacing);
 
 					//set cursor position
-					_this38.mouseHandler.cursorFromScreen(screenPoint);
+					_this39.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov && fov.has(gamePoint)) {
-						var targetTile = _this38.board.get(gamePoint);
+						var targetTile = _this39.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this38.dungeonLevels[_this38.currentDungeonLevel].objs.forEach(function (obj) {
+							_this39.dungeonLevels[_this39.stats.currentDungeonLevel].objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this38.examineContainer.innerHTML = targetTile.top;
+							_this39.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this38.examineContainer.innerHTML = targetTile;
+							_this39.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this38.examineContainer.innerHTML = "You can't see that";
+						_this39.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this38.dungeonLevels[_this38.currentDungeonLevel].objs.forEach(function (obj) {
+						_this39.dungeonLevels[_this39.stats.currentDungeonLevel].objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this38.dungeonLevels[_this38.currentDungeonLevel].objs[Number(id)];
+						var target = _this39.dungeonLevels[_this39.stats.currentDungeonLevel].objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this38.mouseHandler.cursorFromGame(target.position);
-							_this38.examineContainer.innerHTML = target;
+							_this39.mouseHandler.cursorFromGame(target.position);
+							_this39.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
@@ -2543,35 +2658,35 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 			this.inventoryManager = new InventoryManager(document.getElementById("info-container-inventory"), this.player.inventory);
 			this.equipmentManager = new EquipmentManager(document.getElementById("info-container-equipment"), this.player.equipment);
-			this.statsManager = new StatsManager(document.getElementById("info-container-player"), null, this.player.stats, null);
+			this.statsManager = new StatsManager(document.getElementById("info-container-player"), document.getElementById("info-container-game"), this.player.stats, this.stats);
 		}
 
 		Game.prototype.saveDungeonLevel = function saveDungeonLevel(dungeon) {
-			var _this39 = this;
+			var _this40 = this;
 
 			var rooms = dungeon.rooms;
 			var paths = dungeon.paths;
 			var objs = dungeon.objs;
 			var img = new Image();
 			img.src = secondCanvas.toDataURL();
-			this.dungeonLevels[this.currentDungeonLevel] = {
+			this.dungeonLevels[this.stats.currentDungeonLevel] = {
 				objs: [],
 				rooms: rooms,
 				paths: paths,
 				map: img
 			};
 			objs.forEach(function (obj) {
-				return _this39.dungeonLevels[_this39.currentDungeonLevel].objs[obj.id] = obj;
+				return _this40.dungeonLevels[_this40.stats.currentDungeonLevel].objs[obj.id] = obj;
 			});
 		};
 
 		Game.prototype.changeDungeonLevel = function changeDungeonLevel(level) {
-			var _this40 = this;
+			var _this41 = this;
 
-			this.saveDungeonLevel(this.dungeonLevels[this.currentDungeonLevel]);
-			var dir = level > this.currentDungeonLevel ? "down" : "up";
+			this.saveDungeonLevel(this.dungeonLevels[this.stats.currentDungeonLevel]);
+			var dir = level > this.stats.currentDungeonLevel ? "down" : "up";
 
-			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj, k) {
+			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(function (obj, k) {
 				if (k === 0) {
 					return;
 				}
@@ -2580,7 +2695,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				}
 			});
 
-			this.currentDungeonLevel = level;
+			this.stats.currentDungeonLevel = level;
 
 			mainCtx.clearRect(0, 0, w, h);
 			secondCtx.clearRect(0, 0, w, h);
@@ -2613,31 +2728,31 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 			//put objs in their id slots
 			objs.forEach(function (obj) {
-				return _this40.dungeonLevels[level].objs[obj.id] = obj;
+				return _this41.dungeonLevels[level].objs[obj.id] = obj;
 			});
 
 			//insert objs into the board
 			this.dungeonLevels[level].objs.forEach(function (obj) {
 				if (obj) {
-					_this40.board.insert(obj);
+					_this41.board.insert(obj);
 				}
 			});
 
 			this.dungeonLevels[level].objs.forEach(function (obj) {
 				if (obj) {
-					_this40.logic.think(obj, _this40.player);
+					_this41.logic.think(obj, _this41.player);
 				}
 			});
 		};
 
 		Game.prototype.update = function update() {
-			var _this41 = this;
+			var _this42 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
 
 			if (this.player.dungeonLevelChange) {
-				var level = this.currentDungeonLevel;
+				var level = this.stats.currentDungeonLevel;
 				if (this.player.dungeonLevelChange === "up") {
 					level--;
 				} else if (this.player.dungeonLevelChange === "down") {
@@ -2653,31 +2768,31 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//contains the total durations of each objs actions for this turn
 			var objDurations = [];
 			for (var i = 0; i < tickCount; i++) {
-				this.time += TICK;
+				this.stats.time += TICK;
 
-				this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj, index) {
+				this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(function (obj, index) {
 					//skip player
 					if (obj.type === "Player") {
 						return;
 					}
 
 					if (obj.isAlive) {
-						var _duration = obj.update(_this41.logger, _this41.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this42.logger, _this42.stats.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this41.logic.think(obj, _this41.player);
+							_this42.logic.think(obj, _this42.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						//obj died during update
 						if (!obj.isAlive) {
-							_this41.board.remove(obj);
-							delete _this41.dungeonLevels[_this41.currentDungeonLevel].objs[obj.id];
+							_this42.board.remove(obj);
+							delete _this42.dungeonLevels[_this42.stats.currentDungeonLevel].objs[obj.id];
 						}
 					} else {
-						_this41.board.remove(obj);
-						delete _this41.dungeonLevels[_this41.currentDungeonLevel].objs[obj.id];
+						_this42.board.remove(obj);
+						delete _this42.dungeonLevels[_this42.stats.currentDungeonLevel].objs[obj.id];
 					}
 				});
 			}
@@ -2686,7 +2801,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			this.player.fov = fov;
 
 			if (fov) {
-				this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj) {
+				this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(function (obj) {
 					if (obj instanceof Enemy) {
 						if (fov.has(obj.position)) {
 							obj.lifebar.show();
@@ -2706,20 +2821,20 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		};
 
 		Game.prototype.start = function start() {
-			var _this42 = this;
+			var _this43 = this;
 
 			this.logger.log("Hello and welcome", "hilight");
-			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj) {
+			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(function (obj) {
 				if (obj) {
-					_this42.board.insert(obj);
+					_this43.board.insert(obj);
 				}
 			});
 
 			var fov = this.logic.getFov(this.player);
 			this.player.fov = fov;
 
-			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(function (obj) {
-				_this42.logic.think(obj, _this42.player);
+			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(function (obj) {
+				_this43.logic.think(obj, _this43.player);
 				if (obj instanceof Enemy) {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
@@ -2745,34 +2860,35 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Player(position, stats) {
 			_classCallCheck(this, Player);
 
-			var _this43 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
+			var _this44 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
 
-			_this43.actions = [];
-			_this43.bgColor = "white";
-			_this43.glyph = "@";
-			_this43.color = "black";
+			_this44.actions = [];
+			_this44.bgColor = "white";
+			_this44.glyph = "@";
+			_this44.color = "black";
 
-			_this43.stats.maxHP = 50;
-			_this43.stats.HP = 50;
-			_this43.stats.viewDistance = 8;
-			_this43.stats.moveSpeed = 10;
+			_this44.stats.maxHP = 50;
+			_this44.stats.HP = 50;
+			_this44.stats.viewDistance = 8;
+			_this44.stats.moveSpeed = 10;
 			//this.stats.inventorySize = 15;
 
-			_this43.stats = stats || _this43.stats;
+			_this44.stats = stats || _this44.stats;
 
-			_this43.equipment.head = new Armor("head", "Bronze helmet", 1);
+			_this44.equipment.head = new Armor("head", "Bronze helmet", 1);
 
-			_this43.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
+			_this44.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
 
-			_this43.lifebar = new Lifebar(_this43.id, "Hero", document.getElementById("info-container-player"), _this43.stats.maxHP, _this43.stats.HP);
-			_this43.flavorName = "you";
-			_this43.flavor = "Hi mom!";
+			_this44.lifebar = new Lifebar(_this44.id, "Hero", document.getElementById("info-container-player"), _this44.stats);
+			_this44.flavorName = "you";
+			_this44.flavor = "Hi mom!";
 			//todo: store username here?
-			return _this43;
+			return _this44;
 		}
 
 		return Player;
 	}(Creature);
+
 	/*
  @depends ../core/game.class.js
  @depends ../objs/player.class.js

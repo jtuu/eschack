@@ -15,18 +15,26 @@ const Game = class Game {
 
 		this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
-		//global gametime
-		this.time = 0;
+		let self = this;
+		this.stats = {
+			time: 0,
+			dungeonName: "Dungeon of Esc",
+			currentDungeonLevel: 0,
+			get score() {
+				return Math.round(
+					(
+						(self.player.killcount + 1) * (self.stats.currentDungeonLevel + 1)
+					) / (
+						(self.stats.time) / 1000 + 1
+					)
+				);
+			}
+		};
 
-		this.currentDungeonLevel = 0;
 		this.dungeonLevels = [];
 
 		this.board = board;
 		this.player = dungeon.objs[0];
-
-		//map objs argument into this.objs by the objs creation id
-		//this.objs = [];
-		//objs.forEach(obj => this.objs[obj.id] = obj);
 
 		this.saveDungeonLevel(dungeon);
 
@@ -62,13 +70,13 @@ const Game = class Game {
 				this.mouseHandler.cursorFromScreen(screenPoint);
 
 				//if hovering over a tile that is seen
-				if(fov && fov.has(gamePoint)){
+				if (fov && fov.has(gamePoint)) {
 					let targetTile = this.board.get(gamePoint);
 
 					//if tile is not empty
 					if (targetTile && targetTile.top) {
 						//reset all lifebars styles
-						this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
+						this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
@@ -88,13 +96,13 @@ const Game = class Game {
 				//hovering over a lifebar
 			} else if (e.target.classList.contains("bar-lifebar")) {
 				//reset all lifebars styles
-				this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
+				this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
 					if (obj.lifebar) obj.lifebar.setStyle("default");
 				});
 
 				//get lifebars owner
 				let id = e.target.id.match(/[0-9]+$/);
-				let target = this.dungeonLevels[this.currentDungeonLevel].objs[Number(id)];
+				let target = this.dungeonLevels[this.stats.currentDungeonLevel].objs[Number(id)];
 
 				//set cursor to lifebars owner
 				if (target) {
@@ -115,39 +123,43 @@ const Game = class Game {
 		);
 		this.statsManager = new StatsManager(
 			document.getElementById("info-container-player"),
-			null,
+			document.getElementById("info-container-game"),
 			this.player.stats,
-			null
+			this.stats
 		);
 	}
 
-	saveDungeonLevel(dungeon){
-		let {rooms, paths, objs} = dungeon,
-			img = new Image();
-			img.src = secondCanvas.toDataURL();
-		this.dungeonLevels[this.currentDungeonLevel] = {
+	saveDungeonLevel(dungeon) {
+		let {
+			rooms,
+			paths,
+			objs
+		} = dungeon,
+		img = new Image();
+		img.src = secondCanvas.toDataURL();
+		this.dungeonLevels[this.stats.currentDungeonLevel] = {
 			objs: [],
 			rooms: rooms,
 			paths: paths,
 			map: img
 		};
-		objs.forEach(obj => this.dungeonLevels[this.currentDungeonLevel].objs[obj.id] = obj);
+		objs.forEach(obj => this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id] = obj);
 	}
 
-	changeDungeonLevel(level){
-		this.saveDungeonLevel(this.dungeonLevels[this.currentDungeonLevel]);
-		let dir = level > this.currentDungeonLevel ? "down" : "up";
+	changeDungeonLevel(level) {
+		this.saveDungeonLevel(this.dungeonLevels[this.stats.currentDungeonLevel]);
+		let dir = level > this.stats.currentDungeonLevel ? "down" : "up";
 
-		this.dungeonLevels[this.currentDungeonLevel].objs.forEach((obj,k) => {
-			if(k === 0){
+		this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach((obj, k) => {
+			if (k === 0) {
 				return;
 			}
-			if(obj.lifebar){
+			if (obj.lifebar) {
 				obj.lifebar.remove();
 			}
 		});
 
-		this.currentDungeonLevel = level;
+		this.stats.currentDungeonLevel = level;
 
 		mainCtx.clearRect(0, 0, w, h);
 		secondCtx.clearRect(0, 0, w, h);
@@ -156,23 +168,23 @@ const Game = class Game {
 		let objs = [];
 		objs[0] = this.player;
 		//if level already exists load it else generate new
-		if(this.dungeonLevels[level]){
+		if (this.dungeonLevels[level]) {
 			objs = this.dungeonLevels[level].objs;
 			secondCtx.drawImage(this.dungeonLevels[level].map, 0, 0);
 			//put player in the last room if we're going up
-			if(dir === "up"){
+			if (dir === "up") {
 				this.player.position.set(
-					this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length-1].x+1,
-					this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length-1].y+1
+					this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].x + 1,
+					this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].y + 1
 				);
-			}else{
+			} else {
 				//or in the first room
 				this.player.position.set(
-					this.dungeonLevels[level].rooms[0].x+1,
-					this.dungeonLevels[level].rooms[0].y+1
+					this.dungeonLevels[level].rooms[0].x + 1,
+					this.dungeonLevels[level].rooms[0].y + 1
 				);
 			}
-		}else{
+		} else {
 			let options = Utils.DungeonGenerator.defaultOptions;
 			options.stairs.up = true;
 			let dungeon = Utils.DungeonGenerator.makeLevel(this.player, options);
@@ -206,34 +218,34 @@ const Game = class Game {
 		let duration = this.player.update(this.logger);
 		let tickCount = duration / TICK;
 
-		if(this.player.dungeonLevelChange){
-			let level = this.currentDungeonLevel;
-			if(this.player.dungeonLevelChange === "up"){
+		if (this.player.dungeonLevelChange) {
+			let level = this.stats.currentDungeonLevel;
+			if (this.player.dungeonLevelChange === "up") {
 				level--;
-			}else if(this.player.dungeonLevelChange === "down"){
+			} else if (this.player.dungeonLevelChange === "down") {
 				level++;
 			}
 			this.changeDungeonLevel(level);
 
 			delete this.player.dungeonLevelChange;
-		}else if(!this.player.isAlive){
+		} else if (!this.player.isAlive) {
 			this.board.remove(this.player);
 		}
 
 		//contains the total durations of each objs actions for this turn
 		let objDurations = [];
-		for(let i = 0; i < tickCount; i++){
-			this.time += TICK;
+		for (let i = 0; i < tickCount; i++) {
+			this.stats.time += TICK;
 
-			this.dungeonLevels[this.currentDungeonLevel].objs.forEach((obj, index) => {
+			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach((obj, index) => {
 				//skip player
-				if(obj.type === "Player"){
+				if (obj.type === "Player") {
 					return;
 				}
 
-				if(obj.isAlive){
-					let duration = obj.update(this.logger, this.time + (objDurations[obj.id] || 0));
-					if(duration > 0){
+				if (obj.isAlive) {
+					let duration = obj.update(this.logger, this.stats.time + (objDurations[obj.id] || 0));
+					if (duration > 0) {
 						//if action was excecuted we generate new ones and
 						//forward the time for this obj
 						this.logic.think(obj, this.player);
@@ -241,13 +253,13 @@ const Game = class Game {
 					}
 
 					//obj died during update
-					if(!obj.isAlive){
+					if (!obj.isAlive) {
 						this.board.remove(obj);
-						delete this.dungeonLevels[this.currentDungeonLevel].objs[obj.id];
+						delete this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id];
 					}
-				}else{
+				} else {
 					this.board.remove(obj);
-					delete this.dungeonLevels[this.currentDungeonLevel].objs[obj.id];
+					delete this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id];
 				}
 			});
 		}
@@ -255,12 +267,12 @@ const Game = class Game {
 		let fov = this.logic.getFov(this.player);
 		this.player.fov = fov;
 
-		if(fov){
-			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
-				if(obj instanceof Enemy){
-					if(fov.has(obj.position)){
+		if (fov) {
+			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
+				if (obj instanceof Enemy) {
+					if (fov.has(obj.position)) {
 						obj.lifebar.show();
-					}else{
+					} else {
 						obj.lifebar.hide();
 					}
 				}
@@ -278,7 +290,7 @@ const Game = class Game {
 	start() {
 
 		this.logger.log("Hello and welcome", "hilight");
-		this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
+		this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
 			if (obj) {
 				this.board.insert(obj);
 			}
@@ -287,12 +299,12 @@ const Game = class Game {
 		let fov = this.logic.getFov(this.player);
 		this.player.fov = fov;
 
-		this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
+		this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
 			this.logic.think(obj, this.player);
-			if(obj instanceof Enemy){
-				if(fov.has(obj.position)){
+			if (obj instanceof Enemy) {
+				if (fov.has(obj.position)) {
 					obj.lifebar.show();
-				}else{
+				} else {
 					obj.lifebar.hide();
 				}
 			}

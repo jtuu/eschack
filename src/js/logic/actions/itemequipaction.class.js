@@ -33,7 +33,7 @@ const ItemEquipAction = class ItemEquipAction extends Action {
 		item = actor.inventory.splice(inventoryIndex, 1)[0];
 		actor.equipment[item.slot] = item;
 
-		this.logger.log(actor.flavorName + " equipped " + item.toString());
+		this.logger.log(actor.flavorName + " equipped " + item.toString(), "junk1");
 		return duration + 10;
 	}
 };

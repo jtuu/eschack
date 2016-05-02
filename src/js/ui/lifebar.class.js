@@ -1,9 +1,8 @@
 const Lifebar = class Lifebar {
-	constructor(id, name, container, max, value) {
+	constructor(id, name, container, stats) {
 		this.id = id;
 		this.name = name;
-		this.max = max;
-		this.value = value || max;
+		this.stats = stats;
 
 		this.container = container;
 
@@ -27,11 +26,11 @@ const Lifebar = class Lifebar {
 		if (!isNaN(value)) {
 			this.value = value;
 		}
-		this.bar.setAttribute("data-content", this.value + "/" + this.max);
+		this.bar.setAttribute("data-content", this.stats.HP + "/" + this.stats.maxHP);
 
 		//approximate visual size, range [0...100]
 		//do we need more precision? is this too much precision?
-		let sizeClass = "bar-size-" + Math.max(Math.floor(this.value / this.max * 100), 0);
+		let sizeClass = "bar-size-" + Math.max(Math.floor(this.stats.HP / this.stats.maxHP * 100), 0);
 		if (this.bar.className.match(/size/)) {
 			this.bar.className = this.bar.className.replace(/bar-size-[0-9]{1,3}/, sizeClass);
 		} else {

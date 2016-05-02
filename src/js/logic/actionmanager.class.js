@@ -47,7 +47,7 @@ const ActionManager = class ActionManager {
 				let vector = Point.distance(actor.position, actor.target.position);
 				vector.reduce();
 				instruction = vector;
-				if (!actor.noticed && shouldLog) this.logger.log(actor.flavorName + " noticed " + player.flavorName);
+				if (!actor.noticed && shouldLog) this.logger.log(actor.flavorName + " noticed " + player.flavorName, "threat1");
 				actor.noticed = true;
 			}
 

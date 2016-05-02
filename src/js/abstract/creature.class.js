@@ -1,4 +1,5 @@
 /*
+@depends ../core/globals.js
 @depends ../abstract/gameobject.class.js
 @depends ../misc/mixins.js
 @depends ../objs/weapon.class.js
@@ -21,12 +22,14 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 			"STR": 1,
 			"INT": 1,
 			"DEX": 1,
-			get AC(){
+			"XP": 0,
+			"XL": 1,
+			get AC() {
 				//add up the defence values of all equipped armor
 				return Object.keys(self.equipment)
 					.filter(k => self.equipment[k] && self.equipment[k].constructor === Armor)
-						.reduce((p, c) => self.equipment[c].defence + p, 0);
-				}
+					.reduce((p, c) => self.equipment[c].defence + p, 0);
+			}
 		};
 
 		this.inventory = [];
@@ -42,7 +45,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 		this.flavorName = "creature";
 		this.flavor = "It is mundane."; //flavor text used in examine
 
-		this.xp = 1;
+		this.killcount = 0;
 	}
 
 	//oh boy
@@ -62,10 +65,10 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 
 				proposals.some(p => {
 					let action = p();
-					if(action.try(this, time)){
+					if (action.try(this, time)) {
 						chosen = action;
 						return true;
-					}else{
+					} else {
 						return false;
 					}
 				});
@@ -77,18 +80,39 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 			}
 		});
 
-		for(let i = 0; i < updateCount; i++){
+		for (let i = 0; i < updateCount; i++) {
 			this.actions.shift();
 		}
 
 		return elapsedTime;
 	}
 
+	gainXP(amount) {
+		this.stats.XP += amount;
+
+		if (this.stats.XP >= BASE_XP * Math.pow(this.stats.XL + 1, BASE_XP_GROWTH)) {
+			return this.levelUp();
+		}
+		return false;
+	}
+
+	levelUp() {
+		this.stats.XL++;
+		let possibleStats = ["maxHP", "STR", "INT", "DEX"],
+			chosenStat = possibleStats[Math.floor(Math.random() * possibleStats.length)];
+
+		this.stats[chosenStat]++;
+		if(chosenStat === "maxHP"){
+			this.lifebar.set();
+		}
+		return chosenStat;
+	}
+
 	toString() {
 		return `${this.type}<br>${this.stats.HP} HP<br>${this.flavor}<br>${this.equipment.weapon.damage} ATT`;
 	}
 
-	get items(){
+	get items() {
 		let items = this.inventory.concat(Object.values(this.equipment)).filter(v => v);
 		return items;
 	}

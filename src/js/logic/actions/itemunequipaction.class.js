@@ -27,7 +27,7 @@ const ItemUnequipAction = class ItemUnequipAction extends Action {
 		}
 		actor.equipment[itemSlot] = null;
 
-		this.logger.log(actor.flavorName + " unequipped " + item.toString());
+		this.logger.log(actor.flavorName + " unequipped " + item.toString(), "junk1");
 		return 10;
 	}
 };

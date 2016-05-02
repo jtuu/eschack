@@ -12,6 +12,7 @@ const Enemy = class Enemy extends Creature {
 		this.stats.HP = 3;
 		this.stats.viewDistance = 7;
 		this.stats.moveSpeed = 9;
+		this.stats.XP = 1;
 
 		this.stats = stats || this.stats;
 
@@ -20,10 +21,10 @@ const Enemy = class Enemy extends Creature {
 	}
 
 	toString() {
-		return this.type + "<br>" + this.stats.HP + " HP<br>" + this.flavor + "<br>" + this.equipment.weapon.damage + " ATT<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.");
+		return this.type + "<br>" + this.stats.XL + " HP<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.") + "<br>" + this.flavor;
 	}
-	
+
 	createLifebar(){
-		this.lifebar = new Lifebar(this.id, this.type, document.getElementById("info-container-other-life"), this.stats.maxHP, this.stats.HP);
+		this.lifebar = new Lifebar(this.id, this.type, document.getElementById("info-container-other-life"), this.stats);
 	}
 };

@@ -245,6 +245,28 @@ const Utils = class Utils {
 		return new Weapon(name, Math.round(Math.random() * 5 + 1), Math.round(Math.random() * 6 + 4));
 	}
 
+	static get DamageCalculator() {
+		return class {
+			static get constants() {
+				return {
+					baseAC: 0.1,
+					defenderStrEffectiveness: 10,
+					attackerStatEffectiveness: 2
+				};
+			}
+
+			static get physical() {
+				return {
+					melee: (attacker, defender) => {
+						let effectiveAC = (defender.stats.AC + this.constants.baseAC) * (1 + defender.stats.STR / this.constants.defenderStrEffectiveness),
+							effectiveDmg = attacker.equipment.weapon.damage + (attacker.stats.STR + attacker.stats.DEX) / 2 / this.constants.attackerStatEffectiveness;
+						return Math.max(Math.floor(effectiveDmg - effectiveAC), 0);
+					}
+				};
+			}
+		};
+	}
+
 	//use this to generate maps
 	//(actually it generates array of objs which then get inserted by Game)
 	static get DungeonGenerator() {

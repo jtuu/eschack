@@ -9,11 +9,11 @@ const AttackAction = class AttackAction extends Action {
 	}
 
 	try (actor, time) {
-		if(!actor.equipment.weapon){
+		if (!actor.equipment.weapon) {
 			actor.equipment.weapon = Utils.defaults.weapon();
 		}
 		this.duration = actor.equipment.weapon.speed;
-		if(time % this.duration !== 0){
+		if (time % this.duration !== 0) {
 			return false;
 		}
 		let target = new Point(...actor.position.get);
@@ -28,16 +28,21 @@ const AttackAction = class AttackAction extends Action {
 		target.moveBy(this.direction);
 		target = this.context.get(target);
 
-		let damage = Math.max(actor.equipment.weapon.damage - target.top.stats.AC, 0);
+		let damage = Utils.DamageCalculator.physical.melee(actor, target.top);
 
-		if(this.logger){
+		if (this.logger) {
 			this.logger.log(`${actor.flavorName} hit ${target.top.flavorName} for ${damage} damage with ${actor.equipment.weapon}`, (actor.constructor === Player ? "hit" : "damage"));
 		}
 		let died = target.top.takeDamage(damage, this.logger);
 		if (died) {
+			actor.killcount++;
+			let leveledUpStat = actor.gainXP(target.top.stats.XP);
+			if (leveledUpStat) {
+				this.logger.log(actor.flavorName + " leveled up and gained a point in " + leveledUpStat, "hilight");
+			}
 			//drop all items and corpse
 			target.top.items.forEach(item => {
-				if(item.canDrop){
+				if (item.canDrop) {
 					item.position = new Point(...target.top.position.get);
 					target.add(item);
 				}
