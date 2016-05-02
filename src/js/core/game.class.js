@@ -25,7 +25,7 @@ const Game = class Game {
 					(
 						(self.player.killcount + 1) * (self.stats.currentDungeonLevel + 1)
 					) / (
-						(self.stats.time) / 1000 + 1
+						(self.stats.time) / 10000 + 1
 					)
 				);
 			}
@@ -187,6 +187,7 @@ const Game = class Game {
 		} else {
 			let options = Utils.DungeonGenerator.defaultOptions;
 			options.stairs.up = true;
+			options.difficulty = this.stats.currentDungeonLevel;
 			let dungeon = Utils.DungeonGenerator.makeLevel(this.player, options);
 			objs = dungeon.objs;
 			this.dungeonLevels[level] = {
@@ -277,9 +278,15 @@ const Game = class Game {
 					}
 				}
 			});
+
 			mainCtx.clearRect(0, 0, w, h);
-			fov.draw();
+			if (this.player.cheatMode) {
+				this.board.draw();
+			}else{
+				fov.draw();
+			}
 			secondCtx.drawImage(mainCanvas, 0, 0);
+
 		}
 
 		this.inventoryManager.update();

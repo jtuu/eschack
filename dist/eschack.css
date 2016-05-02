@@ -140,10 +140,10 @@ canvas {
   .info-container#info-container-equipment .equipment-row .equipment-slot {
     display: inline-block;
     width: 70px; }
-    .info-container#info-container-equipment .equipment-row .equipment-slot:after {
-      content: ": "; }
   .info-container#info-container-equipment .equipment-row .equipment-item {
     display: inline-block; }
+    .info-container#info-container-equipment .equipment-row .equipment-item:before {
+      content: ": "; }
 
 .menu-title {
   background: black;
@@ -175,7 +175,7 @@ label {
 .bar {
   height: 20px;
   width: 100px;
-  background: black;
+  background: #dc6565;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -195,12 +195,9 @@ label {
     left: 0;
     right: 0; }
   .bar:before {
-    background: white; }
+    background: #b3d7b2; }
   .bar:after {
     content: attr(data-content);
-    mix-blend-mode: difference;
-    -webkit-filter: invert(1);
-            filter: invert(1);
     color: black; }
   .bar.hilighted {
     border: 1px solid yellow; }

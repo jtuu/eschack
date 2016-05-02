@@ -335,9 +335,15 @@ const Utils = class Utils {
 				for (let x = room.x + room.w; x > room.x; x--) {
 					for (let y = room.y + room.h; y > room.y; y--) {
 						if (Math.random() < options.enemies.spawnChance) {
-							let enemy = enemyList[Math.round(Math.random() * (enemyList.length - 1))];
+							let enemy = enemyList[Math.floor(Math.random() * enemyList.length)];
 							enemy = new enemy(new Point(x, y));
 							enemy = this.generateEquipment(enemy);
+
+							for (let i = 1; i < options.difficulty; i++) {
+								enemy.levelUp();
+								enemy.stats.XP++;
+							}
+
 							enemies.push(enemy);
 						}
 					}
@@ -413,10 +419,10 @@ const Utils = class Utils {
 
 				//carve out paths
 				paths.forEach(path => {
-					for (let i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1; i0++) {
+					for (let i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1 + 1; i0++) {
 						matrix[path.y1][i0].empty();
 					}
-					for (let i0 = Math.min(path.y2, path.y3), i1 = Math.max(path.y2, path.y3); i0 < i1; i0++) {
+					for (let i0 = Math.min(path.y2, path.y3), i1 = Math.max(path.y2, path.y3); i0 < i1 + 1; i0++) {
 						matrix[i0][path.x2].empty();
 					}
 				});
@@ -439,6 +445,7 @@ const Utils = class Utils {
 
 			static get defaultOptions() {
 				return {
+					difficulty: 1,
 					stairs: {
 						up: false,
 						down: true

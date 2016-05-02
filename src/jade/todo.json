@@ -1,8 +1,8 @@
 {
 	"todo": [
-		"add stats display for player, flavored stats for other creatures",
+		"move stuff out of utils",
+		"add flavored stats display for enemies",
 		"place enemies in a more intelligent way",
-		"xp, stats",
 		"fix raycasting",
 		"fix saving/loading",
 		"enemies shouldnt attack eachother (faction system?)",

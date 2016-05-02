@@ -41,6 +41,8 @@ const KeyHandler = class KeyHandler {
 				60: "up", //<
 				226: "up", //chrome...
 
+				0: "cheat"
+
 			};
 
 			this.actionMap = {
@@ -55,7 +57,8 @@ const KeyHandler = class KeyHandler {
 				"c": null,
 				"pickup": "pickup",
 				"up": "stair",
-				"down": "stair"
+				"down": "stair",
+				"cheat": "cheat"
 			};
 
 		}else if(map === "inventorydialog"){

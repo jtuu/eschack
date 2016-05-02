@@ -6,8 +6,9 @@ $nbsp: "\a0";
 $canvas-width: 1040px;
 $canvas-height: 520px;
 $basic-border: 1px solid black;
-$bar-primary-color: black;
-$bar-secondary-color: white;
+$bar-primary-color: hsl(0, 63%, 63%);
+$bar-secondary-color: hsl(118, 32%, 77%);
+$bar-text-color: black;
 $hilight-color: yellow;
 $cursor-color: hsl(227, 95%, 33%);
 @mixin PseudoBlock($p) {
@@ -86,7 +87,7 @@ canvas {
 				color: hsl(211, 75%, 40%);
 			}
 			&.logmsg-damage {
-				color: hsl(28, 74%, 39%)
+				color: hsl(28, 74%, 39%);
 			}
 			&.logmsg-miss {
 				color: hsl(90, 2%, 33%);
@@ -138,26 +139,26 @@ $info-containers-margin: 20;
 		border: $basic-border;
 		left: 370px;
 		width: 160px;
-		& .game-stat-row{
+		& .game-stat-row {
 			margin-left: 10px;
-			&#game-stat-dungeonName{
+			&#game-stat-dungeonName {
 				font-weight: bold;
 				line-height: 2em;
-				& .game-stat-name{
-					width:0;
+				& .game-stat-name {
+					width: 0;
 				}
 			}
-			& .game-stat-name{
+			& .game-stat-name {
 				display: inline-block;
 				width: 70px;
 			}
-			& .game-stat-value{
+			& .game-stat-value {
 				display: inline-block;
 			}
 		}
-		& .game-stat-row:not(#game-stat-dungeonName) .game-stat-name{
-			&:after{
-				content:":";
+		& .game-stat-row:not(#game-stat-dungeonName) .game-stat-name {
+			&:after {
+				content: ":";
 			}
 		}
 	}
@@ -177,8 +178,8 @@ $info-containers-margin: 20;
 		width: 240px;
 		@include InfoContainersTopCalc(150, "left");
 		border: $basic-border;
-		& .examine-container{
-			padding:10px;
+		& .examine-container {
+			padding: 10px;
 			height: calc(100% - 50px);
 			overflow-y: auto;
 		}
@@ -204,12 +205,12 @@ $info-containers-margin: 20;
 			& .equipment-slot {
 				display: inline-block;
 				width: 70px;
-				&:after {
-					content: ": ";
-				}
 			}
 			& .equipment-item {
 				display: inline-block;
+				&:before {
+					content: ": ";
+				}
 			}
 		}
 	}
@@ -221,8 +222,8 @@ $info-containers-margin: 20;
 }
 #bottom-row {
 	> div {
-		> h3{
-			margin:0;
+		> h3 {
+			margin: 0;
 		}
 		display: inline-block;
 		margin: 10px;
@@ -230,8 +231,8 @@ $info-containers-margin: 20;
 		border: $basic-border;
 		vertical-align: top;
 		width: 45%;
-		& .content{
-			height:150px;
+		& .content {
+			height: 150px;
 			overflow-y: auto;
 		}
 	}
@@ -261,9 +262,9 @@ label {
 	}
 	&:after {
 		content: attr(data-content);
-		mix-blend-mode: difference;
-		filter: invert(1);
-		color: black;
+		//mix-blend-mode: difference;
+		//filter: invert(1);
+		color: $bar-text-color;
 	}
 	&.hilighted {
 		border: 1px solid $hilight-color;

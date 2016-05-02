@@ -16,7 +16,7 @@ const MoveAction = class MoveAction extends Action {
 		let target = new Point(...actor.position.get);
 		target.moveBy(this.movement);
 		let tile = this.context.get(target);
-		return (tile.isEmpty || (tile && tile.top && !tile.top.isMoveBlocking)) && actor.isAlive;
+		return actor.cheatMode || ((tile.isEmpty || (tile && tile.top && !tile.top.isMoveBlocking)) && actor.isAlive);
 	}
 
 	do(actor) {

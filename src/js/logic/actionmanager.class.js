@@ -127,6 +127,10 @@ const ActionManager = class ActionManager {
 						case "unequip":
 							this.logger.log("Which item to unequip? [a-z]");
 							return false;
+						case "cheat":
+							actor.cheatMode = true;
+							this.logger.log("Cheat mode activated", "hilight");
+							return false;
 						default:
 							break;
 					}

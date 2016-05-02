@@ -637,7 +637,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		}
 
 		Enemy.prototype.toString = function toString() {
-			return this.type + "<br>" + this.stats.XL + " HP<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.") + "<br>" + this.flavor;
+			return this.type + "<br>Lvl. " + this.stats.XL + "<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.") + "<br>" + this.flavor;
 		};
 
 		Enemy.prototype.createLifebar = function createLifebar() {
@@ -726,9 +726,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					84: { use: "inventorydialog", act: "unequip" }, //t
 
 					60: "up", //<
-					226: "up" };
+					226: "up", //chrome...
 
-				//chrome...
+					0: "cheat"
+
+				};
 
 				this.actionMap = {
 					"n": function n() {
@@ -758,7 +760,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					"c": null,
 					"pickup": "pickup",
 					"up": "stair",
-					"down": "stair"
+					"down": "stair",
+					"cheat": "cheat"
 				};
 			} else if (map === "inventorydialog") {
 				this.using = "inventorydialog";
@@ -1325,9 +1328,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						for (var x = room.x + room.w; x > room.x; x--) {
 							for (var y = room.y + room.h; y > room.y; y--) {
 								if (Math.random() < options.enemies.spawnChance) {
-									var enemy = enemyList[Math.round(Math.random() * (enemyList.length - 1))];
+									var enemy = enemyList[Math.floor(Math.random() * enemyList.length)];
 									enemy = new enemy(new Point(x, y));
 									enemy = this.generateEquipment(enemy);
+
+									for (var i = 1; i < options.difficulty; i++) {
+										enemy.levelUp();
+										enemy.stats.XP++;
+									}
+
 									enemies.push(enemy);
 								}
 							}
@@ -1405,10 +1414,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 						//carve out paths
 						paths.forEach(function (path) {
-							for (var i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1; i0++) {
+							for (var i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1 + 1; i0++) {
 								matrix[path.y1][i0].empty();
 							}
-							for (var _i3 = Math.min(path.y2, path.y3), _i4 = Math.max(path.y2, path.y3); _i3 < _i4; _i3++) {
+							for (var _i3 = Math.min(path.y2, path.y3), _i4 = Math.max(path.y2, path.y3); _i3 < _i4 + 1; _i3++) {
 								matrix[_i3][path.x2].empty();
 							}
 						});
@@ -1433,6 +1442,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						key: "defaultOptions",
 						get: function get() {
 							return {
+								difficulty: 1,
 								stairs: {
 									up: false,
 									down: true
@@ -2291,7 +2301,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			var target = new (Function.prototype.bind.apply(Point, [null].concat(actor.position.get)))();
 			target.moveBy(this.movement);
 			var tile = this.context.get(target);
-			return (tile.isEmpty || tile && tile.top && !tile.top.isMoveBlocking) && actor.isAlive;
+			return actor.cheatMode || (tile.isEmpty || tile && tile.top && !tile.top.isMoveBlocking) && actor.isAlive;
 		};
 
 		MoveAction.prototype.do = function _do(actor) {
@@ -2302,6 +2312,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 		return MoveAction;
 	}(Action);
+
 	/* @depends ../../abstract/action.class.js */
 	//doesnt do anything
 	var NullAction = function (_Action7) {
@@ -2515,6 +2526,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 							case "unequip":
 								this.logger.log("Which item to unequip? [a-z]");
 								return false;
+							case "cheat":
+								actor.cheatMode = true;
+								this.logger.log("Cheat mode activated", "hilight");
+								return false;
 							default:
 								break;
 						}
@@ -2570,7 +2585,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				dungeonName: "Dungeon of Esc",
 				currentDungeonLevel: 0,
 				get score() {
-					return Math.round((self.player.killcount + 1) * (self.stats.currentDungeonLevel + 1) / (self.stats.time / 1000 + 1));
+					return Math.round((self.player.killcount + 1) * (self.stats.currentDungeonLevel + 1) / (self.stats.time / 10000 + 1));
 				}
 			};
 
@@ -2717,6 +2732,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			} else {
 				var options = Utils.DungeonGenerator.defaultOptions;
 				options.stairs.up = true;
+				options.difficulty = this.stats.currentDungeonLevel;
 				var dungeon = Utils.DungeonGenerator.makeLevel(this.player, options);
 				objs = dungeon.objs;
 				this.dungeonLevels[level] = {
@@ -2810,8 +2826,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						}
 					}
 				});
+
 				mainCtx.clearRect(0, 0, w, h);
-				fov.draw();
+				if (this.player.cheatMode) {
+					this.board.draw();
+				} else {
+					fov.draw();
+				}
 				secondCtx.drawImage(mainCanvas, 0, 0);
 			}
 

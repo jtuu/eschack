@@ -21,7 +21,7 @@ const Enemy = class Enemy extends Creature {
 	}
 
 	toString() {
-		return this.type + "<br>" + this.stats.XL + " HP<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.") + "<br>" + this.flavor;
+		return this.type + "<br>Lvl. " + this.stats.XL + "<br>" + (this.noticed ? "It has noticed you." : "It has not noticed you.") + "<br>" + this.flavor;
 	}
 
 	createLifebar(){
