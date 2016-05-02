@@ -11,6 +11,13 @@ $bar-secondary-color: hsl(118, 32%, 77%);
 $bar-text-color: black;
 $hilight-color: yellow;
 $cursor-color: hsl(227, 95%, 33%);
+$main-width: 98vw;
+
+@mixin MainViewWidth(){
+	max-width: $canvas-width;
+	width: $main-width;
+}
+
 @mixin PseudoBlock($p) {
 	&:#{$p} {
 		content: "";
@@ -37,6 +44,7 @@ body {
 }
 canvas {
 	display: block;
+	@include MainViewWidth();
 	&#canvas-second {
 		position: absolute;
 		top: 0;
@@ -47,12 +55,12 @@ canvas {
 }
 #canvas-container {
 	position: relative;
-	width: $canvas-width;
+	@include MainViewWidth();
 	height: $canvas-height;
 }
 #logbox {
 	box-sizing: border-box;
-	width: $canvas-width;
+	@include MainViewWidth();
 	height: 200px;
 	background: $component-bg-color;
 	color: black;
@@ -215,6 +223,14 @@ $info-containers-margin: 20;
 		}
 	}
 }
+#column-right{
+	height: max(
+		map-get($info-container-tops, left),
+		map-get($info-container-tops, right)
+	) + px;
+	width: 530px;
+}
+
 .menu-title {
 	background: black;
 	color: darkgrey;
@@ -230,14 +246,10 @@ $info-containers-margin: 20;
 		padding: 10px;
 		border: $basic-border;
 		vertical-align: top;
-		width: 45%;
 		& .content {
 			height: 150px;
 			overflow-y: auto;
 		}
-	}
-	& #settings {
-		min-width: 200px;
 	}
 }
 label {

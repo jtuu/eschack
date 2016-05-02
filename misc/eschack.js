@@ -511,11 +511,12 @@ const KeyHandler = class KeyHandler {
 		this.use("default");
 	}
 
-	use(map = "default"){
-		if(map ==="default"){
+	use(map = "default") {
+		if (map === "default") {
 			this.using = "default";
 
 			this.keyCases = {
+				/*
 				//numpad
 				104: "n",
 				100: "w",
@@ -548,6 +549,45 @@ const KeyHandler = class KeyHandler {
 				226: "up", //chrome...
 
 				0: "cheat"
+				*/
+
+				"Numpad1": "sw",
+				"Numpad2": "s",
+				"Numpad3": "se",
+				"Numpad4": "w",
+				"Numpad5": "c",
+				"Numpad6": "e",
+				"Numpad7": "nw",
+				"Numpad8": "n",
+				"Numpad9": "ne",
+
+				"KeyH": "w",
+				"KeyJ": "s",
+				"KeyK": "n",
+				"KeyL": "e",
+				"KeyY": "nw",
+				"KeyU": "ne",
+				"KeyB": "sw",
+				"KeyN": "se",
+
+				"KeyG": "pickup",
+
+				"KeyD": {
+					use: "inventorydialog",
+					act: "drop"
+				},
+				"KeyW": {
+					use: "inventorydialog",
+					act: "equip"
+				},
+				"KeyT": {
+					use: "inventorydialog",
+					act: "unequip"
+				},
+
+				"KeyS": "up",
+
+				"Backquote": "cheat"
 
 			};
 
@@ -567,24 +607,25 @@ const KeyHandler = class KeyHandler {
 				"cheat": "cheat"
 			};
 
-		}else if(map === "inventorydialog"){
+		} else if (map === "inventorydialog") {
 			this.using = "inventorydialog";
-			this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
+			//this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
+			this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p["Key" + c.toUpperCase()] = c, p), {});
 		}
 	}
 
 	//input is a key or a keycode
 	//returns action instruction
 	get(key) {
-		if(typeof this.keyCases[key] === "object"){
+		if (typeof this.keyCases[key] === "object") {
 			this.act = this.keyCases[key].act;
 			this.use(this.keyCases[key].use);
 			return this.act;
-		}else if(this.using === "inventorydialog"){
+		} else if (this.using === "inventorydialog") {
 			let val = this.keyCases[key];
 			//return default
 			this.use();
-			return this.act+":"+val;
+			return this.act + ":" + val;
 		}
 		this.act = undefined;
 		return this.actionMap[this.keyCases[key]];
@@ -2074,7 +2115,7 @@ const Game = class Game {
 		//keypress eventlistener
 		this.keyHandler = new KeyHandler();
 		document.addEventListener("keydown", e => {
-			if (this.logic.delegateAction(this.player, this.keyHandler.get(e.keyCode))) {
+			if (this.logic.delegateAction(this.player, this.keyHandler.get(e.code))) {
 				this.update();
 			}
 		});

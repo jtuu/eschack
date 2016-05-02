@@ -16,26 +16,6 @@ html
 				canvas#canvas-second
 				canvas#canvas-main
 			#logbox
-			#bottom-row
-				#settings
-					h3 Controls
-					.content
-						ul
-							li numpad or vi keys: movement
-							li num5: rest turn
-							li g: pick up item
-							li d: drop item
-							li w: equip item
-							li t: unequip item
-							li &lt; or &gt;: enter stairs
-					//a.github-button(data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/") Watch
-					//script#github-bjs(async defer src="https://buttons.github.io/buttons.js")
-				#todo
-					h3 TODO
-					.content
-						ul
-							each val in todo
-								li=	 val
 		.column#column-right
 			.info-container.moveable.resizeable.moveable-anchor#info-container-player
 			.info-container.moveable.resizeable.moveable-anchor#info-container-game
@@ -48,6 +28,26 @@ html
 				strong.menu-title.moveable-anchor Inventory
 			.info-container.moveable.resizeable#info-container-equipment
 				strong.menu-title.moveable-anchor Equipment
+		#bottom-row
+			#settings
+				h3 Controls
+				.content
+					ul
+						li numpad or vi keys: movement
+						li num5: rest turn
+						li g: pick up item
+						li d: drop item
+						li w: equip item
+						li t: unequip item
+						li s: enter stairs
+				//a.github-button(data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/") Watch
+				//script#github-bjs(async defer src="https://buttons.github.io/buttons.js")
+			#todo
+				h3 TODO
+				.content
+					ul
+						each val in todo
+							li=	 val
 
 
 		script(src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js")

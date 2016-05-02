@@ -697,38 +697,72 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				this.using = "default";
 
 				this.keyCases = {
-					//numpad
-					104: "n",
-					100: "w",
-					98: "s",
-					102: "e",
-					105: "ne",
-					99: "se",
-					97: "sw",
-					103: "nw",
+					/*
+     //numpad
+     104: "n",
+     100: "w",
+     98: "s",
+     102: "e",
+     105: "ne",
+     99: "se",
+     97: "sw",
+     103: "nw",
+     		//vi keys
+     75: "n", //k
+     76: "e", //l
+     74: "s", //j
+     72: "w", //h
+     89: "nw", //y
+     85: "ne", //u
+     66: "sw", //b
+     78: "se", //n
+     		101: "c", //num5
+     		71: "pickup", //g
+     		68: {use: "inventorydialog", act: "drop"}, //d
+     87: {use: "inventorydialog", act: "equip"}, //w
+     84: {use: "inventorydialog", act: "unequip"}, //t
+     		60: "up", //<
+     226: "up", //chrome...
+     		0: "cheat"
+     */
 
-					//vi keys
-					75: "n", //k
-					76: "e", //l
-					74: "s", //j
-					72: "w", //h
-					89: "nw", //y
-					85: "ne", //u
-					66: "sw", //b
-					78: "se", //n
+					"Numpad1": "sw",
+					"Numpad2": "s",
+					"Numpad3": "se",
+					"Numpad4": "w",
+					"Numpad5": "c",
+					"Numpad6": "e",
+					"Numpad7": "nw",
+					"Numpad8": "n",
+					"Numpad9": "ne",
 
-					101: "c", //num5
+					"KeyH": "w",
+					"KeyJ": "s",
+					"KeyK": "n",
+					"KeyL": "e",
+					"KeyY": "nw",
+					"KeyU": "ne",
+					"KeyB": "sw",
+					"KeyN": "se",
 
-					71: "pickup", //g
+					"KeyG": "pickup",
 
-					68: { use: "inventorydialog", act: "drop" }, //d
-					87: { use: "inventorydialog", act: "equip" }, //w
-					84: { use: "inventorydialog", act: "unequip" }, //t
+					"KeyD": {
+						use: "inventorydialog",
+						act: "drop"
+					},
+					"KeyW": {
+						use: "inventorydialog",
+						act: "equip"
+					},
+					"KeyT": {
+						use: "inventorydialog",
+						act: "unequip"
+					},
 
-					60: "up", //<
-					226: "up", //chrome...
+					"KeyS": "up",
 
-					0: "cheat"
+					"Backquote": "cheat"
 
 				};
 
@@ -765,8 +799,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				};
 			} else if (map === "inventorydialog") {
 				this.using = "inventorydialog";
+				//this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
 				this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce(function (p, c) {
-					return p[c.toUpperCase().charCodeAt(0)] = c, p;
+					return p["Key" + c.toUpperCase()] = c, p;
 				}, {});
 			}
 		};
@@ -2601,7 +2636,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this39.logic.delegateAction(_this39.player, _this39.keyHandler.get(e.keyCode))) {
+				if (_this39.logic.delegateAction(_this39.player, _this39.keyHandler.get(e.code))) {
 					_this39.update();
 				}
 			});
