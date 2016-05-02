@@ -1,6 +1,7 @@
 .moveable {
-  position: absolute;
-  cursor: move; }
+  position: absolute; }
+  .moveable.moveable-anchor, .moveable .moveable-anchor {
+    cursor: move; }
 
 .resizeable {
   position: absolute; }

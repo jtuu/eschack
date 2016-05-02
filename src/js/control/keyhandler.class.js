@@ -39,7 +39,8 @@ const KeyHandler = class KeyHandler {
 				84: {use: "inventorydialog", act: "unequip"}, //t
 
 				60: "up", //<
-				62: "down" //>
+				226: "up", //chrome...
+
 			};
 
 			this.actionMap = {

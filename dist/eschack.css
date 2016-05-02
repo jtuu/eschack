@@ -56,8 +56,26 @@ canvas {
 
 .info-container#info-container-player {
   top: 10px;
-  height: 50px;
-  border: 1px solid black; }
+  height: 200px;
+  border: 1px solid black;
+  width: 340px; }
+  .info-container#info-container-player .player-stat-row {
+    display: inline-block;
+    width: 50%; }
+    .info-container#info-container-player .player-stat-row .player-stat-name {
+      display: inline-block;
+      width: 70px; }
+      .info-container#info-container-player .player-stat-row .player-stat-name:after {
+        content: ":"; }
+    .info-container#info-container-player .player-stat-row .player-stat-value {
+      display: inline-block; }
+
+.info-container#info-container-game {
+  top: 10px;
+  height: 200px;
+  border: 1px solid black;
+  left: 370px;
+  width: 160px; }
 
 .info-container#info-container-other-life {
   width: 100%;
@@ -65,41 +83,63 @@ canvas {
   overflow-y: auto; }
 
 .info-container#info-container-other-misc {
-  top: 250px;
-  width: 300px;
+  width: 240px;
+  top: 230px;
+  height: 150px;
+  border: 1px solid black; }
+  .info-container#info-container-other-misc .examine-container {
+    padding: 10px;
+    height: calc(100% - 50px);
+    overflow-y: auto; }
+
+#info-container-other-life-wrap {
+  width: 240px;
+  top: 400px;
   height: 150px;
   border: 1px solid black; }
 
 .info-container#info-container-inventory {
-  top: 80px;
-  left: 330px;
+  left: 270px;
+  top: 230px;
   height: 320px;
-  width: 200px;
+  width: 260px;
   border: 1px solid black; }
 
 .info-container#info-container-equipment {
-  top: 420px;
+  top: 570px;
   height: 200px;
   width: 520px;
   border: 1px solid black; }
-
-#info-container-other-life-wrap {
-  top: 80px;
-  width: 300px;
-  height: 150px;
-  border: 1px solid black; }
+  .info-container#info-container-equipment .equipment-row .equipment-key {
+    display: inline-block;
+    width: 40px; }
+    .info-container#info-container-equipment .equipment-row .equipment-key:after {
+      content: " - "; }
+  .info-container#info-container-equipment .equipment-row .equipment-slot {
+    display: inline-block;
+    width: 70px; }
+    .info-container#info-container-equipment .equipment-row .equipment-slot:after {
+      content: ": "; }
+  .info-container#info-container-equipment .equipment-row .equipment-item {
+    display: inline-block; }
 
 .menu-title {
   background: black;
   color: darkgrey;
   display: block; }
 
-#bottom-row > * {
+#bottom-row > div {
   display: inline-block;
   margin: 10px;
   padding: 10px;
   border: 1px solid black;
-  vertical-align: top; }
+  vertical-align: top;
+  width: 45%; }
+  #bottom-row > div > h3 {
+    margin: 0; }
+  #bottom-row > div .content {
+    height: 150px;
+    overflow-y: auto; }
 
 #bottom-row #settings {
   min-width: 200px; }
@@ -428,30 +468,30 @@ codepen.io/Vestride/pen/vHzyk
               animation-delay: 0s; }
 
 @-webkit-keyframes pulse {
-  from,
-  40% {
+  40%,
+  from {
     background: #fdfdfd; }
   to {
     background: #dadada; } }
 
 @keyframes pulse {
-  from,
-  40% {
+  40%,
+  from {
     background: #fdfdfd; }
   to {
     background: #dadada; } }
 
 @-webkit-keyframes show {
-  from,
-  40% {
+  40%,
+  from {
     opacity: 0; }
   41%,
   to {
     opacity: 1; } }
 
 @keyframes show {
-  from,
-  40% {
+  40%,
+  from {
     opacity: 0; }
   41%,
   to {

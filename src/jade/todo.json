@@ -5,7 +5,6 @@
 		"xp, stats",
 		"fix raycasting",
 		"fix saving/loading",
-		"ItemUnequipAction",
 		"enemies shouldnt attack eachother (faction system?)",
 		"pathfinding"
 	]

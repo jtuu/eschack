@@ -18,35 +18,36 @@ html
 			#logbox
 			#bottom-row
 				#settings
-					button#button-save save
-					button#button-delete delete
-					hr
-					h4 Controls
-					p numpad or vi keys: movement
-					p num5: rest turn
-					p g: pick up item
-					p d: drop item
-					p w: wear or wield item
-					p &lt; or &gt;: enter stairs
-					hr
+					h3 Controls
+					.content
+						ul
+							li numpad or vi keys: movement
+							li num5: rest turn
+							li g: pick up item
+							li d: drop item
+							li w: equip item
+							li t: unequip item
+							li &lt; or &gt;: enter stairs
 					//a.github-button(data-count-api="/repos/jtuu/eschack#subscribers_count" data-count-href="jtuu/eschack/watchers" data-style="mega" data-icon="octicon-eye" href="https://github.com/jtuu/eschack/") Watch
 					//script#github-bjs(async defer src="https://buttons.github.io/buttons.js")
 				#todo
 					h3 TODO
-					ul
-						each val in todo
-							li=	 val
+					.content
+						ul
+							each val in todo
+								li=	 val
 		.column#column-right
-			.info-container.moveable.resizeable#info-container-player
+			.info-container.moveable.resizeable.moveable-anchor#info-container-player
+			.info-container.moveable.resizeable.moveable-anchor#info-container-game
 			#info-container-other-life-wrap.moveable.resizeable
-				strong.menu-title Enemies
+				strong.menu-title.moveable-anchor Enemies
 				.info-container#info-container-other-life
 			.info-container.moveable.resizeable#info-container-other-misc
-				strong.menu-title Examine
+				strong.menu-title.moveable-anchor Examine
 			.info-container.moveable.resizeable#info-container-inventory
-				strong.menu-title Inventory
+				strong.menu-title.moveable-anchor Inventory
 			.info-container.moveable.resizeable#info-container-equipment
-				strong.menu-title Equipment
+				strong.menu-title.moveable-anchor Equipment
 
 
 		script(src="https://rawgit.com/pieroxy/lz-string/master/libs/lz-string.min.js")

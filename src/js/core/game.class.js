@@ -1,8 +1,9 @@
-/* 
+/*
 @depends globals.js
 @depends ../ui/equipmentmanager.class.js
 @depends ../ui/inventorymanager.class.js
 @depends ../ui/logboxmanager.class.js
+@depends ../ui/statsmanager.class.js
 @depends ../misc/utils.class.js
 @depends ../logic/actionmanager.class.js
 @depends ../control/keyhandler.class.js
@@ -11,22 +12,22 @@
 //the game
 const Game = class Game {
 	constructor(board, dungeon) {
-		
+
 		this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
 		//global gametime
 		this.time = 0;
-		
+
 		this.currentDungeonLevel = 0;
 		this.dungeonLevels = [];
-		
+
 		this.board = board;
 		this.player = dungeon.objs[0];
-		
+
 		//map objs argument into this.objs by the objs creation id
 		//this.objs = [];
 		//objs.forEach(obj => this.objs[obj.id] = obj);
-		
+
 		this.saveDungeonLevel(dungeon);
 
 		this.logic = new ActionManager(this.board, this.logger);
@@ -34,16 +35,16 @@ const Game = class Game {
 		//keypress eventlistener
 		this.keyHandler = new KeyHandler();
 		document.addEventListener("keydown", e => {
-			if (this.logic.delegateAction(this.player, this.keyHandler.get(e.which))) {
+			if (this.logic.delegateAction(this.player, this.keyHandler.get(e.keyCode))) {
 				this.update();
 			}
 		});
 
 		let miscOtherInfoContainer = document.getElementById("info-container-other-misc");
-		
+
 		this.examineContainer = document.createElement("div");
-		this.examineContainer.style.padding = "10px";
-		
+		this.examineContainer.className = "examine-container";
+
 		miscOtherInfoContainer.appendChild(this.examineContainer);
 
 		//cleaned this up a bit but it's still not very nice
@@ -51,26 +52,26 @@ const Game = class Game {
 		document.addEventListener("mousemove", e => {
 			let bounds = this.board.bounds;
 			let screenPoint = new Point(e.pageX, e.pageY);
-			
+
 			//mouse is inside game screen
 			if (screenPoint.in(bounds)) {
 				let fov = this.player.fov,
 					gamePoint = Utils.screenToGame(screenPoint, this.board.tileSize, this.board.spacing);
-					
+
 				//set cursor position
 				this.mouseHandler.cursorFromScreen(screenPoint);
-					
+
 				//if hovering over a tile that is seen
 				if(fov && fov.has(gamePoint)){
 					let targetTile = this.board.get(gamePoint);
-					
+
 					//if tile is not empty
 					if (targetTile && targetTile.top) {
 						//reset all lifebars styles
 						this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
-						
+
 						//set examine text
 						this.examineContainer.innerHTML = targetTile.top;
 						//highlight lifebar
@@ -90,7 +91,7 @@ const Game = class Game {
 				this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
 					if (obj.lifebar) obj.lifebar.setStyle("default");
 				});
-				
+
 				//get lifebars owner
 				let id = e.target.id.match(/[0-9]+$/);
 				let target = this.dungeonLevels[this.currentDungeonLevel].objs[Number(id)];
@@ -103,11 +104,23 @@ const Game = class Game {
 				}
 			}
 		});
-		
-		this.inventoryManager = new InventoryManager(document.getElementById("info-container-inventory"), this.player.inventory);
-		this.equipmentManager = new EquipmentManager(document.getElementById("info-container-equipment"), this.player.equipment);
+
+		this.inventoryManager = new InventoryManager(
+			document.getElementById("info-container-inventory"),
+			this.player.inventory
+		);
+		this.equipmentManager = new EquipmentManager(
+			document.getElementById("info-container-equipment"),
+			this.player.equipment
+		);
+		this.statsManager = new StatsManager(
+			document.getElementById("info-container-player"),
+			null,
+			this.player.stats,
+			null
+		);
 	}
-	
+
 	saveDungeonLevel(dungeon){
 		let {rooms, paths, objs} = dungeon,
 			img = new Image();
@@ -120,11 +133,11 @@ const Game = class Game {
 		};
 		objs.forEach(obj => this.dungeonLevels[this.currentDungeonLevel].objs[obj.id] = obj);
 	}
-	
+
 	changeDungeonLevel(level){
 		this.saveDungeonLevel(this.dungeonLevels[this.currentDungeonLevel]);
 		let dir = level > this.currentDungeonLevel ? "down" : "up";
-		
+
 		this.dungeonLevels[this.currentDungeonLevel].objs.forEach((obj,k) => {
 			if(k === 0){
 				return;
@@ -133,13 +146,13 @@ const Game = class Game {
 				obj.lifebar.remove();
 			}
 		});
-		
+
 		this.currentDungeonLevel = level;
-		
+
 		mainCtx.clearRect(0, 0, w, h);
 		secondCtx.clearRect(0, 0, w, h);
 		this.board.clear();
-		
+
 		let objs = [];
 		objs[0] = this.player;
 		//if level already exists load it else generate new
@@ -170,17 +183,17 @@ const Game = class Game {
 				paths: dungeon.paths
 			};
 		}
-		
+
 		//put objs in their id slots
 		objs.forEach(obj => this.dungeonLevels[level].objs[obj.id] = obj);
-		
+
 		//insert objs into the board
 		this.dungeonLevels[level].objs.forEach(obj => {
 			if (obj) {
 				this.board.insert(obj);
 			}
 		});
-		
+
 		this.dungeonLevels[level].objs.forEach(obj => {
 			if (obj) {
 				this.logic.think(obj, this.player);
@@ -192,7 +205,7 @@ const Game = class Game {
 	update() {
 		let duration = this.player.update(this.logger);
 		let tickCount = duration / TICK;
-		
+
 		if(this.player.dungeonLevelChange){
 			let level = this.currentDungeonLevel;
 			if(this.player.dungeonLevelChange === "up"){
@@ -201,23 +214,23 @@ const Game = class Game {
 				level++;
 			}
 			this.changeDungeonLevel(level);
-			
+
 			delete this.player.dungeonLevelChange;
 		}else if(!this.player.isAlive){
 			this.board.remove(this.player);
 		}
-		
+
 		//contains the total durations of each objs actions for this turn
 		let objDurations = [];
 		for(let i = 0; i < tickCount; i++){
 			this.time += TICK;
-			
+
 			this.dungeonLevels[this.currentDungeonLevel].objs.forEach((obj, index) => {
 				//skip player
 				if(obj.type === "Player"){
 					return;
 				}
-				
+
 				if(obj.isAlive){
 					let duration = obj.update(this.logger, this.time + (objDurations[obj.id] || 0));
 					if(duration > 0){
@@ -226,7 +239,7 @@ const Game = class Game {
 						this.logic.think(obj, this.player);
 						objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + duration : duration;
 					}
-					
+
 					//obj died during update
 					if(!obj.isAlive){
 						this.board.remove(obj);
@@ -241,7 +254,7 @@ const Game = class Game {
 
 		let fov = this.logic.getFov(this.player);
 		this.player.fov = fov;
-		
+
 		if(fov){
 			this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
 				if(obj instanceof Enemy){
@@ -259,20 +272,21 @@ const Game = class Game {
 
 		this.inventoryManager.update();
 		this.equipmentManager.update();
+		this.statsManager.update();
 	}
 
 	start() {
-		
+
 		this.logger.log("Hello and welcome", "hilight");
 		this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
 			if (obj) {
 				this.board.insert(obj);
 			}
 		});
-		
+
 		let fov = this.logic.getFov(this.player);
 		this.player.fov = fov;
-		
+
 		this.dungeonLevels[this.currentDungeonLevel].objs.forEach(obj => {
 			this.logic.think(obj, this.player);
 			if(obj instanceof Enemy){
@@ -286,7 +300,7 @@ const Game = class Game {
 		fov.draw();
 		this.inventoryManager.update();
 		this.equipmentManager.update();
-		
+
 		document.getElementById("loader").remove();
 	}
 };

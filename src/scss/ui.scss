@@ -1,38 +1,35 @@
-.moveable{
-	position:absolute;
-	cursor:move;
-}
-
-.resizeable{
-	position:absolute;
-}
-
-$edge-size: 5;
-
-.edge{
-	position:absolute;
-	background:black;
-	box-sizing:border-box;
-	border-right:dashed 1px darkgrey;
-	border-bottom:dashed 1px darkgrey;
-	
-	&.edge-right{
-		top:0;
-		right:-#{$edge-size}px;
-		left:100%;
-		bottom:0;
-		width:#{$edge-size}px;
-		height:100%;
-		cursor:e-resize;
+.moveable {
+	position: absolute;
+	&.moveable-anchor, .moveable-anchor {
+		cursor: move;
 	}
-	
-	&.edge-bottom{
-		top:100%;
-		left:0;
-		right:0;
-		bottom:-#{$edge-size}px;
-		height:#{$edge-size}px;
-		width:100%;
-		cursor:n-resize;
+}
+.resizeable {
+	position: absolute;
+}
+$edge-size: 5;
+.edge {
+	position: absolute;
+	background: black;
+	box-sizing: border-box;
+	border-right: dashed 1px darkgrey;
+	border-bottom: dashed 1px darkgrey;
+	&.edge-right {
+		top: 0;
+		right: -#{$edge-size}px;
+		left: 100%;
+		bottom: 0;
+		width: #{$edge-size}px;
+		height: 100%;
+		cursor: e-resize;
+	}
+	&.edge-bottom {
+		top: 100%;
+		left: 0;
+		right: 0;
+		bottom: -#{$edge-size}px;
+		height: #{$edge-size}px;
+		width: 100%;
+		cursor: n-resize;
 	}
 }

@@ -18,6 +18,9 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 			"viewDistance": 5,
 			"moveSpeed": 10,
 			"inventorySize": 5,
+			"STR": 1,
+			"INT": 1,
+			"DEX": 1,
 			get AC(){
 				//add up the defence values of all equipped armor
 				return Object.keys(self.equipment)

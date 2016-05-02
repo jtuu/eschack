@@ -13,7 +13,7 @@ var game = new Game(
 		h: 20
 	}), Utils.loadGame() || Utils.DungeonGenerator.makeLevel(new Player(new Point(10,10)))
 );
-Utils.initUIButtons(game);
+//Utils.initUIButtons(game);
 
 if (env === "dev") {
 	Utils.exportObjs(Utils.exports);

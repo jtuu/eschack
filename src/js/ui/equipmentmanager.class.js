@@ -13,12 +13,22 @@ const EquipmentManager = class EquipmentManager {
 			Array.from(this.container.children).forEach(item => item.remove());
 		}
 		Object.keys(this.equipment).filter(k => this.equipment[k]).forEach((k, i) => {
-			let parent = document.createElement("div");
-			let key = document.createElement("span");
-			let value = document.createElement("span");
-			key.innerHTML = Utils.alphabetMap[i] + " - " + k + ": ";
+			let parent = document.createElement("div"),
+				key = document.createElement("div"),
+				slot = document.createElement("div"),
+				value = document.createElement("div");
+
+			parent.className = "equipment-row";
+			key.className = "equipment-key";
+			slot.className = "equipment-slot";
+			value.className = "equipment-item";
+
+			key.innerHTML = Utils.alphabetMap[i];
+			slot.innerHTML = k;
 			value.innerHTML = this.equipment[k];
+
 			parent.appendChild(key);
+			parent.appendChild(slot);
 			parent.appendChild(value);
 			this.container.appendChild(parent);
 		});

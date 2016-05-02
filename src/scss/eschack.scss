@@ -6,15 +6,12 @@ $nbsp: "\a0";
 $canvas-width: 1040px;
 $canvas-height: 520px;
 $basic-border: 1px solid black;
-
 $bar-primary-color: black;
 $bar-secondary-color: white;
-
 $hilight-color: yellow;
 $cursor-color: hsl(227, 95%, 33%);
-
 @mixin PseudoBlock($p) {
-	&:#{$p}{
+	&:#{$p} {
 		content: "";
 		position: absolute;
 		top: 0;
@@ -23,27 +20,22 @@ $cursor-color: hsl(227, 95%, 33%);
 		right: 0;
 	}
 }
-
-@mixin Offscreen(){
+@mixin Offscreen() {
 	position: absolute;
 	top: -9001px;
 	left: -9001px;
 }
-
 body {
 	margin: 0;
 	background: $base-bg-color;
 	font-family: $base-font;
 }
-
 .column {
 	display: inline-block;
 	vertical-align: top;
 }
-
 canvas {
 	display: block;
-
 	&#canvas-second {
 		position: absolute;
 		top: 0;
@@ -52,141 +44,175 @@ canvas {
 		opacity: 0.3;
 	}
 }
-
-#canvas-container{
+#canvas-container {
 	position: relative;
 	width: $canvas-width;
 	height: $canvas-height;
 }
-
 #logbox {
 	box-sizing: border-box;
 	width: $canvas-width;
 	height: 200px;
 	background: $component-bg-color;
 	color: black;
-
 	& .logbox-row {
 		width: 100%;
 		height: 10%;
 		padding-left: 10px;
 		box-sizing: border-box;
-
 		&:after {
 			content: $nbsp;
 		}
-
 		&:nth-child(even) {
 			background: $component-accent-color;
 		}
-
 		& .logmsg {
-
-			&.logmsg-default {
-			}
-
+			&.logmsg-default {}
 			&.logmsg-hilight {
 				color: hsl(294, 57%, 43%);
 			}
-
 			&.logmsg-hit {
 				color: hsl(211, 75%, 40%);
 			}
-
 			&.logmsg-damage {
 				color: hsl(36, 97%, 28%);
 			}
-
 			&.logmsg-miss {
-				color: hsl(90, 2%, 33%)
+				color: hsl(90, 2%, 33%);
 			}
-
 			&.logmsg-death {
 				color: hsl(0, 83%, 50%);
 			}
 		}
 	}
 }
-
 #column-right {
 	padding: 10px;
 	box-sizing: border-box;
 	max-width: calc(100% - 100px - #{$canvas-width});
-	position:relative;
-
+	position: relative;
 	> * {
 		//padding: 20px 0 80px 0;
 	}
 }
-
+$info-container-tops: ( left: 10, right: 10 );
+$info-containers-margin: 20;
+@mixin InfoContainersTopCalc($height, $side) {
+	top: map-get($info-container-tops, $side) + px;
+	height: $height + px;
+	$info-container-tops: map-merge($info-container-tops, ( $side: map-get($info-container-tops, $side) + $height + $info-containers-margin )) !global;
+}
 .info-container {
 	&#info-container-player {
-		top: 10px;
-		height: 50px;
+		@include InfoContainersTopCalc(200, "left");
 		border: $basic-border;
+		width: 340px;
+		& .player-stat-row {
+			display: inline-block;
+			width: 50%;
+			& .player-stat-name {
+				display: inline-block;
+				width: 70px;
+				&:after {
+					content: ":";
+				}
+			}
+			& .player-stat-value {
+				display: inline-block;
+			}
+		}
 	}
-	&#info-container-other-life{
-		width:100%;
+	&#info-container-game {
+		@include InfoContainersTopCalc(200, "right");
+		border: $basic-border;
+		left: 370px;
+		width: 160px;
+	}
+	&#info-container-other-life {
+		width: 100%;
 		height: calc(100% - 23px);
-		overflow-y:auto;
+		overflow-y: auto;
 	}
-	&#info-container-other-misc{
-		top: 250px;
-		width: 300px;
-		height: 150px;
+	&#info-container-other-misc {
+		width: 240px;
+		@include InfoContainersTopCalc(150, "left");
 		border: $basic-border;
+		& .examine-container{
+			padding:10px;
+			height: calc(100% - 50px);
+			overflow-y: auto;
+		}
 	}
+}
+#info-container-other-life-wrap {
+	width: 240px;
+	@include InfoContainersTopCalc(150, "left");
+	border: $basic-border;
+}
+.info-container {
 	&#info-container-inventory {
-		top: 80px;
-		left: 330px;
-		height: 320px;
-		width: 200px;
+		left: 270px;
+		@include InfoContainersTopCalc(320, "right");
+		width: 260px;
 		border: $basic-border;
 	}
 	&#info-container-equipment {
-		top: 420px;
-		height: 200px;
+		@include InfoContainersTopCalc(200, "left");
 		width: 520px;
 		border: $basic-border;
+		& .equipment-row {
+			& .equipment-key {
+				display: inline-block;
+				width: 40px;
+				&:after {
+					content: " - ";
+				}
+			}
+			& .equipment-slot {
+				display: inline-block;
+				width: 70px;
+				&:after {
+					content: ": ";
+				}
+			}
+			& .equipment-item {
+				display: inline-block;
+			}
+		}
 	}
 }
-
-#info-container-other-life-wrap{
-	top: 80px;
-	width: 300px;
-	height: 150px;
-	border: $basic-border;
+.menu-title {
+	background: black;
+	color: darkgrey;
+	display: block;
 }
-
-.menu-title{
-	background:black;
-	color:darkgrey;
-	display:block;
-}
-
-#bottom-row{
-	> * {
+#bottom-row {
+	> div {
+		> h3{
+			margin:0;
+		}
 		display: inline-block;
 		margin: 10px;
 		padding: 10px;
 		border: $basic-border;
 		vertical-align: top;
+		width: 45%;
+		& .content{
+			height:150px;
+			overflow-y: auto;
+		}
 	}
-
 	& #settings {
 		min-width: 200px;
 	}
 }
-
-label{
+label {
 	display: inline-block;
 	margin: 5px;
-	&.hilighted{
+	&.hilighted {
 		color: $hilight-color;
 	}
 }
-
-
 .bar {
 	@include PseudoBlock(after);
 	@include PseudoBlock(before);
@@ -197,22 +223,18 @@ label{
 	position: relative;
 	overflow: hidden;
 	box-sizing: border-box;
-
 	&:before {
 		background: $bar-secondary-color;
 	}
-
 	&:after {
 		content: attr(data-content);
 		mix-blend-mode: difference;
 		filter: invert(1);
 		color: black;
 	}
-
-	&.hilighted{
+	&.hilighted {
 		border: 1px solid $hilight-color;
 	}
-
 	@for $i from 0 through 100 {
 		&.bar-size-#{$i} {
 			&:before {
@@ -221,8 +243,7 @@ label{
 		}
 	}
 }
-
-#cursor{
+#cursor {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -233,24 +254,19 @@ label{
 	box-shadow: 0 0 5px $cursor-color;
 	transition: top 0.1s, left 0.1s;
 }
-
 /*
 loader stolen from here
 codepen.io/Vestride/pen/vHzyk
 */
-
 $blockCount: 3;
 $blockSize: 2em;
-
 $delay: 0.065s;
 $duration: 0.88s;
 $startingColor: #fdfdfd;
 $endingColor: #dadada;
-
 $blockMargin: $blockSize / $blockCount;
 $loaderSize: $blockSize * $blockCount + $blockMargin * 2;
-
-#loader{
+#loader {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -258,8 +274,7 @@ $loaderSize: $blockSize * $blockCount + $blockMargin * 2;
 	height: $loaderSize;
 	margin-left: -$loaderSize/2;
 	margin-top: -$loaderSize/2;
-
-	& .loader-block{
+	& .loader-block {
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -269,11 +284,9 @@ $loaderSize: $blockSize * $blockCount + $blockMargin * 2;
 		height: $blockSize;
 		background: $startingColor;
 		animation: show $duration step-end infinite alternate, pulse $duration linear infinite alternate;
-
 		$delay-mults: (1,2,3,5,2,7,6,4,0);
-
-		@for $i from 1 through $blockCount * $blockCount{
-			&:nth-child(#{$i}){
+		@for $i from 1 through $blockCount * $blockCount {
+			&:nth-child(#{$i}) {
 				$mult-x: ($i - 1) % $blockCount;
 				$mult-y: floor(($i - 1) / $blockCount);
 				transform: translate(#{($blockSize + $blockMargin) * $mult-x}, #{($blockSize + $blockMargin) * $mult-y});
@@ -282,20 +295,18 @@ $loaderSize: $blockSize * $blockCount + $blockMargin * 2;
 		}
 	}
 }
-
-@keyframes pulse{
-	from,
-	40% {
+@keyframes pulse {
+	40%,
+	from {
 		background: $startingColor;
 	}
 	to {
 		background: $endingColor;
 	}
 }
-
-@keyframes show{
-	from,
-	40% {
+@keyframes show {
+	40%,
+	from {
 		opacity: 0;
 	}
 	41%,

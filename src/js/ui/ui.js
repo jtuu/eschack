@@ -16,42 +16,44 @@
 		bottom.classList.add("edge-bottom");
 
 		if (elem.classList.contains("moveable")) {
-			function move(e){
-				e.stopPropagation();
-				//e.cancelBubble();
-				e.preventDefault();
-				let x = e.pageX;
-				let y = e.pageY;
-				if(x === undefined){
-					x = e.touches[0].pageX;
-					y = e.touches[0].pageY;
+			function move(e) {
+				if (e.target.classList.contains("moveable-anchor")) {
+					e.stopPropagation();
+					//e.cancelBubble();
+					e.preventDefault();
+					let x = e.pageX;
+					let y = e.pageY;
+					if (x === undefined) {
+						x = e.touches[0].pageX;
+						y = e.touches[0].pageY;
+					}
+					elemX = x - elem.offsetLeft;
+					elemY = y - elem.offsetTop;
+					dragging = "body";
+					selected = elem;
 				}
-				elemX = x - elem.offsetLeft;
-				elemY = y - elem.offsetTop;
-				dragging = "body";
-				selected = elem;
 			}
 			elem.addEventListener("mousedown", move);
 			elem.addEventListener("touchstart", move);
 		}
 
 		if (elem.classList.contains("resizeable")) {
-			function startr(e){
+			function startr(e) {
 				e.stopPropagation();
 				//e.cancelBubble();
 				e.preventDefault();
 				dragging = "right";
 				selected = elem;
 			}
-			
-			function startb(e){
+
+			function startb(e) {
 				e.stopPropagation();
 				//e.cancelBubble();
 				e.preventDefault();
 				dragging = "bottom";
 				selected = elem;
 			}
-			
+
 			bottom.addEventListener("mousedown", startb);
 			bottom.addEventListener("touchstart", startb);
 			right.addEventListener("mousedown", startr);
@@ -61,13 +63,13 @@
 			elem.appendChild(bottom);
 		}
 	});
-	
-	function gmove(e){
+
+	function gmove(e) {
 		//e.preventDefault();
 		if (dragging && selected) {
 			let x = e.pageX;
 			let y = e.pageY;
-			if(x === undefined){
+			if (x === undefined) {
 				x = e.touches[0].pageX;
 				y = e.touches[0].pageY;
 			}
@@ -81,18 +83,18 @@
 			}
 		}
 	}
-	
+
 	document.addEventListener("mousemove", gmove);
 	document.addEventListener("touchmove", gmove);
-	
-	function end(e){
+
+	function end(e) {
 		e.stopPropagation();
 		//e.cancelBubble();
 		//e.preventDefault();
 		dragging = false;
 		selected = undefined;
 	}
-	
+
 	document.addEventListener("mouseup", end);
 	document.addEventListener("touchend", end);
 })();
