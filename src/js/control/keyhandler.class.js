@@ -10,7 +10,6 @@ const KeyHandler = class KeyHandler {
 			this.using = "default";
 
 			this.keyCases = {
-				/*
 				//numpad
 				104: "n",
 				100: "w",
@@ -42,8 +41,7 @@ const KeyHandler = class KeyHandler {
 				60: "up", //<
 				226: "up", //chrome...
 
-				0: "cheat"
-				*/
+				0: "cheat",
 
 				"Numpad1": "sw",
 				"Numpad2": "s",
@@ -104,7 +102,9 @@ const KeyHandler = class KeyHandler {
 		} else if (map === "inventorydialog") {
 			this.using = "inventorydialog";
 			//this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
-			this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p["Key" + c.toUpperCase()] = c, p), {});
+			let keyCodeMap = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {}),
+				codeMap = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p["Key" + c.toUpperCase()] = c, p), {});
+			this.keyCases = Object.assign(keyCodeMap, codeMap);
 		}
 	}
 

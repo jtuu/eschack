@@ -1,4 +1,4 @@
-/*
+	/*
 @depends globals.js
 @depends ../ui/equipmentmanager.class.js
 @depends ../ui/inventorymanager.class.js
@@ -43,7 +43,7 @@ const Game = class Game {
 		//keypress eventlistener
 		this.keyHandler = new KeyHandler();
 		document.addEventListener("keydown", e => {
-			if (this.logic.delegateAction(this.player, this.keyHandler.get(e.code))) {
+			if (this.logic.delegateAction(this.player, this.keyHandler.get(e.code || e.keyCode))) {
 				this.update();
 			}
 		});

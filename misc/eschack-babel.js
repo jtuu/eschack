@@ -697,34 +697,38 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				this.using = "default";
 
 				this.keyCases = {
-					/*
-     //numpad
-     104: "n",
-     100: "w",
-     98: "s",
-     102: "e",
-     105: "ne",
-     99: "se",
-     97: "sw",
-     103: "nw",
-     		//vi keys
-     75: "n", //k
-     76: "e", //l
-     74: "s", //j
-     72: "w", //h
-     89: "nw", //y
-     85: "ne", //u
-     66: "sw", //b
-     78: "se", //n
-     		101: "c", //num5
-     		71: "pickup", //g
-     		68: {use: "inventorydialog", act: "drop"}, //d
-     87: {use: "inventorydialog", act: "equip"}, //w
-     84: {use: "inventorydialog", act: "unequip"}, //t
-     		60: "up", //<
-     226: "up", //chrome...
-     		0: "cheat"
-     */
+					//numpad
+					104: "n",
+					100: "w",
+					98: "s",
+					102: "e",
+					105: "ne",
+					99: "se",
+					97: "sw",
+					103: "nw",
+
+					//vi keys
+					75: "n", //k
+					76: "e", //l
+					74: "s", //j
+					72: "w", //h
+					89: "nw", //y
+					85: "ne", //u
+					66: "sw", //b
+					78: "se", //n
+
+					101: "c", //num5
+
+					71: "pickup", //g
+
+					68: { use: "inventorydialog", act: "drop" }, //d
+					87: { use: "inventorydialog", act: "equip" }, //w
+					84: { use: "inventorydialog", act: "unequip" }, //t
+
+					60: "up", //<
+					226: "up", //chrome...
+
+					0: "cheat",
 
 					"Numpad1": "sw",
 					"Numpad2": "s",
@@ -800,9 +804,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			} else if (map === "inventorydialog") {
 				this.using = "inventorydialog";
 				//this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
-				this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce(function (p, c) {
+				var keyCodeMap = "abcdefghijklmnopqrstuvwxyz".split("").reduce(function (p, c) {
+					return p[c.toUpperCase().charCodeAt(0)] = c, p;
+				}, {}),
+				    codeMap = "abcdefghijklmnopqrstuvwxyz".split("").reduce(function (p, c) {
 					return p["Key" + c.toUpperCase()] = c, p;
 				}, {});
+				this.keyCases = Object.assign(keyCodeMap, codeMap);
 			}
 		};
 
@@ -2604,7 +2612,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  @depends ../logic/actionmanager.class.js
  @depends ../control/keyhandler.class.js
  @depends ../controls/mousehandler.class.js
-  */
+ */
 	//the game
 	var Game = function () {
 		function Game(board, dungeon) {
@@ -2636,7 +2644,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this39.logic.delegateAction(_this39.player, _this39.keyHandler.get(e.code))) {
+				if (_this39.logic.delegateAction(_this39.player, _this39.keyHandler.get(e.code || e.keyCode))) {
 					_this39.update();
 				}
 			});
