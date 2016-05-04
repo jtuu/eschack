@@ -546,6 +546,7 @@ const KeyHandler = class KeyHandler {
 
 				60: "up", //<
 				226: "up", //chrome...
+				83: "up",//s
 
 				0: "cheat",
 
@@ -632,110 +633,9 @@ const KeyHandler = class KeyHandler {
 	}
 };
 
-/* @depends ../abstract/dungeonfeature.class.js */
-const Stair = class Stair extends GameObject{
-	constructor(position, direction){
-		super(position);
-		this.direction = direction;
-		this.bgColor = "hsl(0,0%,35%)";
-		
-		if(this.direction === "up"){
-			this.glyph = "<";
-		}else if(this.direction === "down"){
-			this.glyph = ">";
-		}
-		this.color = "hsl(0,0%,75%)";
-		this.flavorName = this.direction+"stair";
-	}
-	
-	update(){
-		return 0;
-	}
-	
-	toString(){
-		return "A staircase going "+this.direction;
-	}
-};
-/* @depends ../abstract/dungeonfeature.class.js */
-//todo: create base class Inanimate or something
-const Wall = class Wall extends VisionBlocking(MoveBlocking(DungeonFeature)) {
-	constructor(position) {
-		super(position);
-		this.bgColor = "hsl(0,0%,15%)";
-		this.glyph = "\u2589"; //some block character
-		this.color = "hsl(0,0%,25%)";
-		this.flavorName = "wall";
-	}
-
-	update() {
-		return 0;
-	}
-};
-/* @depends ../abstract/enemy.class.js */
-const Honeybadger = class Honeybadger extends Enemy {
-	constructor(position){
-		super(position, null, new Weapon("Claws", 4, 11));
-		this.bgColor = "hsl(25, 5%, 10%)";
-		this.glyph = "B";
-		this.color = "hsl(5, 5%, 90%)";
-		
-		this.equipment.weapon.canDrop = false;
-		
-		this.stats.maxHP = 10;
-		this.stats.HP = 10;
-		this.stats.viewDistance = 7;
-		this.stats.moveSpeed = 10;
-		this.flavorName = "the honeybadger";
-		this.flavor = "Notorious for their ferocity.";
-		this.createLifebar();
-	}
-};
-/* @depends ../abstract/enemy.class.js */
-const Jackalope = class Jackalope extends Enemy {
-	constructor(position){
-		super(position, null, new Weapon("Antlers", 2, 5));
-		this.bgColor = "hsl(35, 25%, 65%)";
-		this.glyph = "J";
-		this.color = "hsl(35, 35%, 5%)";
-		
-		this.equipment.weapon.canDrop = false;
-		
-		this.stats.maxHP = 6;
-		this.stats.HP = 6;
-		this.stats.viewDistance = 7;
-		this.stats.moveSpeed = 8;
-		this.flavorName = "the jackalope";
-		this.flavor = "A large agressive rabbit with antlers on its head.";
-		this.createLifebar();
-	}
-};
-/* @depends ../abstract/enemy.class.js */
-const Redcap = class Redcap extends Enemy {
-	constructor(position){
-		super(position, null, null);
-		this.bgColor = "hsl(66, 10%, 70%)";
-		this.glyph = "^";
-		this.color = "hsl(0, 80%, 60%)";
-		
-		this.stats.maxHP = 10;
-		this.stats.HP = 10;
-		this.stats.viewDistance = 7;
-		this.stats.moveSpeed = 10;
-		this.flavorName = "the redcap";
-		this.flavor = "A malevolent murderous dwarf-like creature.";
-		this.createLifebar();
-		
-		this.canWield = true;
-		this.canWear = true;
-	}
-};
 /*
-@depends ../objs/stair.class.js
-@depends ../objs/wall.class.js
-@depends monsters/honeybadger.class.js
-@depends jackalope.class.js
-@depends redcap.class.js
- */
+@depends ../objs/weapon.class.js
+*/
 const Utils = class Utils {
 
 	static get defaults() {
@@ -966,7 +866,7 @@ const Utils = class Utils {
 		}
 	}
 
-	static generateRandomWeapon() {
+	static randomWeapon() {
 		let materials = ["Bronze", "Iron", "Steel"],
 			types = ["Dagger", "Sword", "Axe", "Pikestaff"];
 
@@ -992,220 +892,6 @@ const Utils = class Utils {
 						let effectiveAC = (defender.stats.AC + this.constants.baseAC) * (1 + defender.stats.STR / this.constants.defenderStrEffectiveness),
 							effectiveDmg = attacker.equipment.weapon.damage + (attacker.stats.STR + attacker.stats.DEX) / 2 / this.constants.attackerStatEffectiveness;
 						return Math.max(Math.floor(effectiveDmg - effectiveAC), 0);
-					}
-				};
-			}
-		};
-	}
-
-	//use this to generate maps
-	//(actually it generates array of objs which then get inserted by Game)
-	static get DungeonGenerator() {
-		return class {
-			static makeRoom(options) {
-				let room = {};
-
-				room.w = ~~(Math.random() * (options.rooms.size.max.w - options.rooms.size.min.w) + options.rooms.size.min.w);
-				room.h = ~~(Math.random() * (options.rooms.size.max.h - options.rooms.size.min.h) + options.rooms.size.min.h);
-				room.x = ~~(Math.random() * (options.size.w - room.w));
-				room.y = ~~(Math.random() * (options.size.h - room.h));
-
-				return room;
-			}
-
-			static makePoint(options) {
-				return {
-					x: ~~(Math.random() * options.size.w),
-					y: ~~(Math.random() * options.size.h)
-				};
-			}
-
-			static makePaths(rooms, midPoints, options) {
-				let paths = [];
-
-				//connect rooms to midpoints
-				for (let i = 0; i < options.paths.count; i++) {
-					let path = {},
-						dest = midPoints[i % options.paths.count % options.midPoints.count];
-
-					path.x1 = rooms[i].x + ~~(Math.random() * rooms[i].w);
-					path.y1 = rooms[i].y + ~~(Math.random() * rooms[i].h);
-
-					path.x2 = dest.x;
-					path.y2 = rooms[i].y + ~~(Math.random() * rooms[i].h);
-
-					path.x3 = dest.x;
-					path.y3 = dest.y;
-
-					paths.push(path);
-				}
-
-				//connect midpoints together
-				for (let i = 1; i < options.midPoints.count; i++) {
-					let path = {};
-
-					path.x1 = midPoints[i - 1].x;
-					path.y1 = midPoints[i - 1].y;
-
-					path.x2 = midPoints[i].x;
-					path.y2 = midPoints[i - 1].y;
-
-					path.x3 = midPoints[i].x;
-					path.y3 = midPoints[i].y;
-
-					paths.push(path);
-				}
-
-				return paths;
-			}
-
-			//try to spawn some enemies within room
-			static insertEnemies(room, options) {
-				let enemyList = [Jackalope, Honeybadger, Redcap];
-				let enemies = [];
-				for (let x = room.x + room.w; x > room.x; x--) {
-					for (let y = room.y + room.h; y > room.y; y--) {
-						if (Math.random() < options.enemies.spawnChance) {
-							let enemy = enemyList[Math.floor(Math.random() * enemyList.length)];
-							enemy = new enemy(new Point(x, y));
-							enemy = this.generateEquipment(enemy);
-
-							for (let i = 1; i < options.difficulty; i++) {
-								enemy.levelUp();
-								enemy.stats.XP++;
-							}
-
-							enemies.push(enemy);
-						}
-					}
-				}
-				return enemies;
-			}
-
-			static generateEquipment(enemy) {
-				if (enemy.canWield) {
-					enemy.equipment.weapon = Utils.generateRandomWeapon();
-				}
-				if (enemy.canWear) {
-
-				}
-				return enemy;
-			}
-
-			//main method
-			static makeLevel(player, options) {
-				options = options || this.defaultOptions;
-				let matrix = [],
-					objs = [],
-					rooms = Array(options.rooms.count).fill(),
-					midPoints = Array(options.midPoints.count).fill();
-
-				//get rooms
-				for (let i in rooms) {
-					rooms[i] = this.makeRoom(options);
-				}
-
-				//set player to first room
-				player.position.set(rooms[0].x + 1, rooms[0].y + 1);
-				objs.push(player);
-
-				if (options.stairs.up) {
-					//put an upstairs on player
-					objs.push(new Stair(new Point(rooms[0].x + 1, rooms[0].y + 1), "up"));
-				}
-
-				if (options.stairs.down) {
-					//put a downstairs in "last" room
-					objs.push(new Stair(new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1), "down"));
-				}
-
-				//get midpoints
-				for (let i in midPoints) {
-					midPoints[i] = this.makePoint(options);
-				}
-
-				//get paths
-				let paths = this.makePaths(rooms, midPoints, options);
-
-				//fill matrix with walls
-				for (let y = 0; y < options.size.h; y++) {
-					matrix[y] = [];
-					for (let x = 0; x < options.size.w; x++) {
-						let tile = new Tile(new Point(x, y));
-						tile.add(new Wall(new Point(x, y)));
-						matrix[y][x] = tile;
-					}
-				}
-
-				//carve out rooms
-				//and try put some enemies in them
-				rooms.forEach(room => {
-					for (let x = room.x + room.w; x > room.x; x--) {
-						for (let y = room.y + room.h; y > room.y; y--) {
-							matrix[y][x].empty();
-						}
-					}
-					objs = objs.concat(this.insertEnemies(room, options));
-				});
-
-				//carve out paths
-				paths.forEach(path => {
-					for (let i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1 + 1; i0++) {
-						matrix[path.y1][i0].empty();
-					}
-					for (let i0 = Math.min(path.y2, path.y3), i1 = Math.max(path.y2, path.y3); i0 < i1 + 1; i0++) {
-						matrix[i0][path.x2].empty();
-					}
-				});
-
-				//get objs
-				for (let y = 0; y < options.size.h; y++) {
-					for (let x = 0; x < options.size.w; x++) {
-						if (!matrix[y][x].isEmpty) {
-							objs.push(matrix[y][x].top);
-						}
-					}
-				}
-
-				return {
-					rooms,
-					paths,
-					objs
-				};
-			}
-
-			static get defaultOptions() {
-				return {
-					difficulty: 1,
-					stairs: {
-						up: false,
-						down: true
-					},
-					size: {
-						w: 40,
-						h: 20
-					},
-					rooms: {
-						count: 8,
-						size: {
-							max: {
-								w: 8,
-								h: 8
-							},
-							min: {
-								w: 3,
-								h: 3
-							}
-						}
-					},
-					midPoints: {
-						count: 2
-					},
-					paths: {
-						count: 8
-					},
-					enemies: {
-						spawnChance: 0.02
 					}
 				};
 			}
@@ -2071,277 +1757,316 @@ const ActionManager = class ActionManager {
 };
 
 	/*
-@depends globals.js
-@depends ../ui/equipmentmanager.class.js
-@depends ../ui/inventorymanager.class.js
-@depends ../ui/logboxmanager.class.js
-@depends ../ui/statsmanager.class.js
-@depends ../misc/utils.class.js
-@depends ../logic/actionmanager.class.js
-@depends ../control/keyhandler.class.js
-@depends ../controls/mousehandler.class.js
- */
-//the game
-const Game = class Game {
-	constructor(board, dungeon) {
+	@depends globals.js
+	@depends ../ui/equipmentmanager.class.js
+	@depends ../ui/inventorymanager.class.js
+	@depends ../ui/logboxmanager.class.js
+	@depends ../ui/statsmanager.class.js
+	@depends ../misc/utils.class.js
+	@depends ../logic/actionmanager.class.js
+	@depends ../control/keyhandler.class.js
+	@depends ../controls/mousehandler.class.js
+	 */
+	//the game
+	const Game = class Game {
+		constructor(board, dungeon) {
 
-		this.logger = new LogboxManager(document.getElementById("logbox"), 10);
+			this.logger = new LogboxManager(document.getElementById("logbox"), 10);
 
-		let self = this;
-		this.stats = {
-			time: 0,
-			dungeonName: "Dungeon of Esc",
-			currentDungeonLevel: 0,
-			get score() {
-				return Math.round(
-					(
-						(self.player.killcount + 1) * (self.stats.currentDungeonLevel + 1)
-					) / (
-						(self.stats.time) / 10000 + 1
-					)
-				);
-			}
-		};
+			let self = this;
+			this.stats = {
+				time: 0,
+				dungeonName: "Dungeon of Esc",
+				currentDungeonLevel: 0,
+				get score() {
+					return Math.round(
+						(
+							(self.player.killcount + 1) * (self.stats.currentDungeonLevel + 1)
+						) / (
+							(self.stats.time) / 10000 + 1
+						)
+					);
+				}
+			};
 
-		this.dungeonLevels = [];
+			this.dungeonLevels = [];
 
-		this.board = board;
-		this.player = dungeon.objs[0];
+			this.board = board;
+			this.player = dungeon.objs[0];
 
-		this.saveDungeonLevel(dungeon);
+			this.saveDungeonLevel(dungeon);
 
-		this.logic = new ActionManager(this.board, this.logger);
+			this.logic = new ActionManager(this.board, this.logger);
 
-		//keypress eventlistener
-		this.keyHandler = new KeyHandler();
-		document.addEventListener("keydown", e => {
-			if (this.logic.delegateAction(this.player, this.keyHandler.get(e.code || e.keyCode))) {
-				this.update();
-			}
-		});
+			//keypress eventlistener
+			this.keyHandler = new KeyHandler();
+			document.addEventListener("keydown", e => {
+				if (this.logic.delegateAction(this.player, this.keyHandler.get(e.code || e.keyCode))) {
+					this.update();
+				}
+			});
 
-		let miscOtherInfoContainer = document.getElementById("info-container-other-misc");
+			let miscOtherInfoContainer = document.getElementById("info-container-other-misc");
 
-		this.examineContainer = document.createElement("div");
-		this.examineContainer.className = "examine-container";
+			this.examineContainer = document.createElement("div");
+			this.examineContainer.className = "examine-container";
 
-		miscOtherInfoContainer.appendChild(this.examineContainer);
+			miscOtherInfoContainer.appendChild(this.examineContainer);
 
-		//cleaned this up a bit but it's still not very nice
-		this.mouseHandler = new MouseHandler(this.board);
-		document.addEventListener("mousemove", e => {
-			let bounds = this.board.bounds;
-			let screenPoint = new Point(e.pageX, e.pageY);
+			//cleaned this up a bit but it's still not very nice
+			this.mouseHandler = new MouseHandler(this.board);
+			document.addEventListener("mousemove", e => {
+				let bounds = this.board.bounds;
+				let screenPoint = new Point(e.pageX, e.pageY);
 
-			//mouse is inside game screen
-			if (screenPoint.in(bounds)) {
-				let fov = this.player.fov,
-					gamePoint = Utils.screenToGame(screenPoint, this.board.tileSize, this.board.spacing);
+				//mouse is inside game screen
+				if (screenPoint.in(bounds)) {
+					let fov = this.player.fov,
+						gamePoint = Utils.screenToGame(screenPoint, this.board.tileSize, this.board.spacing);
 
-				//set cursor position
-				this.mouseHandler.cursorFromScreen(screenPoint);
+					//set cursor position
+					this.mouseHandler.cursorFromScreen(screenPoint);
 
-				//if hovering over a tile that is seen
-				if (fov && fov.has(gamePoint)) {
-					let targetTile = this.board.get(gamePoint);
+					//if hovering over a tile that is seen
+					if (fov && fov.has(gamePoint)) {
+						let targetTile = this.board.get(gamePoint);
 
-					//if tile is not empty
-					if (targetTile && targetTile.top) {
-						//reset all lifebars styles
-						this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
-							if (obj.lifebar) obj.lifebar.setStyle("default");
-						});
+						//if tile is not empty
+						if (targetTile && targetTile.top) {
+							//reset all lifebars styles
+							this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
+								if (obj.lifebar) obj.lifebar.setStyle("default");
+							});
 
-						//set examine text
-						this.examineContainer.innerHTML = targetTile.top;
-						//highlight lifebar
-						if (targetTile.top instanceof Creature) {
-							targetTile.top.lifebar.setStyle("hilight");
+							//set examine text
+							this.examineContainer.innerHTML = targetTile.top;
+							//highlight lifebar
+							if (targetTile.top instanceof Creature) {
+								targetTile.top.lifebar.setStyle("hilight");
+							}
+						} else {
+							this.examineContainer.innerHTML = targetTile;
 						}
 					} else {
-						this.examineContainer.innerHTML = targetTile;
+						//tile is not in fov
+						this.examineContainer.innerHTML = "You can't see that";
 					}
-				} else {
-					//tile is not in fov
-					this.examineContainer.innerHTML = "You can't see that";
+					//hovering over a lifebar
+				} else if (e.target.classList.contains("bar-lifebar")) {
+					//reset all lifebars styles
+					this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
+						if (obj.lifebar) obj.lifebar.setStyle("default");
+					});
+
+					//get lifebars owner
+					let id = e.target.id.match(/[0-9]+$/);
+					let target = this.dungeonLevels[this.stats.currentDungeonLevel].objs[Number(id)];
+
+					//set cursor to lifebars owner
+					if (target) {
+						this.mouseHandler.cursorFromGame(target.position);
+						this.examineContainer.innerHTML = target;
+						target.lifebar.setStyle("hilight");
+					}
 				}
-				//hovering over a lifebar
-			} else if (e.target.classList.contains("bar-lifebar")) {
-				//reset all lifebars styles
-				this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
-					if (obj.lifebar) obj.lifebar.setStyle("default");
-				});
+			});
 
-				//get lifebars owner
-				let id = e.target.id.match(/[0-9]+$/);
-				let target = this.dungeonLevels[this.stats.currentDungeonLevel].objs[Number(id)];
+			this.inventoryManager = new InventoryManager(
+				document.getElementById("info-container-inventory"),
+				this.player.inventory
+			);
+			this.equipmentManager = new EquipmentManager(
+				document.getElementById("info-container-equipment"),
+				this.player.equipment
+			);
+			this.statsManager = new StatsManager(
+				document.getElementById("info-container-player"),
+				document.getElementById("info-container-game"),
+				this.player.stats,
+				this.stats
+			);
+		}
 
-				//set cursor to lifebars owner
-				if (target) {
-					this.mouseHandler.cursorFromGame(target.position);
-					this.examineContainer.innerHTML = target;
-					target.lifebar.setStyle("hilight");
-				}
-			}
-		});
-
-		this.inventoryManager = new InventoryManager(
-			document.getElementById("info-container-inventory"),
-			this.player.inventory
-		);
-		this.equipmentManager = new EquipmentManager(
-			document.getElementById("info-container-equipment"),
-			this.player.equipment
-		);
-		this.statsManager = new StatsManager(
-			document.getElementById("info-container-player"),
-			document.getElementById("info-container-game"),
-			this.player.stats,
-			this.stats
-		);
-	}
-
-	saveDungeonLevel(dungeon) {
-		let {
-			rooms,
-			paths,
-			objs
-		} = dungeon,
-		img = new Image();
-		img.src = secondCanvas.toDataURL();
-		this.dungeonLevels[this.stats.currentDungeonLevel] = {
-			objs: [],
-			rooms: rooms,
-			paths: paths,
-			map: img
-		};
-		objs.forEach(obj => this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id] = obj);
-	}
-
-	changeDungeonLevel(level) {
-		this.saveDungeonLevel(this.dungeonLevels[this.stats.currentDungeonLevel]);
-		let dir = level > this.stats.currentDungeonLevel ? "down" : "up";
-
-		this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach((obj, k) => {
-			if (k === 0) {
-				return;
-			}
-			if (obj.lifebar) {
-				obj.lifebar.remove();
-			}
-		});
-
-		this.stats.currentDungeonLevel = level;
-
-		mainCtx.clearRect(0, 0, w, h);
-		secondCtx.clearRect(0, 0, w, h);
-		this.board.clear();
-
-		let objs = [];
-		objs[0] = this.player;
-		//if level already exists load it else generate new
-		if (this.dungeonLevels[level]) {
-			objs = this.dungeonLevels[level].objs;
-			secondCtx.drawImage(this.dungeonLevels[level].map, 0, 0);
-			//put player in the last room if we're going up
-			if (dir === "up") {
-				this.player.position.set(
-					this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].x + 1,
-					this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].y + 1
-				);
-			} else {
-				//or in the first room
-				this.player.position.set(
-					this.dungeonLevels[level].rooms[0].x + 1,
-					this.dungeonLevels[level].rooms[0].y + 1
-				);
-			}
-		} else {
-			let options = Utils.DungeonGenerator.defaultOptions;
-			options.stairs.up = true;
-			options.difficulty = this.stats.currentDungeonLevel;
-			let dungeon = Utils.DungeonGenerator.makeLevel(this.player, options);
-			objs = dungeon.objs;
-			this.dungeonLevels[level] = {
+		saveDungeonLevel(dungeon) {
+			let {
+				rooms,
+				paths,
+				objs
+			} = dungeon,
+			img = new Image();
+			img.src = secondCanvas.toDataURL();
+			this.dungeonLevels[this.stats.currentDungeonLevel] = {
 				objs: [],
-				rooms: dungeon.rooms,
-				paths: dungeon.paths
+				rooms: rooms,
+				paths: paths,
+				map: img
 			};
+			objs.forEach(obj => this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id] = obj);
 		}
 
-		//put objs in their id slots
-		objs.forEach(obj => this.dungeonLevels[level].objs[obj.id] = obj);
+		changeDungeonLevel(level) {
+			this.saveDungeonLevel(this.dungeonLevels[this.stats.currentDungeonLevel]);
+			let dir = level > this.stats.currentDungeonLevel ? "down" : "up";
 
-		//insert objs into the board
-		this.dungeonLevels[level].objs.forEach(obj => {
-			if (obj) {
-				this.board.insert(obj);
-			}
-		});
-
-		this.dungeonLevels[level].objs.forEach(obj => {
-			if (obj) {
-				this.logic.think(obj, this.player);
-			}
-		});
-
-	}
-
-	update() {
-		let duration = this.player.update(this.logger);
-		let tickCount = duration / TICK;
-
-		if (this.player.dungeonLevelChange) {
-			let level = this.stats.currentDungeonLevel;
-			if (this.player.dungeonLevelChange === "up") {
-				level--;
-			} else if (this.player.dungeonLevelChange === "down") {
-				level++;
-			}
-			this.changeDungeonLevel(level);
-
-			delete this.player.dungeonLevelChange;
-		} else if (!this.player.isAlive) {
-			this.board.remove(this.player);
-		}
-
-		//contains the total durations of each objs actions for this turn
-		let objDurations = [];
-		for (let i = 0; i < tickCount; i++) {
-			this.stats.time += TICK;
-
-			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach((obj, index) => {
-				//skip player
-				if (obj.type === "Player") {
+			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach((obj, k) => {
+				if (k === 0) {
 					return;
 				}
+				if (obj.lifebar) {
+					obj.lifebar.remove();
+				}
+			});
 
-				if (obj.isAlive) {
-					let duration = obj.update(this.logger, this.stats.time + (objDurations[obj.id] || 0));
-					if (duration > 0) {
-						//if action was excecuted we generate new ones and
-						//forward the time for this obj
-						this.logic.think(obj, this.player);
-						objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + duration : duration;
+			this.stats.currentDungeonLevel = level;
+
+			mainCtx.clearRect(0, 0, w, h);
+			secondCtx.clearRect(0, 0, w, h);
+			this.board.clear();
+
+			let objs = [];
+			objs[0] = this.player;
+			//if level already exists load it else generate new
+			if (this.dungeonLevels[level]) {
+				objs = this.dungeonLevels[level].objs;
+				secondCtx.drawImage(this.dungeonLevels[level].map, 0, 0);
+				//put player in the last room if we're going up
+				if (dir === "up") {
+					this.player.position.set(
+						this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].x + 1,
+						this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].y + 1
+					);
+				} else {
+					//or in the first room
+					this.player.position.set(
+						this.dungeonLevels[level].rooms[0].x + 1,
+						this.dungeonLevels[level].rooms[0].y + 1
+					);
+				}
+			} else {
+				let levelType = DungeonGenerator.types[Math.floor(Math.random() * DungeonGenerator.types.length)];
+				let options = DungeonGenerator[levelType].defaultOptions;
+				options.stairs.up = true;
+				options.difficulty = this.stats.currentDungeonLevel;
+				let dungeon = DungeonGenerator[levelType].makeLevel(this.player, options);
+				objs = dungeon.objs;
+				this.dungeonLevels[level] = {
+					objs: [],
+					rooms: dungeon.rooms,
+					paths: dungeon.paths
+				};
+			}
+
+			//put objs in their id slots
+			objs.forEach(obj => this.dungeonLevels[level].objs[obj.id] = obj);
+
+			//insert objs into the board
+			this.dungeonLevels[level].objs.forEach(obj => {
+				if (obj) {
+					this.board.insert(obj);
+				}
+			});
+
+			this.dungeonLevels[level].objs.forEach(obj => {
+				if (obj) {
+					this.logic.think(obj, this.player);
+				}
+			});
+
+		}
+
+		update() {
+			let duration = this.player.update(this.logger);
+			let tickCount = duration / TICK;
+
+			if (this.player.dungeonLevelChange) {
+				let level = this.stats.currentDungeonLevel;
+				if (this.player.dungeonLevelChange === "up") {
+					level--;
+				} else if (this.player.dungeonLevelChange === "down") {
+					level++;
+				}
+				this.changeDungeonLevel(level);
+
+				delete this.player.dungeonLevelChange;
+			} else if (!this.player.isAlive) {
+				this.board.remove(this.player);
+			}
+
+			//contains the total durations of each objs actions for this turn
+			let objDurations = [];
+			for (let i = 0; i < tickCount; i++) {
+				this.stats.time += TICK;
+
+				this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach((obj, index) => {
+					//skip player
+					if (obj.type === "Player") {
+						return;
 					}
 
-					//obj died during update
-					if (!obj.isAlive) {
+					if (obj.isAlive) {
+						let duration = obj.update(this.logger, this.stats.time + (objDurations[obj.id] || 0));
+						if (duration > 0) {
+							//if action was excecuted we generate new ones and
+							//forward the time for this obj
+							this.logic.think(obj, this.player);
+							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + duration : duration;
+						}
+
+						//obj died during update
+						if (!obj.isAlive) {
+							this.board.remove(obj);
+							delete this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id];
+						}
+					} else {
 						this.board.remove(obj);
 						delete this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id];
 					}
+				});
+			}
+
+			let fov = this.logic.getFov(this.player);
+			this.player.fov = fov;
+
+			if (fov) {
+				this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
+					if (obj instanceof Enemy) {
+						if (fov.has(obj.position)) {
+							obj.lifebar.show();
+						} else {
+							obj.lifebar.hide();
+						}
+					}
+				});
+
+				mainCtx.clearRect(0, 0, w, h);
+				if (this.player.cheatMode) {
+					this.board.draw();
 				} else {
-					this.board.remove(obj);
-					delete this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id];
+					fov.draw();
 				}
-			});
+				secondCtx.drawImage(mainCanvas, 0, 0);
+
+			}
+
+			this.inventoryManager.update();
+			this.equipmentManager.update();
+			this.statsManager.update();
 		}
 
-		let fov = this.logic.getFov(this.player);
-		this.player.fov = fov;
+		start() {
 
-		if (fov) {
+			this.logger.log("Hello and welcome", "hilight");
 			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
+				if (obj) {
+					this.board.insert(obj);
+				}
+			});
+
+			let fov = this.logic.getFov(this.player);
+			this.player.fov = fov;
+
+			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
+				this.logic.think(obj, this.player);
 				if (obj instanceof Enemy) {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
@@ -2350,49 +2075,832 @@ const Game = class Game {
 					}
 				}
 			});
+			fov.draw();
+			this.inventoryManager.update();
+			this.equipmentManager.update();
 
-			mainCtx.clearRect(0, 0, w, h);
-			if (this.player.cheatMode) {
-				this.board.draw();
-			}else{
-				fov.draw();
-			}
-			secondCtx.drawImage(mainCanvas, 0, 0);
-
+			document.getElementById("loader").remove();
 		}
+	};
 
-		this.inventoryManager.update();
-		this.equipmentManager.update();
-		this.statsManager.update();
+const Rect = class Rect {
+	constructor(bounds) {
+		Object.assign(this, bounds);
+		if (!this.type) {
+			this.type = Rect.type.DEFAULT;
+		}
 	}
 
-	start() {
+	static get type() {
+		return {
+			DEFAULT: 0,
+			ROOM: 1,
+			PATH: 2,
+			CHUNK: 3,
+			DOOR: 4
+		};
+	}
 
-		this.logger.log("Hello and welcome", "hilight");
-		this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
-			if (obj) {
-				this.board.insert(obj);
-			}
+	get mids() {
+		return {
+			top: new Rect({
+				x: ~~(this.x + this.w / 2),
+				y: this.y,
+				w: 1,
+				h: 1
+			}),
+			left: new Rect({
+				x: this.x,
+				y: ~~(this.y + this.h / 2),
+				w: 1,
+				h: 1
+			}),
+			right: new Rect({
+				x: this.x + this.w,
+				y: ~~(this.y + this.h / 2),
+				w: 1,
+				h: 1
+			}),
+			bottom: new Rect({
+				x: ~~(this.x + this.w / 2),
+				y: this.y + this.h,
+				w: 1,
+				h: 1
+			})
+		};
+	}
+
+	shrink(amount) {
+		if (amount !== ~~amount) {
+			this.x += Math.floor(amount);
+			this.y += Math.floor(amount);
+			this.w -= Math.ceil(amount);
+			this.h -= Math.ceil(amount);
+		} else {
+			this.x += amount;
+			this.y += amount;
+			this.w -= amount * 2;
+			this.h -= amount * 2;
+		}
+	}
+
+	grow(amount) {
+		if (amount !== ~~amount) {
+			this.x -= Math.floor(amount);
+			this.y -= Math.floor(amount);
+			this.w += Math.ceil(amount);
+			this.h += Math.ceil(amount);
+		} else {
+			this.x -= amount;
+			this.y -= amount;
+			this.w += amount * 2;
+			this.h += amount * 2;
+		}
+	}
+
+	clone() {
+		return new Rect({
+			x: this.x,
+			y: this.y,
+			w: this.w,
+			h: this.h,
+			type: this.type
 		});
+	}
 
-		let fov = this.logic.getFov(this.player);
-		this.player.fov = fov;
+	intersect(rect2) {
+		let r1l = this.x,
+			r1r = this.x + this.w,
+			r1t = this.y,
+			r1b = this.y + this.h;
+		let r2l = rect2.x,
+			r2r = rect2.x + rect2.w,
+			r2t = rect2.y,
+			r2b = rect2.y + rect2.h;
+		let diffs = {
+			left: Infinity,
+			right: Infinity,
+			bottom: Infinity,
+			top: Infinity,
+		};
 
-		this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(obj => {
-			this.logic.think(obj, this.player);
-			if (obj instanceof Enemy) {
-				if (fov.has(obj.position)) {
-					obj.lifebar.show();
-				} else {
-					obj.lifebar.hide();
+		if (r1r >= r2l && r1l <= r2l) {
+			diffs.left = r1r - r2l;
+		}
+		if (r1l <= r2r && r1r >= r2r) {
+			diffs.right = r2r - r1l;
+		}
+		if (r1t <= r2b && r1b >= r2b) {
+			diffs.top = r1t - r2b;
+		}
+		if (r1b >= r2t && r1t <= r2t) {
+			diffs.bottom = r2t - r1b;
+		}
+		let min = Object.keys(diffs).map(k => diffs[k]).reduce((p, c) => c < p ? c : p);
+
+		if (min === Infinity) {
+			return false;
+		}
+
+		return Object.keys(diffs).find(k => diffs[k] === min);
+	}
+
+	get split() {
+		return {
+			h: pos => {
+				pos = pos || ~~(Math.random() * this.h);
+				return [
+					new Rect({
+						x: this.x,
+						y: this.y,
+						w: this.w,
+						h: pos,
+						splitDir: "h"
+					}),
+					new Rect({
+						x: this.x,
+						y: this.y + pos,
+						w: this.w,
+						h: this.h - pos,
+						splitDir: "h"
+					})
+				];
+			},
+			w: pos => {
+				pos = pos || ~~(Math.random() * this.w);
+				return [
+					new Rect({
+						x: this.x,
+						y: this.y,
+						w: pos,
+						h: this.h,
+						splitDir: "w"
+					}),
+					new Rect({
+						x: this.x + pos,
+						y: this.y,
+						w: this.w - pos,
+						h: this.h,
+						splitDir: "w"
+					})
+				];
+			}
+		};
+	}
+
+};
+
+/* @depends ../abstract/dungeonfeature.class.js */
+const Stair = class Stair extends GameObject{
+	constructor(position, direction){
+		super(position);
+		this.direction = direction;
+		this.bgColor = "hsl(0,0%,35%)";
+		
+		if(this.direction === "up"){
+			this.glyph = "<";
+		}else if(this.direction === "down"){
+			this.glyph = ">";
+		}
+		this.color = "hsl(0,0%,75%)";
+		this.flavorName = this.direction+"stair";
+	}
+	
+	update(){
+		return 0;
+	}
+	
+	toString(){
+		return "A staircase going "+this.direction;
+	}
+};
+/* @depends ../abstract/dungeonfeature.class.js */
+//todo: create base class Inanimate or something
+const Wall = class Wall extends VisionBlocking(MoveBlocking(DungeonFeature)) {
+	constructor(position) {
+		super(position);
+		this.bgColor = "hsl(0,0%,15%)";
+		this.glyph = "\u2589"; //some block character
+		this.color = "hsl(0,0%,25%)";
+		this.flavorName = "wall";
+	}
+
+	update() {
+		return 0;
+	}
+};
+/* @depends ../abstract/enemy.class.js */
+const Honeybadger = class Honeybadger extends Enemy {
+	constructor(position){
+		super(position, null, new Weapon("Claws", 4, 11));
+		this.bgColor = "hsl(25, 5%, 10%)";
+		this.glyph = "B";
+		this.color = "hsl(5, 5%, 90%)";
+		
+		this.equipment.weapon.canDrop = false;
+		
+		this.stats.maxHP = 10;
+		this.stats.HP = 10;
+		this.stats.viewDistance = 7;
+		this.stats.moveSpeed = 10;
+		this.flavorName = "the honeybadger";
+		this.flavor = "Notorious for their ferocity.";
+		this.createLifebar();
+	}
+};
+/* @depends ../abstract/enemy.class.js */
+const Jackalope = class Jackalope extends Enemy {
+	constructor(position){
+		super(position, null, new Weapon("Antlers", 2, 5));
+		this.bgColor = "hsl(35, 25%, 65%)";
+		this.glyph = "J";
+		this.color = "hsl(35, 35%, 5%)";
+		
+		this.equipment.weapon.canDrop = false;
+		
+		this.stats.maxHP = 6;
+		this.stats.HP = 6;
+		this.stats.viewDistance = 7;
+		this.stats.moveSpeed = 8;
+		this.flavorName = "the jackalope";
+		this.flavor = "A large agressive rabbit with antlers on its head.";
+		this.createLifebar();
+	}
+};
+/* @depends ../abstract/enemy.class.js */
+const Redcap = class Redcap extends Enemy {
+	constructor(position){
+		super(position, null, null);
+		this.bgColor = "hsl(66, 10%, 70%)";
+		this.glyph = "^";
+		this.color = "hsl(0, 80%, 60%)";
+		
+		this.stats.maxHP = 10;
+		this.stats.HP = 10;
+		this.stats.viewDistance = 7;
+		this.stats.moveSpeed = 10;
+		this.flavorName = "the redcap";
+		this.flavor = "A malevolent murderous dwarf-like creature.";
+		this.createLifebar();
+		
+		this.canWield = true;
+		this.canWear = true;
+	}
+};
+/*
+@depends ../core/rect.class.js
+@depends ../misc/utils.class.js
+@depends ../objs/stair.class.js
+@depends ../objs/wall.class.js
+@depends monsters/honeybadger.class.js
+@depends jackalope.class.js
+@depends redcap.class.js
+ */
+const DungeonGenerator = class DungeonGenerator {
+
+	static generateEquipment(enemy) {
+		if (enemy.canWield) {
+			enemy.equipment.weapon = Utils.randomWeapon();
+		}
+		if (enemy.canWear) {
+
+		}
+		return enemy;
+	}
+
+	//try to spawn some enemies within room
+	static insertEnemies(room, options) {
+		let enemyList = [Jackalope, Honeybadger, Redcap];
+		let enemies = [];
+		for (let x = room.x + room.w; x > room.x; x--) {
+			for (let y = room.y + room.h; y > room.y; y--) {
+				if (Math.random() < options.enemies.spawnChance) {
+					let enemy = enemyList[Math.floor(Math.random() * enemyList.length)];
+					enemy = new enemy(new Point(x, y));
+					enemy = this.generateEquipment(enemy);
+
+					for (let i = 1; i < options.difficulty; i++) {
+						enemy.levelUp();
+						enemy.stats.XP++;
+					}
+
+					enemies.push(enemy);
 				}
 			}
-		});
-		fov.draw();
-		this.inventoryManager.update();
-		this.equipmentManager.update();
+		}
+		return enemies;
+	}
 
-		document.getElementById("loader").remove();
+	static get types() {
+		return ["traditional", "city"];
+	}
+
+	static get traditional() {
+		return class {
+			static makeRoom(options) {
+				let room = {};
+
+				room.w = ~~(Math.random() * (options.rooms.size.max.w - options.rooms.size.min.w) + options.rooms.size.min.w);
+				room.h = ~~(Math.random() * (options.rooms.size.max.h - options.rooms.size.min.h) + options.rooms.size.min.h);
+				room.x = ~~(Math.random() * (options.size.w - room.w));
+				room.y = ~~(Math.random() * (options.size.h - room.h));
+
+				return room;
+			}
+
+			static makePoint(options) {
+				return {
+					x: ~~(Math.random() * options.size.w),
+					y: ~~(Math.random() * options.size.h)
+				};
+			}
+
+			static makePaths(rooms, midPoints, options) {
+				let paths = [];
+
+				//connect rooms to midpoints
+				for (let i = 0; i < options.paths.count; i++) {
+					let path = {},
+						dest = midPoints[i % options.paths.count % options.midPoints.count];
+
+					path.x1 = rooms[i].x + ~~(Math.random() * rooms[i].w);
+					path.y1 = rooms[i].y + ~~(Math.random() * rooms[i].h);
+
+					path.x2 = dest.x;
+					path.y2 = rooms[i].y + ~~(Math.random() * rooms[i].h);
+
+					path.x3 = dest.x;
+					path.y3 = dest.y;
+
+					paths.push(path);
+				}
+
+				//connect midpoints together
+				for (let i = 1; i < options.midPoints.count; i++) {
+					let path = {};
+
+					path.x1 = midPoints[i - 1].x;
+					path.y1 = midPoints[i - 1].y;
+
+					path.x2 = midPoints[i].x;
+					path.y2 = midPoints[i - 1].y;
+
+					path.x3 = midPoints[i].x;
+					path.y3 = midPoints[i].y;
+
+					paths.push(path);
+				}
+
+				return paths;
+			}
+
+			//main method
+			static makeLevel(player, options) {
+				options = options || this.defaultOptions;
+				let matrix = [],
+					objs = [],
+					rooms = Array(options.rooms.count).fill(),
+					midPoints = Array(options.midPoints.count).fill();
+
+				//get rooms
+				for (let i in rooms) {
+					rooms[i] = this.makeRoom(options);
+				}
+
+				//set player to first room
+				player.position.set(rooms[0].x + 1, rooms[0].y + 1);
+				objs.push(player);
+
+				if (options.stairs.up) {
+					//put an upstairs on player
+					objs.push(new Stair(new Point(rooms[0].x + 1, rooms[0].y + 1), "up"));
+				}
+
+				if (options.stairs.down) {
+					//put a downstairs in "last" room
+					objs.push(new Stair(new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1), "down"));
+				}
+
+				//get midpoints
+				for (let i in midPoints) {
+					midPoints[i] = this.makePoint(options);
+				}
+
+				//get paths
+				let paths = this.makePaths(rooms, midPoints, options);
+
+				//fill matrix with walls
+				for (let y = 0; y < options.size.h; y++) {
+					matrix[y] = [];
+					for (let x = 0; x < options.size.w; x++) {
+						let tile = new Tile(new Point(x, y));
+						tile.add(new Wall(new Point(x, y)));
+						matrix[y][x] = tile;
+					}
+				}
+
+				//carve out rooms
+				//and try put some enemies in them
+				rooms.forEach(room => {
+					for (let x = room.x + room.w; x > room.x; x--) {
+						for (let y = room.y + room.h; y > room.y; y--) {
+							matrix[y][x].empty();
+						}
+					}
+					objs = objs.concat(DungeonGenerator.insertEnemies(room, options));
+				});
+
+				//carve out paths
+				paths.forEach(path => {
+					for (let i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1 + 1; i0++) {
+						matrix[path.y1][i0].empty();
+					}
+					for (let i0 = Math.min(path.y2, path.y3), i1 = Math.max(path.y2, path.y3); i0 < i1 + 1; i0++) {
+						matrix[i0][path.x2].empty();
+					}
+				});
+
+				//get objs
+				for (let y = 0; y < options.size.h; y++) {
+					for (let x = 0; x < options.size.w; x++) {
+						if (!matrix[y][x].isEmpty) {
+							objs.push(matrix[y][x].top);
+						}
+					}
+				}
+
+				return {
+					rooms,
+					paths,
+					objs
+				};
+			}
+
+			static get defaultOptions() {
+				return {
+					difficulty: 1,
+					stairs: {
+						up: false,
+						down: true
+					},
+					size: {
+						w: 40,
+						h: 20
+					},
+					rooms: {
+						count: 8,
+						size: {
+							max: {
+								w: 8,
+								h: 8
+							},
+							min: {
+								w: 3,
+								h: 3
+							}
+						}
+					},
+					midPoints: {
+						count: 2
+					},
+					paths: {
+						count: 8
+					},
+					enemies: {
+						spawnChance: 0.02
+					}
+				};
+			}
+		};
+	}
+
+	static get city() {
+		return class {
+
+			static splitWithPath(rect, dir, options) {
+				if (rect.w < options.chunks.size.min.w || rect.h < options.chunks.size.min.h) {
+					return {
+						path: null,
+						chunks: []
+					};
+				}
+				let pos = Math.floor(
+						Math.random() *
+						(rect[dir] - options.chunks.size.min[dir] - options.paths.size - options.chunks.margin * 2) +
+						options.chunks.margin
+					),
+					first = rect.split[dir](),
+					second = first[1].split[dir](options.paths.size);
+
+				first[0].type = Rect.type.CHUNK;
+				second[0].type = Rect.type.PATH;
+				second[1].type = Rect.type.CHUNK;
+				return {
+					path: second[0],
+					chunks: [first[0], second[1]]
+				};
+			}
+
+			static findLargestRect(splits) {
+				if (splits.length <= 1) {
+					let a = splits[0].chunks.reduce((pp, cc) => pp.w * pp.h > cc.w * cc.h ? pp : cc);
+					let b = splits[0].chunks.reduce((pp, cc) => pp.w * pp.h > cc.w * cc.h ? pp : cc);
+					let rect = a.w * a.h > b.w * b.h ? a : b;
+					return {
+						rect: rect,
+						splitIndex: 0,
+						chunkIndex: splits[0].chunks.indexOf(rect)
+					};
+				}
+				let split = splits.reduce((p, c, i, arr) => {
+					if (c.chunks.length === 0 || p.chunks.length === 0) {
+						return p;
+					}
+					let a = c.chunks.reduce((pp, cc) => pp.w * pp.h > cc.w * cc.h ? pp : cc);
+					let b = p.chunks.reduce((pp, cc) => pp.w * pp.h > cc.w * cc.h ? pp : cc);
+					return a.w * a.h > b.w * b.h ? c : p;
+				}, splits[0]);
+				if (split.chunks.length === 0) {
+					return {
+						rect: null,
+						splitIndex: null,
+						chunkIndex: null
+					};
+				}
+				let rect = split.chunks.reduce((p, c) => p.w * p.h > c.w * c.h ? p : c),
+					splitIndex = splits.indexOf(split),
+					chunkIndex = splits[splitIndex].chunks.indexOf(rect);
+				return {
+					rect: rect,
+					splitIndex: splitIndex,
+					chunkIndex: chunkIndex
+				};
+			}
+
+			static splitBase(base, options) {
+				let splits = [];
+				splits.push(this.splitWithPath(base, "w", options));
+				for (let i = 0; i < options.main.splitCount; i++) {
+					let largest = this.findLargestRect(splits);
+					if (!largest.rect) {
+						break;
+					}
+					let dir = largest.rect.splitDir === "h" ? "w" : "h",
+						split = this.splitWithPath(largest.rect, dir, options);
+					splits[largest.splitIndex].chunks.splice(largest.chunkIndex, 1);
+					splits.push(split);
+				}
+				return splits;
+			}
+
+			static splitChunks(splits, options) {
+				let chunks = [].concat.apply([], splits.map((s, i) => {
+					s.chunks.forEach(c => c.splitIndex = i);
+					return s.chunks;
+				}));
+				chunks.forEach((chunk, index) => {
+					if (chunk.w < options.rooms.size.min.w || chunk.h < options.rooms.size.min.h) {
+						return;
+					}
+					chunk.rooms = [];
+					chunk.rooms.push({
+						chunks: chunk.split.w()
+					});
+					for (let i = 0; i < options.chunks.splitCount; i++) {
+						let largest = this.findLargestRect(chunk.rooms);
+						if (!largest.rect || largest.rect.w < options.rooms.size.min.w || largest.rect.h < options.rooms.size.min.h) {
+							break;
+						}
+						let dir = largest.rect.splitDir === "h" ? "w" : "h",
+							split = {
+								chunks: largest.rect.split[dir]()
+							};
+						split.chunks.forEach(s => s.type = Rect.type.ROOM);
+						chunk.rooms[largest.splitIndex].chunks.splice(largest.chunkIndex, 1);
+						chunk.rooms.push(split);
+					}
+				});
+
+				return splits.map((s, i) => {
+					s.chunks = chunks.filter(c => c.splitIndex === i);
+					s.chunks.forEach(c => {
+						if (!c.rooms) return;
+						//c.rooms.forEach(c => c.chunks.forEach(r => r.shrink(0.5)));
+					});
+					return s;
+				});
+			}
+
+			static carveDoors(splits, options) {
+				splits.forEach(s => {
+					s.doors = [];
+					s.chunks.forEach(c => {
+						if (!c.rooms) return;
+						c.rooms.forEach(rc => {
+							rc.chunks.forEach(r => {
+								let pathColl = r.intersect(s.path);
+								if (pathColl) {
+									let door = r.mids[pathColl];
+									door.type = Rect.type.DOOR;
+									//door.grow(0.5);
+									if (pathColl === "top" || pathColl === "bottom") {
+										door.h += options.doors.stretch;
+										door.y -= options.doors.stretch / 2 | 0;
+									} else {
+										door.w += options.doors.stretch;
+										door.x -= options.doors.stretch / 2 | 0;
+									}
+
+									door.x--;
+									s.doors.push(door);
+								}
+								let roomColl = r.intersect(rc.chunks[Math.floor(Math.random() * rc.chunks.length)]);
+								if (roomColl) {
+									let door = r.mids[roomColl];
+									door.type = Rect.type.DOOR;
+									//door1.grow(0.5);
+									if (roomColl === "top" || roomColl === "bottom") {
+										door.h += options.doors.stretch;
+										door.y -= options.doors.stretch / 2 | 0;
+									} else {
+										door.w += options.doors.stretch;
+										door.x -= options.doors.stretch / 2 | 0;
+									}
+									door.y--;
+									door.x--;
+									s.doors.push(door);
+								}
+							});
+						});
+					});
+				});
+				return splits;
+			}
+
+			static makeLevel(player, options) {
+				options = options || this.defaultOptions;
+				let base = new Rect({
+					x: 0,
+					y: 0,
+					w: options.main.size.w,
+					h: options.main.size.h,
+					type: Rect.type.CHUNK
+				});
+				try {
+					let bluePrint = this.carveDoors(this.splitChunks(this.splitBase(base, options), options), options),
+						rooms = [],
+						paths = [],
+						matrix = [],
+						objs = [];
+
+					//make empty matrix
+					for (let y = 0; y < options.main.size.h; y++) {
+						matrix[y] = [];
+						for (let x = 0; x < options.main.size.w; x++) {
+							let tile = new Tile(new Point(x, y));
+							matrix[y][x] = tile;
+						}
+					}
+
+					//fill chunks with walls
+					bluePrint.forEach(split => {
+						if (!split.path) return;
+
+						split.chunks.forEach(chunk => {
+							for (let x = chunk.x + chunk.w; x > chunk.x; x--) {
+								for (let y = chunk.y + chunk.h; y > chunk.y; y--) {
+									matrix[y - 1][x - 1].add(new Wall(new Point(x, y)));
+								}
+							}
+						});
+					});
+
+					let playerPlaced = false;
+
+					bluePrint.forEach(split => {
+						if (!split.path) return;
+
+						paths.push(split.path);
+						split.chunks.forEach(chunk => {
+							if (!chunk.rooms) return;
+
+							chunk.rooms.forEach(rsplit => {
+								rsplit.chunks.forEach(room => {
+									if (room.type === Rect.type.ROOM) {
+										room.shrink(1);
+										rooms.push(room);
+										//carve out rooms
+										for (let x = room.x + room.w; x > room.x; x--) {
+											for (let y = room.y + room.h; y > room.y; y--) {
+												matrix[y - 1][x - 1].empty();
+												//place player as soon as possible
+												if (!playerPlaced) {
+													player.position.set(x, y);
+													objs.push(player);
+													playerPlaced = true;
+												}
+											}
+										}
+									}
+								});
+							});
+						});
+						//carve out doors
+						if (split.doors) {
+							split.doors.forEach(door => {
+								for (let x = door.x + door.w; x > door.x; x--) {
+									for (let y = door.y + door.h; y > door.y; y--) {
+										if (matrix[y] && matrix[y][x]) {
+											matrix[y][x].empty();
+										}
+									}
+								}
+							});
+						}
+					});
+
+					if (options.stairs.up) {
+						//put an upstairs on player
+						objs.push(new Stair(new Point(...player.position.get), "up"));
+					}
+
+					if (options.stairs.down) {
+						//put a downstairs in largest room
+						let largest = rooms.reduce((p, c) => p.w * p.h > c.w * c.h ? p : c);
+						objs.push(new Stair(new Point(largest.x + 1, largest.y + 1), "down"));
+					}
+
+					//spawn enemies
+					rooms.forEach(room => {
+						objs = objs.concat(DungeonGenerator.insertEnemies(room, options));
+					});
+
+					//get objs
+					for (let y = 0; y < options.main.size.h; y++) {
+						for (let x = 0; x < options.main.size.w; x++) {
+							if (!matrix[y][x].isEmpty) {
+								objs.push(matrix[y][x].top);
+							}
+						}
+					}
+					return {
+						rooms,
+						paths,
+						objs
+					};
+				} catch (err) {
+					throw err;
+				}
+			}
+
+			static get defaultOptions() {
+				return {
+					main: {
+						size: {
+							w: 40,
+							h: 20
+						},
+						splitCount: 6
+					},
+					difficulty: 1,
+					stairs: {
+						up: false,
+						down: true
+					},
+					paths: {
+						size: 2
+					},
+					chunks: {
+						size: {
+							min: {
+								w: 5,
+								h: 5
+							}
+						},
+						margin: 5,
+						splitCount: 2
+					},
+					rooms: {
+						size: {
+							min: {
+								w: 4,
+								h: 4
+							},
+							max: {
+								w: 10,
+								h: 10
+							}
+						}
+					},
+					doors: {
+						stretch: 3
+					},
+					enemies: {
+						spawnChance: 0.02
+					}
+				};
+			}
+		};
 	}
 };
 
@@ -2437,7 +2945,7 @@ var game = new Game(
 		spacing: 1,
 		w: 40,
 		h: 20
-	}), Utils.loadGame() || Utils.DungeonGenerator.makeLevel(new Player(new Point(10,10)))
+	}), Utils.loadGame() || DungeonGenerator.traditional.makeLevel(new Player(new Point(10,10)))
 );
 //Utils.initUIButtons(game);
 
@@ -2459,6 +2967,40 @@ game.start();
 		elemX = 0,
 		elemY = 0;
 
+	function move(e) {
+		if (e.target.classList.contains("moveable-anchor")) {
+			e.stopPropagation();
+			//e.cancelBubble();
+			e.preventDefault();
+			let x = e.pageX;
+			let y = e.pageY;
+			if (x === undefined) {
+				x = e.touches[0].pageX;
+				y = e.touches[0].pageY;
+			}
+			elemX = x - elem.offsetLeft;
+			elemY = y - elem.offsetTop;
+			dragging = "body";
+			selected = elem;
+		}
+	}
+
+	function startr(e) {
+		e.stopPropagation();
+		//e.cancelBubble();
+		e.preventDefault();
+		dragging = "right";
+		selected = elem;
+	}
+
+	function startb(e) {
+		e.stopPropagation();
+		//e.cancelBubble();
+		e.preventDefault();
+		dragging = "bottom";
+		selected = elem;
+	}
+
 	elems.forEach(elem => {
 		let right = document.createElement("div"),
 			bottom = document.createElement("div");
@@ -2469,44 +3011,11 @@ game.start();
 		bottom.classList.add("edge-bottom");
 
 		if (elem.classList.contains("moveable")) {
-			function move(e) {
-				if (e.target.classList.contains("moveable-anchor")) {
-					e.stopPropagation();
-					//e.cancelBubble();
-					e.preventDefault();
-					let x = e.pageX;
-					let y = e.pageY;
-					if (x === undefined) {
-						x = e.touches[0].pageX;
-						y = e.touches[0].pageY;
-					}
-					elemX = x - elem.offsetLeft;
-					elemY = y - elem.offsetTop;
-					dragging = "body";
-					selected = elem;
-				}
-			}
 			elem.addEventListener("mousedown", move);
 			elem.addEventListener("touchstart", move);
 		}
 
 		if (elem.classList.contains("resizeable")) {
-			function startr(e) {
-				e.stopPropagation();
-				//e.cancelBubble();
-				e.preventDefault();
-				dragging = "right";
-				selected = elem;
-			}
-
-			function startb(e) {
-				e.stopPropagation();
-				//e.cancelBubble();
-				e.preventDefault();
-				dragging = "bottom";
-				selected = elem;
-			}
-
 			bottom.addEventListener("mousedown", startb);
 			bottom.addEventListener("touchstart", startb);
 			right.addEventListener("mousedown", startr);

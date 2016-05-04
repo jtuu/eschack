@@ -727,6 +727,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 					60: "up", //<
 					226: "up", //chrome...
+					83: "up", //s
 
 					0: "cheat",
 
@@ -836,150 +837,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		return KeyHandler;
 	}();
 
-	/* @depends ../abstract/dungeonfeature.class.js */
-	var Stair = function (_GameObject3) {
-		_inherits(Stair, _GameObject3);
-
-		function Stair(position, direction) {
-			_classCallCheck(this, Stair);
-
-			var _this12 = _possibleConstructorReturn(this, _GameObject3.call(this, position));
-
-			_this12.direction = direction;
-			_this12.bgColor = "hsl(0,0%,35%)";
-
-			if (_this12.direction === "up") {
-				_this12.glyph = "<";
-			} else if (_this12.direction === "down") {
-				_this12.glyph = ">";
-			}
-			_this12.color = "hsl(0,0%,75%)";
-			_this12.flavorName = _this12.direction + "stair";
-			return _this12;
-		}
-
-		Stair.prototype.update = function update() {
-			return 0;
-		};
-
-		Stair.prototype.toString = function toString() {
-			return "A staircase going " + this.direction;
-		};
-
-		return Stair;
-	}(GameObject);
-	/* @depends ../abstract/dungeonfeature.class.js */
-	//todo: create base class Inanimate or something
-	var Wall = function (_VisionBlocking) {
-		_inherits(Wall, _VisionBlocking);
-
-		function Wall(position) {
-			_classCallCheck(this, Wall);
-
-			var _this13 = _possibleConstructorReturn(this, _VisionBlocking.call(this, position));
-
-			_this13.bgColor = "hsl(0,0%,15%)";
-			_this13.glyph = "▉"; //some block character
-			_this13.color = "hsl(0,0%,25%)";
-			_this13.flavorName = "wall";
-			return _this13;
-		}
-
-		Wall.prototype.update = function update() {
-			return 0;
-		};
-
-		return Wall;
-	}(VisionBlocking(MoveBlocking(DungeonFeature)));
-	/* @depends ../abstract/enemy.class.js */
-	var Honeybadger = function (_Enemy) {
-		_inherits(Honeybadger, _Enemy);
-
-		function Honeybadger(position) {
-			_classCallCheck(this, Honeybadger);
-
-			var _this14 = _possibleConstructorReturn(this, _Enemy.call(this, position, null, new Weapon("Claws", 4, 11)));
-
-			_this14.bgColor = "hsl(25, 5%, 10%)";
-			_this14.glyph = "B";
-			_this14.color = "hsl(5, 5%, 90%)";
-
-			_this14.equipment.weapon.canDrop = false;
-
-			_this14.stats.maxHP = 10;
-			_this14.stats.HP = 10;
-			_this14.stats.viewDistance = 7;
-			_this14.stats.moveSpeed = 10;
-			_this14.flavorName = "the honeybadger";
-			_this14.flavor = "Notorious for their ferocity.";
-			_this14.createLifebar();
-			return _this14;
-		}
-
-		return Honeybadger;
-	}(Enemy);
-	/* @depends ../abstract/enemy.class.js */
-	var Jackalope = function (_Enemy2) {
-		_inherits(Jackalope, _Enemy2);
-
-		function Jackalope(position) {
-			_classCallCheck(this, Jackalope);
-
-			var _this15 = _possibleConstructorReturn(this, _Enemy2.call(this, position, null, new Weapon("Antlers", 2, 5)));
-
-			_this15.bgColor = "hsl(35, 25%, 65%)";
-			_this15.glyph = "J";
-			_this15.color = "hsl(35, 35%, 5%)";
-
-			_this15.equipment.weapon.canDrop = false;
-
-			_this15.stats.maxHP = 6;
-			_this15.stats.HP = 6;
-			_this15.stats.viewDistance = 7;
-			_this15.stats.moveSpeed = 8;
-			_this15.flavorName = "the jackalope";
-			_this15.flavor = "A large agressive rabbit with antlers on its head.";
-			_this15.createLifebar();
-			return _this15;
-		}
-
-		return Jackalope;
-	}(Enemy);
-	/* @depends ../abstract/enemy.class.js */
-	var Redcap = function (_Enemy3) {
-		_inherits(Redcap, _Enemy3);
-
-		function Redcap(position) {
-			_classCallCheck(this, Redcap);
-
-			var _this16 = _possibleConstructorReturn(this, _Enemy3.call(this, position, null, null));
-
-			_this16.bgColor = "hsl(66, 10%, 70%)";
-			_this16.glyph = "^";
-			_this16.color = "hsl(0, 80%, 60%)";
-
-			_this16.stats.maxHP = 10;
-			_this16.stats.HP = 10;
-			_this16.stats.viewDistance = 7;
-			_this16.stats.moveSpeed = 10;
-			_this16.flavorName = "the redcap";
-			_this16.flavor = "A malevolent murderous dwarf-like creature.";
-			_this16.createLifebar();
-
-			_this16.canWield = true;
-			_this16.canWear = true;
-			return _this16;
-		}
-
-		return Redcap;
-	}(Enemy);
 	/*
- @depends ../objs/stair.class.js
- @depends ../objs/wall.class.js
- @depends monsters/honeybadger.class.js
- @depends jackalope.class.js
- @depends redcap.class.js
-  */
+ @depends ../objs/weapon.class.js
+ */
 	var Utils = function () {
 		function Utils() {
 			_classCallCheck(this, Utils);
@@ -1202,7 +1062,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			}
 		};
 
-		Utils.generateRandomWeapon = function generateRandomWeapon() {
+		Utils.randomWeapon = function randomWeapon() {
 			var materials = ["Bronze", "Iron", "Steel"],
 			    types = ["Dagger", "Sword", "Axe", "Pikestaff"];
 
@@ -1212,16 +1072,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		};
 
 		Utils.initUIButtons = function initUIButtons(instance) {
-			var _this17 = this;
+			var _this12 = this;
 
 			document.getElementById("button-save").addEventListener("click", function (e) {
 				e.stopPropagation();
-				_this17.saveGame(instance);
+				_this12.saveGame(instance);
 			});
 
 			document.getElementById("button-delete").addEventListener("click", function (e) {
 				e.stopPropagation();
-				_this17.deleteSave();
+				_this12.deleteSave();
 			});
 		};
 
@@ -1278,12 +1138,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					}, {
 						key: "physical",
 						get: function get() {
-							var _this18 = this;
+							var _this13 = this;
 
 							return {
 								melee: function melee(attacker, defender) {
-									var effectiveAC = (defender.stats.AC + _this18.constants.baseAC) * (1 + defender.stats.STR / _this18.constants.defenderStrEffectiveness),
-									    effectiveDmg = attacker.equipment.weapon.damage + (attacker.stats.STR + attacker.stats.DEX) / 2 / _this18.constants.attackerStatEffectiveness;
+									var effectiveAC = (defender.stats.AC + _this13.constants.baseAC) * (1 + defender.stats.STR / _this13.constants.defenderStrEffectiveness),
+									    effectiveDmg = attacker.equipment.weapon.damage + (attacker.stats.STR + attacker.stats.DEX) / 2 / _this13.constants.attackerStatEffectiveness;
 									return Math.max(Math.floor(effectiveDmg - effectiveAC), 0);
 								}
 							};
@@ -1291,236 +1151,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					}]);
 
 					return _class4;
-				}();
-			}
-
-			//use this to generate maps
-			//(actually it generates array of objs which then get inserted by Game)
-
-		}, {
-			key: "DungeonGenerator",
-			get: function get() {
-				return function () {
-					function _class5() {
-						_classCallCheck(this, _class5);
-					}
-
-					_class5.makeRoom = function makeRoom(options) {
-						var room = {};
-
-						room.w = ~ ~(Math.random() * (options.rooms.size.max.w - options.rooms.size.min.w) + options.rooms.size.min.w);
-						room.h = ~ ~(Math.random() * (options.rooms.size.max.h - options.rooms.size.min.h) + options.rooms.size.min.h);
-						room.x = ~ ~(Math.random() * (options.size.w - room.w));
-						room.y = ~ ~(Math.random() * (options.size.h - room.h));
-
-						return room;
-					};
-
-					_class5.makePoint = function makePoint(options) {
-						return {
-							x: ~ ~(Math.random() * options.size.w),
-							y: ~ ~(Math.random() * options.size.h)
-						};
-					};
-
-					_class5.makePaths = function makePaths(rooms, midPoints, options) {
-						var paths = [];
-
-						//connect rooms to midpoints
-						for (var i = 0; i < options.paths.count; i++) {
-							var path = {},
-							    dest = midPoints[i % options.paths.count % options.midPoints.count];
-
-							path.x1 = rooms[i].x + ~ ~(Math.random() * rooms[i].w);
-							path.y1 = rooms[i].y + ~ ~(Math.random() * rooms[i].h);
-
-							path.x2 = dest.x;
-							path.y2 = rooms[i].y + ~ ~(Math.random() * rooms[i].h);
-
-							path.x3 = dest.x;
-							path.y3 = dest.y;
-
-							paths.push(path);
-						}
-
-						//connect midpoints together
-						for (var _i = 1; _i < options.midPoints.count; _i++) {
-							var _path = {};
-
-							_path.x1 = midPoints[_i - 1].x;
-							_path.y1 = midPoints[_i - 1].y;
-
-							_path.x2 = midPoints[_i].x;
-							_path.y2 = midPoints[_i - 1].y;
-
-							_path.x3 = midPoints[_i].x;
-							_path.y3 = midPoints[_i].y;
-
-							paths.push(_path);
-						}
-
-						return paths;
-					};
-
-					//try to spawn some enemies within room
-
-
-					_class5.insertEnemies = function insertEnemies(room, options) {
-						var enemyList = [Jackalope, Honeybadger, Redcap];
-						var enemies = [];
-						for (var x = room.x + room.w; x > room.x; x--) {
-							for (var y = room.y + room.h; y > room.y; y--) {
-								if (Math.random() < options.enemies.spawnChance) {
-									var enemy = enemyList[Math.floor(Math.random() * enemyList.length)];
-									enemy = new enemy(new Point(x, y));
-									enemy = this.generateEquipment(enemy);
-
-									for (var i = 1; i < options.difficulty; i++) {
-										enemy.levelUp();
-										enemy.stats.XP++;
-									}
-
-									enemies.push(enemy);
-								}
-							}
-						}
-						return enemies;
-					};
-
-					_class5.generateEquipment = function generateEquipment(enemy) {
-						if (enemy.canWield) {
-							enemy.equipment.weapon = Utils.generateRandomWeapon();
-						}
-						if (enemy.canWear) {}
-						return enemy;
-					};
-
-					//main method
-
-
-					_class5.makeLevel = function makeLevel(player, options) {
-						var _this19 = this;
-
-						options = options || this.defaultOptions;
-						var matrix = [],
-						    objs = [],
-						    rooms = Array(options.rooms.count).fill(),
-						    midPoints = Array(options.midPoints.count).fill();
-
-						//get rooms
-						for (var i in rooms) {
-							rooms[i] = this.makeRoom(options);
-						}
-
-						//set player to first room
-						player.position.set(rooms[0].x + 1, rooms[0].y + 1);
-						objs.push(player);
-
-						if (options.stairs.up) {
-							//put an upstairs on player
-							objs.push(new Stair(new Point(rooms[0].x + 1, rooms[0].y + 1), "up"));
-						}
-
-						if (options.stairs.down) {
-							//put a downstairs in "last" room
-							objs.push(new Stair(new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1), "down"));
-						}
-
-						//get midpoints
-						for (var _i2 in midPoints) {
-							midPoints[_i2] = this.makePoint(options);
-						}
-
-						//get paths
-						var paths = this.makePaths(rooms, midPoints, options);
-
-						//fill matrix with walls
-						for (var y = 0; y < options.size.h; y++) {
-							matrix[y] = [];
-							for (var x = 0; x < options.size.w; x++) {
-								var tile = new Tile(new Point(x, y));
-								tile.add(new Wall(new Point(x, y)));
-								matrix[y][x] = tile;
-							}
-						}
-
-						//carve out rooms
-						//and try put some enemies in them
-						rooms.forEach(function (room) {
-							for (var _x3 = room.x + room.w; _x3 > room.x; _x3--) {
-								for (var _y = room.y + room.h; _y > room.y; _y--) {
-									matrix[_y][_x3].empty();
-								}
-							}
-							objs = objs.concat(_this19.insertEnemies(room, options));
-						});
-
-						//carve out paths
-						paths.forEach(function (path) {
-							for (var i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1 + 1; i0++) {
-								matrix[path.y1][i0].empty();
-							}
-							for (var _i3 = Math.min(path.y2, path.y3), _i4 = Math.max(path.y2, path.y3); _i3 < _i4 + 1; _i3++) {
-								matrix[_i3][path.x2].empty();
-							}
-						});
-
-						//get objs
-						for (var _y2 = 0; _y2 < options.size.h; _y2++) {
-							for (var _x4 = 0; _x4 < options.size.w; _x4++) {
-								if (!matrix[_y2][_x4].isEmpty) {
-									objs.push(matrix[_y2][_x4].top);
-								}
-							}
-						}
-
-						return {
-							rooms: rooms,
-							paths: paths,
-							objs: objs
-						};
-					};
-
-					_createClass(_class5, null, [{
-						key: "defaultOptions",
-						get: function get() {
-							return {
-								difficulty: 1,
-								stairs: {
-									up: false,
-									down: true
-								},
-								size: {
-									w: 40,
-									h: 20
-								},
-								rooms: {
-									count: 8,
-									size: {
-										max: {
-											w: 8,
-											h: 8
-										},
-										min: {
-											w: 3,
-											h: 3
-										}
-									}
-								},
-								midPoints: {
-									count: 2
-								},
-								paths: {
-									count: 8
-								},
-								enemies: {
-									spawnChance: 0.02
-								}
-							};
-						}
-					}]);
-
-					return _class5;
 				}();
 			}
 		}]);
@@ -1584,7 +1214,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		}
 
 		EquipmentManager.prototype.update = function update() {
-			var _this20 = this;
+			var _this14 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -1592,7 +1222,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				});
 			}
 			Object.keys(this.equipment).filter(function (k) {
-				return _this20.equipment[k];
+				return _this14.equipment[k];
 			}).forEach(function (k, i) {
 				var parent = document.createElement("div"),
 				    key = document.createElement("div"),
@@ -1606,12 +1236,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 				key.innerHTML = Utils.alphabetMap[i];
 				slot.innerHTML = k;
-				value.innerHTML = _this20.equipment[k];
+				value.innerHTML = _this14.equipment[k];
 
 				parent.appendChild(key);
 				parent.appendChild(slot);
 				parent.appendChild(value);
-				_this20.container.appendChild(parent);
+				_this14.container.appendChild(parent);
 			});
 		};
 
@@ -1632,7 +1262,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		}
 
 		InventoryManager.prototype.update = function update() {
-			var _this21 = this;
+			var _this15 = this;
 
 			if (!!this.container.children.length) {
 				Array.from(this.container.children).forEach(function (item) {
@@ -1642,7 +1272,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			this.inventory.forEach(function (item, key) {
 				var ele = document.createElement("div");
 				ele.innerHTML = Utils.alphabetMap[key] + " - " + item;
-				_this21.container.appendChild(ele);
+				_this15.container.appendChild(ele);
 			});
 		};
 
@@ -1673,7 +1303,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		LogboxManager.prototype.log = function log(text) {
-			var _this22 = this;
+			var _this16 = this;
 
 			var type = arguments.length <= 1 || arguments[1] === undefined ? "default" : arguments[1];
 
@@ -1694,7 +1324,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			} else {
 				this.rows[0].children[0].remove();
 				this.rows.forEach(function (row, index) {
-					row.appendChild(_this22.messages[_this22.messages.length - (_this22.rowCount - index)]);
+					row.appendChild(_this16.messages[_this16.messages.length - (_this16.rowCount - index)]);
 				});
 			}
 		};
@@ -1733,7 +1363,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		}
 
 		StatsManager.prototype.create = function create() {
-			var _this23 = this;
+			var _this17 = this;
 
 			var playerStatCont = document.createElement("div");
 			playerStatCont.style.padding = "10px";
@@ -1751,13 +1381,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				stat.className = "player-stat-name";
 				value.className = "player-stat-value";
 
-				stat.innerHTML = _this23.usedPlayerStats[key];
-				value.innerHTML = _this23.playerStats[key];
+				stat.innerHTML = _this17.usedPlayerStats[key];
+				value.innerHTML = _this17.playerStats[key];
 				parent.appendChild(stat);
 				parent.appendChild(value);
-				_this23.playerStatCont.appendChild(parent);
+				_this17.playerStatCont.appendChild(parent);
 
-				_this23.playerStatElements[key] = {
+				_this17.playerStatElements[key] = {
 					stat: stat,
 					value: value
 				};
@@ -1776,13 +1406,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 				parent.id = "game-stat-" + key;
 
-				stat.innerHTML = _this23.usedGameStats[key];
-				value.innerHTML = _this23.gameStats[key];
+				stat.innerHTML = _this17.usedGameStats[key];
+				value.innerHTML = _this17.gameStats[key];
 				parent.appendChild(stat);
 				parent.appendChild(value);
-				_this23.gameCont.appendChild(parent);
+				_this17.gameCont.appendChild(parent);
 
-				_this23.gameStatElements[key] = {
+				_this17.gameStatElements[key] = {
 					stat: stat,
 					value: value
 				};
@@ -1790,13 +1420,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		};
 
 		StatsManager.prototype.update = function update() {
-			var _this24 = this;
+			var _this18 = this;
 
 			Object.keys(this.usedPlayerStats).forEach(function (key) {
-				_this24.playerStatElements[key].value.innerHTML = _this24.playerStats[key];
+				_this18.playerStatElements[key].value.innerHTML = _this18.playerStats[key];
 			});
 			Object.keys(this.usedGameStats).forEach(function (key) {
-				_this24.gameStatElements[key].value.innerHTML = _this24.gameStats[key];
+				_this18.gameStatElements[key].value.innerHTML = _this18.gameStats[key];
 			});
 		};
 
@@ -1891,7 +1521,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 	//todo: use some kind of EmptyTile object instead of null?
 	var TileGroup = function () {
 		function TileGroup(matrix, options) {
-			var _this25 = this;
+			var _this19 = this;
 
 			_classCallCheck(this, TileGroup);
 
@@ -1923,13 +1553,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			if (this.origin.x >= 0) {
 				//pad x
 				this.matrix.forEach(function (row, y) {
-					return _this25.matrix[y] = Array(_this25.origin.x).concat(_this25.matrix[y]);
+					return _this19.matrix[y] = Array(_this19.origin.x).concat(_this19.matrix[y]);
 				});
 			} else {
 				//shift x
 				this.matrix.forEach(function (row, y) {
-					for (var i = 0; i < -_this25.origin.x; i++) {
-						_this25.matrix[y].shift();
+					for (var i = 0; i < -_this19.origin.x; i++) {
+						_this19.matrix[y].shift();
 					}
 				});
 			}
@@ -1953,14 +1583,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		TileGroup.prototype.update = function update() {
-			var _this26 = this;
+			var _this20 = this;
 
 			this.matrix.forEach(function (row, y) {
 				return row.forEach(function (tile, x) {
 					if (tile && !tile.isEmpty) {
 						var temp = tile.top;
 						tile.contents.shift();
-						_this26.insert(temp);
+						_this20.insert(temp);
 					}
 				});
 			});
@@ -2031,7 +1661,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		TileGroup.prototype.draw = function draw() {
-			var _this27 = this;
+			var _this21 = this;
 
 			this.matrix.forEach(function (row, y) {
 				return row.forEach(function (tile, x) {
@@ -2042,14 +1672,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 						if (tile.isEmpty) {
 							//default
-							mainCtx.fillStyle = _this27.baseColor;
-							mainCtx.fillRect(tx * (_this27.tileSize + _this27.spacing), ty * (_this27.tileSize + _this27.spacing), _this27.tileSize, _this27.tileSize);
+							mainCtx.fillStyle = _this21.baseColor;
+							mainCtx.fillRect(tx * (_this21.tileSize + _this21.spacing), ty * (_this21.tileSize + _this21.spacing), _this21.tileSize, _this21.tileSize);
 						} else {
 							//draw gameobject
 							mainCtx.fillStyle = tile.top.bgColor;
-							mainCtx.fillRect(tx * (_this27.tileSize + _this27.spacing), ty * (_this27.tileSize + _this27.spacing), _this27.tileSize, _this27.tileSize);
+							mainCtx.fillRect(tx * (_this21.tileSize + _this21.spacing), ty * (_this21.tileSize + _this21.spacing), _this21.tileSize, _this21.tileSize);
 							mainCtx.fillStyle = tile.top.color;
-							mainCtx.fillText(tile.top.glyph, tx * (_this27.tileSize + _this27.spacing) + _this27.tileSize / 2, ty * (_this27.tileSize + _this27.spacing) + _this27.tileSize / 1.5);
+							mainCtx.fillText(tile.top.glyph, tx * (_this21.tileSize + _this21.spacing) + _this21.tileSize / 2, ty * (_this21.tileSize + _this21.spacing) + _this21.tileSize / 1.5);
 						}
 					}
 				});
@@ -2071,19 +1701,19 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		return TileGroup;
 	}();
 	/* @depends ../abstract/gameobject.class.js */
-	var Corpse = function (_GameObject4) {
-		_inherits(Corpse, _GameObject4);
+	var Corpse = function (_GameObject3) {
+		_inherits(Corpse, _GameObject3);
 
 		function Corpse(position) {
 			_classCallCheck(this, Corpse);
 
-			var _this28 = _possibleConstructorReturn(this, _GameObject4.call(this, position));
+			var _this22 = _possibleConstructorReturn(this, _GameObject3.call(this, position));
 
-			_this28.bgColor = "hsl(0,40%,40%)";
-			_this28.glyph = "x"; //some block character
-			_this28.color = "hsl(0,40%,10%)";
-			_this28.flavorName = "corpse";
-			return _this28;
+			_this22.bgColor = "hsl(0,40%,40%)";
+			_this22.glyph = "x"; //some block character
+			_this22.color = "hsl(0,40%,10%)";
+			_this22.flavorName = "corpse";
+			return _this22;
 		}
 
 		Corpse.prototype.update = function update() {
@@ -2102,10 +1732,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function AttackAction(context, logger, direction) {
 			_classCallCheck(this, AttackAction);
 
-			var _this29 = _possibleConstructorReturn(this, _Action.call(this, context, logger));
+			var _this23 = _possibleConstructorReturn(this, _Action.call(this, context, logger));
 
-			_this29.direction = direction;
-			return _this29;
+			_this23.direction = direction;
+			return _this23;
 		}
 
 		AttackAction.prototype.try = function _try(actor, time) {
@@ -2164,10 +1794,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function ItemDropAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemDropAction);
 
-			var _this30 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
+			var _this24 = _possibleConstructorReturn(this, _Action2.call(this, context, logger));
 
-			_this30.inventorySlot = inventorySlot;
-			return _this30;
+			_this24.inventorySlot = inventorySlot;
+			return _this24;
 		}
 
 		ItemDropAction.prototype.try = function _try(actor, time) {
@@ -2199,10 +1829,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function ItemUnequipAction(context, logger, equipmentSlot) {
 			_classCallCheck(this, ItemUnequipAction);
 
-			var _this31 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
+			var _this25 = _possibleConstructorReturn(this, _Action3.call(this, context, logger));
 
-			_this31.equipmentSlot = equipmentSlot;
-			return _this31;
+			_this25.equipmentSlot = equipmentSlot;
+			return _this25;
 		}
 
 		ItemUnequipAction.prototype.try = function _try(actor, time) {
@@ -2250,10 +1880,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function ItemEquipAction(context, logger, inventorySlot) {
 			_classCallCheck(this, ItemEquipAction);
 
-			var _this32 = _possibleConstructorReturn(this, _Action4.call(this, context, logger));
+			var _this26 = _possibleConstructorReturn(this, _Action4.call(this, context, logger));
 
-			_this32.inventorySlot = inventorySlot;
-			return _this32;
+			_this26.inventorySlot = inventorySlot;
+			return _this26;
 		}
 
 		ItemEquipAction.prototype.try = function _try(actor, time) {
@@ -2329,10 +1959,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function MoveAction(context, logger, movement) {
 			_classCallCheck(this, MoveAction);
 
-			var _this34 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
+			var _this28 = _possibleConstructorReturn(this, _Action6.call(this, context, logger));
 
-			_this34.movement = movement;
-			return _this34;
+			_this28.movement = movement;
+			return _this28;
 		}
 
 		MoveAction.prototype.try = function _try(actor, time) {
@@ -2444,13 +2074,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		ActionManager.prototype.think = function think(actor, player) {
-			var _this37 = this;
+			var _this31 = this;
 
 			if (actor instanceof Enemy) {
 				var _ret2 = function () {
-					var fov = _this37.getFov(actor),
+					var fov = _this31.getFov(actor),
 					    instruction = null,
-					    shouldLog = _this37.getFov(player).has(actor.position);
+					    shouldLog = _this31.getFov(player).has(actor.position);
 					actor.target = fov.get(player.position);
 
 					if (!actor.target || !player.isAlive) {
@@ -2468,15 +2098,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						var vector = Point.distance(actor.position, actor.target.position);
 						vector.reduce();
 						instruction = vector;
-						if (!actor.noticed && shouldLog) _this37.logger.log(actor.flavorName + " noticed " + player.flavorName, "threat1");
+						if (!actor.noticed && shouldLog) _this31.logger.log(actor.flavorName + " noticed " + player.flavorName, "threat1");
 						actor.noticed = true;
 					}
 
-					var proposals = _this37.proposalMap[instruction.constructor];
+					var proposals = _this31.proposalMap[instruction.constructor];
 					if (proposals) {
 						var methods = proposals.map(function (action) {
 							return function () {
-								return new action(_this37.board, shouldLog ? _this37.logger : null, instruction);
+								return new action(_this31.board, shouldLog ? _this31.logger : null, instruction);
 							};
 						});
 						actor.actions.push(methods);
@@ -2532,7 +2162,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 		ActionManager.prototype.delegateAction = function delegateAction(actor, instruction) {
-			var _this38 = this;
+			var _this32 = this;
 
 			if (!actor) {
 				return;
@@ -2541,7 +2171,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				var proposals = this.proposalMap[null];
 				var methods = proposals.map(function (action) {
 					return function () {
-						return new action(_this38.board, _this38.logger, instruction);
+						return new action(_this32.board, _this32.logger, instruction);
 					};
 				});
 				actor.actions.push(methods);
@@ -2582,7 +2212,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				if (_proposals) {
 					var _methods = _proposals.map(function (action) {
 						return function () {
-							return new action(_this38.board, _this38.logger, instruction);
+							return new action(_this32.board, _this32.logger, instruction);
 						};
 					});
 					actor.actions.push(_methods);
@@ -2592,7 +2222,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				}
 			} else if (instruction === null) {
 				actor.actions.push([function () {
-					return new NullAction(null, _this38.logger);
+					return new NullAction(null, _this32.logger);
 				}]);
 				return true;
 			}
@@ -2612,11 +2242,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  @depends ../logic/actionmanager.class.js
  @depends ../control/keyhandler.class.js
  @depends ../controls/mousehandler.class.js
- */
+  */
 	//the game
 	var Game = function () {
 		function Game(board, dungeon) {
-			var _this39 = this;
+			var _this33 = this;
 
 			_classCallCheck(this, Game);
 
@@ -2644,8 +2274,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//keypress eventlistener
 			this.keyHandler = new KeyHandler();
 			document.addEventListener("keydown", function (e) {
-				if (_this39.logic.delegateAction(_this39.player, _this39.keyHandler.get(e.code || e.keyCode))) {
-					_this39.update();
+				if (_this33.logic.delegateAction(_this33.player, _this33.keyHandler.get(e.code || e.keyCode))) {
+					_this33.update();
 				}
 			});
 
@@ -2659,56 +2289,56 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//cleaned this up a bit but it's still not very nice
 			this.mouseHandler = new MouseHandler(this.board);
 			document.addEventListener("mousemove", function (e) {
-				var bounds = _this39.board.bounds;
+				var bounds = _this33.board.bounds;
 				var screenPoint = new Point(e.pageX, e.pageY);
 
 				//mouse is inside game screen
 				if (screenPoint.in(bounds)) {
-					var fov = _this39.player.fov,
-					    gamePoint = Utils.screenToGame(screenPoint, _this39.board.tileSize, _this39.board.spacing);
+					var fov = _this33.player.fov,
+					    gamePoint = Utils.screenToGame(screenPoint, _this33.board.tileSize, _this33.board.spacing);
 
 					//set cursor position
-					_this39.mouseHandler.cursorFromScreen(screenPoint);
+					_this33.mouseHandler.cursorFromScreen(screenPoint);
 
 					//if hovering over a tile that is seen
 					if (fov && fov.has(gamePoint)) {
-						var targetTile = _this39.board.get(gamePoint);
+						var targetTile = _this33.board.get(gamePoint);
 
 						//if tile is not empty
 						if (targetTile && targetTile.top) {
 							//reset all lifebars styles
-							_this39.dungeonLevels[_this39.stats.currentDungeonLevel].objs.forEach(function (obj) {
+							_this33.dungeonLevels[_this33.stats.currentDungeonLevel].objs.forEach(function (obj) {
 								if (obj.lifebar) obj.lifebar.setStyle("default");
 							});
 
 							//set examine text
-							_this39.examineContainer.innerHTML = targetTile.top;
+							_this33.examineContainer.innerHTML = targetTile.top;
 							//highlight lifebar
 							if (targetTile.top instanceof Creature) {
 								targetTile.top.lifebar.setStyle("hilight");
 							}
 						} else {
-							_this39.examineContainer.innerHTML = targetTile;
+							_this33.examineContainer.innerHTML = targetTile;
 						}
 					} else {
 						//tile is not in fov
-						_this39.examineContainer.innerHTML = "You can't see that";
+						_this33.examineContainer.innerHTML = "You can't see that";
 					}
 					//hovering over a lifebar
 				} else if (e.target.classList.contains("bar-lifebar")) {
 						//reset all lifebars styles
-						_this39.dungeonLevels[_this39.stats.currentDungeonLevel].objs.forEach(function (obj) {
+						_this33.dungeonLevels[_this33.stats.currentDungeonLevel].objs.forEach(function (obj) {
 							if (obj.lifebar) obj.lifebar.setStyle("default");
 						});
 
 						//get lifebars owner
 						var id = e.target.id.match(/[0-9]+$/);
-						var target = _this39.dungeonLevels[_this39.stats.currentDungeonLevel].objs[Number(id)];
+						var target = _this33.dungeonLevels[_this33.stats.currentDungeonLevel].objs[Number(id)];
 
 						//set cursor to lifebars owner
 						if (target) {
-							_this39.mouseHandler.cursorFromGame(target.position);
-							_this39.examineContainer.innerHTML = target;
+							_this33.mouseHandler.cursorFromGame(target.position);
+							_this33.examineContainer.innerHTML = target;
 							target.lifebar.setStyle("hilight");
 						}
 					}
@@ -2720,7 +2350,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		}
 
 		Game.prototype.saveDungeonLevel = function saveDungeonLevel(dungeon) {
-			var _this40 = this;
+			var _this34 = this;
 
 			var rooms = dungeon.rooms;
 			var paths = dungeon.paths;
@@ -2734,12 +2364,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				map: img
 			};
 			objs.forEach(function (obj) {
-				return _this40.dungeonLevels[_this40.stats.currentDungeonLevel].objs[obj.id] = obj;
+				return _this34.dungeonLevels[_this34.stats.currentDungeonLevel].objs[obj.id] = obj;
 			});
 		};
 
 		Game.prototype.changeDungeonLevel = function changeDungeonLevel(level) {
-			var _this41 = this;
+			var _this35 = this;
 
 			this.saveDungeonLevel(this.dungeonLevels[this.stats.currentDungeonLevel]);
 			var dir = level > this.stats.currentDungeonLevel ? "down" : "up";
@@ -2773,10 +2403,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					this.player.position.set(this.dungeonLevels[level].rooms[0].x + 1, this.dungeonLevels[level].rooms[0].y + 1);
 				}
 			} else {
-				var options = Utils.DungeonGenerator.defaultOptions;
+				var levelType = DungeonGenerator.types[Math.floor(Math.random() * DungeonGenerator.types.length)];
+				var options = DungeonGenerator[levelType].defaultOptions;
 				options.stairs.up = true;
 				options.difficulty = this.stats.currentDungeonLevel;
-				var dungeon = Utils.DungeonGenerator.makeLevel(this.player, options);
+				var dungeon = DungeonGenerator[levelType].makeLevel(this.player, options);
 				objs = dungeon.objs;
 				this.dungeonLevels[level] = {
 					objs: [],
@@ -2787,25 +2418,25 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 			//put objs in their id slots
 			objs.forEach(function (obj) {
-				return _this41.dungeonLevels[level].objs[obj.id] = obj;
+				return _this35.dungeonLevels[level].objs[obj.id] = obj;
 			});
 
 			//insert objs into the board
 			this.dungeonLevels[level].objs.forEach(function (obj) {
 				if (obj) {
-					_this41.board.insert(obj);
+					_this35.board.insert(obj);
 				}
 			});
 
 			this.dungeonLevels[level].objs.forEach(function (obj) {
 				if (obj) {
-					_this41.logic.think(obj, _this41.player);
+					_this35.logic.think(obj, _this35.player);
 				}
 			});
 		};
 
 		Game.prototype.update = function update() {
-			var _this42 = this;
+			var _this36 = this;
 
 			var duration = this.player.update(this.logger);
 			var tickCount = duration / TICK;
@@ -2836,22 +2467,22 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					}
 
 					if (obj.isAlive) {
-						var _duration = obj.update(_this42.logger, _this42.stats.time + (objDurations[obj.id] || 0));
+						var _duration = obj.update(_this36.logger, _this36.stats.time + (objDurations[obj.id] || 0));
 						if (_duration > 0) {
 							//if action was excecuted we generate new ones and
 							//forward the time for this obj
-							_this42.logic.think(obj, _this42.player);
+							_this36.logic.think(obj, _this36.player);
 							objDurations[obj.id] = objDurations[obj.id] ? objDurations[obj.id] + _duration : _duration;
 						}
 
 						//obj died during update
 						if (!obj.isAlive) {
-							_this42.board.remove(obj);
-							delete _this42.dungeonLevels[_this42.stats.currentDungeonLevel].objs[obj.id];
+							_this36.board.remove(obj);
+							delete _this36.dungeonLevels[_this36.stats.currentDungeonLevel].objs[obj.id];
 						}
 					} else {
-						_this42.board.remove(obj);
-						delete _this42.dungeonLevels[_this42.stats.currentDungeonLevel].objs[obj.id];
+						_this36.board.remove(obj);
+						delete _this36.dungeonLevels[_this36.stats.currentDungeonLevel].objs[obj.id];
 					}
 				});
 			}
@@ -2885,12 +2516,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		};
 
 		Game.prototype.start = function start() {
-			var _this43 = this;
+			var _this37 = this;
 
 			this.logger.log("Hello and welcome", "hilight");
 			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(function (obj) {
 				if (obj) {
-					_this43.board.insert(obj);
+					_this37.board.insert(obj);
 				}
 			});
 
@@ -2898,7 +2529,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			this.player.fov = fov;
 
 			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(function (obj) {
-				_this43.logic.think(obj, _this43.player);
+				_this37.logic.think(obj, _this37.player);
 				if (obj instanceof Enemy) {
 					if (fov.has(obj.position)) {
 						obj.lifebar.show();
@@ -2917,6 +2548,930 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		return Game;
 	}();
 
+	var Rect = function () {
+		function Rect(bounds) {
+			_classCallCheck(this, Rect);
+
+			Object.assign(this, bounds);
+			if (!this.type) {
+				this.type = Rect.type.DEFAULT;
+			}
+		}
+
+		Rect.prototype.shrink = function shrink(amount) {
+			if (amount !== ~ ~amount) {
+				this.x += Math.floor(amount);
+				this.y += Math.floor(amount);
+				this.w -= Math.ceil(amount);
+				this.h -= Math.ceil(amount);
+			} else {
+				this.x += amount;
+				this.y += amount;
+				this.w -= amount * 2;
+				this.h -= amount * 2;
+			}
+		};
+
+		Rect.prototype.grow = function grow(amount) {
+			if (amount !== ~ ~amount) {
+				this.x -= Math.floor(amount);
+				this.y -= Math.floor(amount);
+				this.w += Math.ceil(amount);
+				this.h += Math.ceil(amount);
+			} else {
+				this.x -= amount;
+				this.y -= amount;
+				this.w += amount * 2;
+				this.h += amount * 2;
+			}
+		};
+
+		Rect.prototype.clone = function clone() {
+			return new Rect({
+				x: this.x,
+				y: this.y,
+				w: this.w,
+				h: this.h,
+				type: this.type
+			});
+		};
+
+		Rect.prototype.intersect = function intersect(rect2) {
+			var r1l = this.x,
+			    r1r = this.x + this.w,
+			    r1t = this.y,
+			    r1b = this.y + this.h;
+			var r2l = rect2.x,
+			    r2r = rect2.x + rect2.w,
+			    r2t = rect2.y,
+			    r2b = rect2.y + rect2.h;
+			var diffs = {
+				left: Infinity,
+				right: Infinity,
+				bottom: Infinity,
+				top: Infinity
+			};
+
+			if (r1r >= r2l && r1l <= r2l) {
+				diffs.left = r1r - r2l;
+			}
+			if (r1l <= r2r && r1r >= r2r) {
+				diffs.right = r2r - r1l;
+			}
+			if (r1t <= r2b && r1b >= r2b) {
+				diffs.top = r1t - r2b;
+			}
+			if (r1b >= r2t && r1t <= r2t) {
+				diffs.bottom = r2t - r1b;
+			}
+			var min = Object.keys(diffs).map(function (k) {
+				return diffs[k];
+			}).reduce(function (p, c) {
+				return c < p ? c : p;
+			});
+
+			if (min === Infinity) {
+				return false;
+			}
+
+			return Object.keys(diffs).find(function (k) {
+				return diffs[k] === min;
+			});
+		};
+
+		_createClass(Rect, [{
+			key: "mids",
+			get: function get() {
+				return {
+					top: new Rect({
+						x: ~ ~(this.x + this.w / 2),
+						y: this.y,
+						w: 1,
+						h: 1
+					}),
+					left: new Rect({
+						x: this.x,
+						y: ~ ~(this.y + this.h / 2),
+						w: 1,
+						h: 1
+					}),
+					right: new Rect({
+						x: this.x + this.w,
+						y: ~ ~(this.y + this.h / 2),
+						w: 1,
+						h: 1
+					}),
+					bottom: new Rect({
+						x: ~ ~(this.x + this.w / 2),
+						y: this.y + this.h,
+						w: 1,
+						h: 1
+					})
+				};
+			}
+		}, {
+			key: "split",
+			get: function get() {
+				var _this38 = this;
+
+				return {
+					h: function h(pos) {
+						pos = pos || ~ ~(Math.random() * _this38.h);
+						return [new Rect({
+							x: _this38.x,
+							y: _this38.y,
+							w: _this38.w,
+							h: pos,
+							splitDir: "h"
+						}), new Rect({
+							x: _this38.x,
+							y: _this38.y + pos,
+							w: _this38.w,
+							h: _this38.h - pos,
+							splitDir: "h"
+						})];
+					},
+					w: function w(pos) {
+						pos = pos || ~ ~(Math.random() * _this38.w);
+						return [new Rect({
+							x: _this38.x,
+							y: _this38.y,
+							w: pos,
+							h: _this38.h,
+							splitDir: "w"
+						}), new Rect({
+							x: _this38.x + pos,
+							y: _this38.y,
+							w: _this38.w - pos,
+							h: _this38.h,
+							splitDir: "w"
+						})];
+					}
+				};
+			}
+		}], [{
+			key: "type",
+			get: function get() {
+				return {
+					DEFAULT: 0,
+					ROOM: 1,
+					PATH: 2,
+					CHUNK: 3,
+					DOOR: 4
+				};
+			}
+		}]);
+
+		return Rect;
+	}();
+
+	/* @depends ../abstract/dungeonfeature.class.js */
+	var Stair = function (_GameObject4) {
+		_inherits(Stair, _GameObject4);
+
+		function Stair(position, direction) {
+			_classCallCheck(this, Stair);
+
+			var _this39 = _possibleConstructorReturn(this, _GameObject4.call(this, position));
+
+			_this39.direction = direction;
+			_this39.bgColor = "hsl(0,0%,35%)";
+
+			if (_this39.direction === "up") {
+				_this39.glyph = "<";
+			} else if (_this39.direction === "down") {
+				_this39.glyph = ">";
+			}
+			_this39.color = "hsl(0,0%,75%)";
+			_this39.flavorName = _this39.direction + "stair";
+			return _this39;
+		}
+
+		Stair.prototype.update = function update() {
+			return 0;
+		};
+
+		Stair.prototype.toString = function toString() {
+			return "A staircase going " + this.direction;
+		};
+
+		return Stair;
+	}(GameObject);
+	/* @depends ../abstract/dungeonfeature.class.js */
+	//todo: create base class Inanimate or something
+	var Wall = function (_VisionBlocking) {
+		_inherits(Wall, _VisionBlocking);
+
+		function Wall(position) {
+			_classCallCheck(this, Wall);
+
+			var _this40 = _possibleConstructorReturn(this, _VisionBlocking.call(this, position));
+
+			_this40.bgColor = "hsl(0,0%,15%)";
+			_this40.glyph = "▉"; //some block character
+			_this40.color = "hsl(0,0%,25%)";
+			_this40.flavorName = "wall";
+			return _this40;
+		}
+
+		Wall.prototype.update = function update() {
+			return 0;
+		};
+
+		return Wall;
+	}(VisionBlocking(MoveBlocking(DungeonFeature)));
+	/* @depends ../abstract/enemy.class.js */
+	var Honeybadger = function (_Enemy) {
+		_inherits(Honeybadger, _Enemy);
+
+		function Honeybadger(position) {
+			_classCallCheck(this, Honeybadger);
+
+			var _this41 = _possibleConstructorReturn(this, _Enemy.call(this, position, null, new Weapon("Claws", 4, 11)));
+
+			_this41.bgColor = "hsl(25, 5%, 10%)";
+			_this41.glyph = "B";
+			_this41.color = "hsl(5, 5%, 90%)";
+
+			_this41.equipment.weapon.canDrop = false;
+
+			_this41.stats.maxHP = 10;
+			_this41.stats.HP = 10;
+			_this41.stats.viewDistance = 7;
+			_this41.stats.moveSpeed = 10;
+			_this41.flavorName = "the honeybadger";
+			_this41.flavor = "Notorious for their ferocity.";
+			_this41.createLifebar();
+			return _this41;
+		}
+
+		return Honeybadger;
+	}(Enemy);
+	/* @depends ../abstract/enemy.class.js */
+	var Jackalope = function (_Enemy2) {
+		_inherits(Jackalope, _Enemy2);
+
+		function Jackalope(position) {
+			_classCallCheck(this, Jackalope);
+
+			var _this42 = _possibleConstructorReturn(this, _Enemy2.call(this, position, null, new Weapon("Antlers", 2, 5)));
+
+			_this42.bgColor = "hsl(35, 25%, 65%)";
+			_this42.glyph = "J";
+			_this42.color = "hsl(35, 35%, 5%)";
+
+			_this42.equipment.weapon.canDrop = false;
+
+			_this42.stats.maxHP = 6;
+			_this42.stats.HP = 6;
+			_this42.stats.viewDistance = 7;
+			_this42.stats.moveSpeed = 8;
+			_this42.flavorName = "the jackalope";
+			_this42.flavor = "A large agressive rabbit with antlers on its head.";
+			_this42.createLifebar();
+			return _this42;
+		}
+
+		return Jackalope;
+	}(Enemy);
+	/* @depends ../abstract/enemy.class.js */
+	var Redcap = function (_Enemy3) {
+		_inherits(Redcap, _Enemy3);
+
+		function Redcap(position) {
+			_classCallCheck(this, Redcap);
+
+			var _this43 = _possibleConstructorReturn(this, _Enemy3.call(this, position, null, null));
+
+			_this43.bgColor = "hsl(66, 10%, 70%)";
+			_this43.glyph = "^";
+			_this43.color = "hsl(0, 80%, 60%)";
+
+			_this43.stats.maxHP = 10;
+			_this43.stats.HP = 10;
+			_this43.stats.viewDistance = 7;
+			_this43.stats.moveSpeed = 10;
+			_this43.flavorName = "the redcap";
+			_this43.flavor = "A malevolent murderous dwarf-like creature.";
+			_this43.createLifebar();
+
+			_this43.canWield = true;
+			_this43.canWear = true;
+			return _this43;
+		}
+
+		return Redcap;
+	}(Enemy);
+	/*
+ @depends ../core/rect.class.js
+ @depends ../misc/utils.class.js
+ @depends ../objs/stair.class.js
+ @depends ../objs/wall.class.js
+ @depends monsters/honeybadger.class.js
+ @depends jackalope.class.js
+ @depends redcap.class.js
+  */
+	var DungeonGenerator = function () {
+		function DungeonGenerator() {
+			_classCallCheck(this, DungeonGenerator);
+		}
+
+		DungeonGenerator.generateEquipment = function generateEquipment(enemy) {
+			if (enemy.canWield) {
+				enemy.equipment.weapon = Utils.randomWeapon();
+			}
+			if (enemy.canWear) {}
+			return enemy;
+		};
+
+		//try to spawn some enemies within room
+
+
+		DungeonGenerator.insertEnemies = function insertEnemies(room, options) {
+			var enemyList = [Jackalope, Honeybadger, Redcap];
+			var enemies = [];
+			for (var x = room.x + room.w; x > room.x; x--) {
+				for (var y = room.y + room.h; y > room.y; y--) {
+					if (Math.random() < options.enemies.spawnChance) {
+						var enemy = enemyList[Math.floor(Math.random() * enemyList.length)];
+						enemy = new enemy(new Point(x, y));
+						enemy = this.generateEquipment(enemy);
+
+						for (var i = 1; i < options.difficulty; i++) {
+							enemy.levelUp();
+							enemy.stats.XP++;
+						}
+
+						enemies.push(enemy);
+					}
+				}
+			}
+			return enemies;
+		};
+
+		_createClass(DungeonGenerator, null, [{
+			key: "types",
+			get: function get() {
+				return ["traditional", "city"];
+			}
+		}, {
+			key: "traditional",
+			get: function get() {
+				return function () {
+					function _class5() {
+						_classCallCheck(this, _class5);
+					}
+
+					_class5.makeRoom = function makeRoom(options) {
+						var room = {};
+
+						room.w = ~ ~(Math.random() * (options.rooms.size.max.w - options.rooms.size.min.w) + options.rooms.size.min.w);
+						room.h = ~ ~(Math.random() * (options.rooms.size.max.h - options.rooms.size.min.h) + options.rooms.size.min.h);
+						room.x = ~ ~(Math.random() * (options.size.w - room.w));
+						room.y = ~ ~(Math.random() * (options.size.h - room.h));
+
+						return room;
+					};
+
+					_class5.makePoint = function makePoint(options) {
+						return {
+							x: ~ ~(Math.random() * options.size.w),
+							y: ~ ~(Math.random() * options.size.h)
+						};
+					};
+
+					_class5.makePaths = function makePaths(rooms, midPoints, options) {
+						var paths = [];
+
+						//connect rooms to midpoints
+						for (var i = 0; i < options.paths.count; i++) {
+							var path = {},
+							    dest = midPoints[i % options.paths.count % options.midPoints.count];
+
+							path.x1 = rooms[i].x + ~ ~(Math.random() * rooms[i].w);
+							path.y1 = rooms[i].y + ~ ~(Math.random() * rooms[i].h);
+
+							path.x2 = dest.x;
+							path.y2 = rooms[i].y + ~ ~(Math.random() * rooms[i].h);
+
+							path.x3 = dest.x;
+							path.y3 = dest.y;
+
+							paths.push(path);
+						}
+
+						//connect midpoints together
+						for (var _i = 1; _i < options.midPoints.count; _i++) {
+							var _path = {};
+
+							_path.x1 = midPoints[_i - 1].x;
+							_path.y1 = midPoints[_i - 1].y;
+
+							_path.x2 = midPoints[_i].x;
+							_path.y2 = midPoints[_i - 1].y;
+
+							_path.x3 = midPoints[_i].x;
+							_path.y3 = midPoints[_i].y;
+
+							paths.push(_path);
+						}
+
+						return paths;
+					};
+
+					//main method
+
+
+					_class5.makeLevel = function makeLevel(player, options) {
+						options = options || this.defaultOptions;
+						var matrix = [],
+						    objs = [],
+						    rooms = Array(options.rooms.count).fill(),
+						    midPoints = Array(options.midPoints.count).fill();
+
+						//get rooms
+						for (var i in rooms) {
+							rooms[i] = this.makeRoom(options);
+						}
+
+						//set player to first room
+						player.position.set(rooms[0].x + 1, rooms[0].y + 1);
+						objs.push(player);
+
+						if (options.stairs.up) {
+							//put an upstairs on player
+							objs.push(new Stair(new Point(rooms[0].x + 1, rooms[0].y + 1), "up"));
+						}
+
+						if (options.stairs.down) {
+							//put a downstairs in "last" room
+							objs.push(new Stair(new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1), "down"));
+						}
+
+						//get midpoints
+						for (var _i2 in midPoints) {
+							midPoints[_i2] = this.makePoint(options);
+						}
+
+						//get paths
+						var paths = this.makePaths(rooms, midPoints, options);
+
+						//fill matrix with walls
+						for (var y = 0; y < options.size.h; y++) {
+							matrix[y] = [];
+							for (var x = 0; x < options.size.w; x++) {
+								var tile = new Tile(new Point(x, y));
+								tile.add(new Wall(new Point(x, y)));
+								matrix[y][x] = tile;
+							}
+						}
+
+						//carve out rooms
+						//and try put some enemies in them
+						rooms.forEach(function (room) {
+							for (var _x4 = room.x + room.w; _x4 > room.x; _x4--) {
+								for (var _y = room.y + room.h; _y > room.y; _y--) {
+									matrix[_y][_x4].empty();
+								}
+							}
+							objs = objs.concat(DungeonGenerator.insertEnemies(room, options));
+						});
+
+						//carve out paths
+						paths.forEach(function (path) {
+							for (var i0 = Math.min(path.x1, path.x2), i1 = Math.max(path.x1, path.x2); i0 < i1 + 1; i0++) {
+								matrix[path.y1][i0].empty();
+							}
+							for (var _i3 = Math.min(path.y2, path.y3), _i4 = Math.max(path.y2, path.y3); _i3 < _i4 + 1; _i3++) {
+								matrix[_i3][path.x2].empty();
+							}
+						});
+
+						//get objs
+						for (var _y2 = 0; _y2 < options.size.h; _y2++) {
+							for (var _x5 = 0; _x5 < options.size.w; _x5++) {
+								if (!matrix[_y2][_x5].isEmpty) {
+									objs.push(matrix[_y2][_x5].top);
+								}
+							}
+						}
+
+						return {
+							rooms: rooms,
+							paths: paths,
+							objs: objs
+						};
+					};
+
+					_createClass(_class5, null, [{
+						key: "defaultOptions",
+						get: function get() {
+							return {
+								difficulty: 1,
+								stairs: {
+									up: false,
+									down: true
+								},
+								size: {
+									w: 40,
+									h: 20
+								},
+								rooms: {
+									count: 8,
+									size: {
+										max: {
+											w: 8,
+											h: 8
+										},
+										min: {
+											w: 3,
+											h: 3
+										}
+									}
+								},
+								midPoints: {
+									count: 2
+								},
+								paths: {
+									count: 8
+								},
+								enemies: {
+									spawnChance: 0.02
+								}
+							};
+						}
+					}]);
+
+					return _class5;
+				}();
+			}
+		}, {
+			key: "city",
+			get: function get() {
+				return function () {
+					function _class6() {
+						_classCallCheck(this, _class6);
+					}
+
+					_class6.splitWithPath = function splitWithPath(rect, dir, options) {
+						if (rect.w < options.chunks.size.min.w || rect.h < options.chunks.size.min.h) {
+							return {
+								path: null,
+								chunks: []
+							};
+						}
+						var pos = Math.floor(Math.random() * (rect[dir] - options.chunks.size.min[dir] - options.paths.size - options.chunks.margin * 2) + options.chunks.margin),
+						    first = rect.split[dir](),
+						    second = first[1].split[dir](options.paths.size);
+
+						first[0].type = Rect.type.CHUNK;
+						second[0].type = Rect.type.PATH;
+						second[1].type = Rect.type.CHUNK;
+						return {
+							path: second[0],
+							chunks: [first[0], second[1]]
+						};
+					};
+
+					_class6.findLargestRect = function findLargestRect(splits) {
+						if (splits.length <= 1) {
+							var a = splits[0].chunks.reduce(function (pp, cc) {
+								return pp.w * pp.h > cc.w * cc.h ? pp : cc;
+							});
+							var b = splits[0].chunks.reduce(function (pp, cc) {
+								return pp.w * pp.h > cc.w * cc.h ? pp : cc;
+							});
+							var _rect = a.w * a.h > b.w * b.h ? a : b;
+							return {
+								rect: _rect,
+								splitIndex: 0,
+								chunkIndex: splits[0].chunks.indexOf(_rect)
+							};
+						}
+						var split = splits.reduce(function (p, c, i, arr) {
+							if (c.chunks.length === 0 || p.chunks.length === 0) {
+								return p;
+							}
+							var a = c.chunks.reduce(function (pp, cc) {
+								return pp.w * pp.h > cc.w * cc.h ? pp : cc;
+							});
+							var b = p.chunks.reduce(function (pp, cc) {
+								return pp.w * pp.h > cc.w * cc.h ? pp : cc;
+							});
+							return a.w * a.h > b.w * b.h ? c : p;
+						}, splits[0]);
+						if (split.chunks.length === 0) {
+							return {
+								rect: null,
+								splitIndex: null,
+								chunkIndex: null
+							};
+						}
+						var rect = split.chunks.reduce(function (p, c) {
+							return p.w * p.h > c.w * c.h ? p : c;
+						}),
+						    splitIndex = splits.indexOf(split),
+						    chunkIndex = splits[splitIndex].chunks.indexOf(rect);
+						return {
+							rect: rect,
+							splitIndex: splitIndex,
+							chunkIndex: chunkIndex
+						};
+					};
+
+					_class6.splitBase = function splitBase(base, options) {
+						var splits = [];
+						splits.push(this.splitWithPath(base, "w", options));
+						for (var i = 0; i < options.main.splitCount; i++) {
+							var largest = this.findLargestRect(splits);
+							if (!largest.rect) {
+								break;
+							}
+							var dir = largest.rect.splitDir === "h" ? "w" : "h",
+							    split = this.splitWithPath(largest.rect, dir, options);
+							splits[largest.splitIndex].chunks.splice(largest.chunkIndex, 1);
+							splits.push(split);
+						}
+						return splits;
+					};
+
+					_class6.splitChunks = function splitChunks(splits, options) {
+						var _this44 = this;
+
+						var chunks = [].concat.apply([], splits.map(function (s, i) {
+							s.chunks.forEach(function (c) {
+								return c.splitIndex = i;
+							});
+							return s.chunks;
+						}));
+						chunks.forEach(function (chunk, index) {
+							if (chunk.w < options.rooms.size.min.w || chunk.h < options.rooms.size.min.h) {
+								return;
+							}
+							chunk.rooms = [];
+							chunk.rooms.push({
+								chunks: chunk.split.w()
+							});
+							for (var i = 0; i < options.chunks.splitCount; i++) {
+								var largest = _this44.findLargestRect(chunk.rooms);
+								if (!largest.rect || largest.rect.w < options.rooms.size.min.w || largest.rect.h < options.rooms.size.min.h) {
+									break;
+								}
+								var dir = largest.rect.splitDir === "h" ? "w" : "h",
+								    split = {
+									chunks: largest.rect.split[dir]()
+								};
+								split.chunks.forEach(function (s) {
+									return s.type = Rect.type.ROOM;
+								});
+								chunk.rooms[largest.splitIndex].chunks.splice(largest.chunkIndex, 1);
+								chunk.rooms.push(split);
+							}
+						});
+
+						return splits.map(function (s, i) {
+							s.chunks = chunks.filter(function (c) {
+								return c.splitIndex === i;
+							});
+							s.chunks.forEach(function (c) {
+								if (!c.rooms) return;
+								//c.rooms.forEach(c => c.chunks.forEach(r => r.shrink(0.5)));
+							});
+							return s;
+						});
+					};
+
+					_class6.carveDoors = function carveDoors(splits, options) {
+						splits.forEach(function (s) {
+							s.doors = [];
+							s.chunks.forEach(function (c) {
+								if (!c.rooms) return;
+								c.rooms.forEach(function (rc) {
+									rc.chunks.forEach(function (r) {
+										var pathColl = r.intersect(s.path);
+										if (pathColl) {
+											var door = r.mids[pathColl];
+											door.type = Rect.type.DOOR;
+											//door.grow(0.5);
+											if (pathColl === "top" || pathColl === "bottom") {
+												door.h += options.doors.stretch;
+												door.y -= options.doors.stretch / 2 | 0;
+											} else {
+												door.w += options.doors.stretch;
+												door.x -= options.doors.stretch / 2 | 0;
+											}
+
+											door.x--;
+											s.doors.push(door);
+										}
+										var roomColl = r.intersect(rc.chunks[Math.floor(Math.random() * rc.chunks.length)]);
+										if (roomColl) {
+											var _door = r.mids[roomColl];
+											_door.type = Rect.type.DOOR;
+											//door1.grow(0.5);
+											if (roomColl === "top" || roomColl === "bottom") {
+												_door.h += options.doors.stretch;
+												_door.y -= options.doors.stretch / 2 | 0;
+											} else {
+												_door.w += options.doors.stretch;
+												_door.x -= options.doors.stretch / 2 | 0;
+											}
+											_door.y--;
+											_door.x--;
+											s.doors.push(_door);
+										}
+									});
+								});
+							});
+						});
+						return splits;
+					};
+
+					_class6.makeLevel = function makeLevel(player, options) {
+						var _this45 = this;
+
+						options = options || this.defaultOptions;
+						var base = new Rect({
+							x: 0,
+							y: 0,
+							w: options.main.size.w,
+							h: options.main.size.h,
+							type: Rect.type.CHUNK
+						});
+						try {
+							var _ret3 = function () {
+								var bluePrint = _this45.carveDoors(_this45.splitChunks(_this45.splitBase(base, options), options), options),
+								    rooms = [],
+								    paths = [],
+								    matrix = [],
+								    objs = [];
+
+								//make empty matrix
+								for (var y = 0; y < options.main.size.h; y++) {
+									matrix[y] = [];
+									for (var x = 0; x < options.main.size.w; x++) {
+										var tile = new Tile(new Point(x, y));
+										matrix[y][x] = tile;
+									}
+								}
+
+								//fill chunks with walls
+								bluePrint.forEach(function (split) {
+									if (!split.path) return;
+
+									split.chunks.forEach(function (chunk) {
+										for (var _x6 = chunk.x + chunk.w; _x6 > chunk.x; _x6--) {
+											for (var _y3 = chunk.y + chunk.h; _y3 > chunk.y; _y3--) {
+												matrix[_y3 - 1][_x6 - 1].add(new Wall(new Point(_x6, _y3)));
+											}
+										}
+									});
+								});
+
+								var playerPlaced = false;
+
+								bluePrint.forEach(function (split) {
+									if (!split.path) return;
+
+									paths.push(split.path);
+									split.chunks.forEach(function (chunk) {
+										if (!chunk.rooms) return;
+
+										chunk.rooms.forEach(function (rsplit) {
+											rsplit.chunks.forEach(function (room) {
+												if (room.type === Rect.type.ROOM) {
+													room.shrink(1);
+													rooms.push(room);
+													//carve out rooms
+													for (var _x7 = room.x + room.w; _x7 > room.x; _x7--) {
+														for (var _y4 = room.y + room.h; _y4 > room.y; _y4--) {
+															matrix[_y4 - 1][_x7 - 1].empty();
+															//place player as soon as possible
+															if (!playerPlaced) {
+																player.position.set(_x7, _y4);
+																objs.push(player);
+																playerPlaced = true;
+															}
+														}
+													}
+												}
+											});
+										});
+									});
+									//carve out doors
+									if (split.doors) {
+										split.doors.forEach(function (door) {
+											for (var _x8 = door.x + door.w; _x8 > door.x; _x8--) {
+												for (var _y5 = door.y + door.h; _y5 > door.y; _y5--) {
+													if (matrix[_y5] && matrix[_y5][_x8]) {
+														matrix[_y5][_x8].empty();
+													}
+												}
+											}
+										});
+									}
+								});
+
+								if (options.stairs.up) {
+									//put an upstairs on player
+									objs.push(new Stair(new (Function.prototype.bind.apply(Point, [null].concat(player.position.get)))(), "up"));
+								}
+
+								if (options.stairs.down) {
+									//put a downstairs in largest room
+									var largest = rooms.reduce(function (p, c) {
+										return p.w * p.h > c.w * c.h ? p : c;
+									});
+									objs.push(new Stair(new Point(largest.x + 1, largest.y + 1), "down"));
+								}
+
+								//spawn enemies
+								rooms.forEach(function (room) {
+									objs = objs.concat(DungeonGenerator.insertEnemies(room, options));
+								});
+
+								//get objs
+								for (var _y6 = 0; _y6 < options.main.size.h; _y6++) {
+									for (var _x9 = 0; _x9 < options.main.size.w; _x9++) {
+										if (!matrix[_y6][_x9].isEmpty) {
+											objs.push(matrix[_y6][_x9].top);
+										}
+									}
+								}
+								return {
+									v: {
+										rooms: rooms,
+										paths: paths,
+										objs: objs
+									}
+								};
+							}();
+
+							if ((typeof _ret3 === "undefined" ? "undefined" : _typeof(_ret3)) === "object") return _ret3.v;
+						} catch (err) {
+							throw err;
+						}
+					};
+
+					_createClass(_class6, null, [{
+						key: "defaultOptions",
+						get: function get() {
+							return {
+								main: {
+									size: {
+										w: 40,
+										h: 20
+									},
+									splitCount: 6
+								},
+								difficulty: 1,
+								stairs: {
+									up: false,
+									down: true
+								},
+								paths: {
+									size: 2
+								},
+								chunks: {
+									size: {
+										min: {
+											w: 5,
+											h: 5
+										}
+									},
+									margin: 5,
+									splitCount: 2
+								},
+								rooms: {
+									size: {
+										min: {
+											w: 4,
+											h: 4
+										},
+										max: {
+											w: 10,
+											h: 10
+										}
+									}
+								},
+								doors: {
+									stretch: 3
+								},
+								enemies: {
+									spawnChance: 0.02
+								}
+							};
+						}
+					}]);
+
+					return _class6;
+				}();
+			}
+		}]);
+
+		return DungeonGenerator;
+	}();
+
 	/* @depends ../abstract/creature.class.js */
 	var Player = function (_Creature2) {
 		_inherits(Player, _Creature2);
@@ -2924,30 +3479,30 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Player(position, stats) {
 			_classCallCheck(this, Player);
 
-			var _this44 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
+			var _this46 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
 
-			_this44.actions = [];
-			_this44.bgColor = "white";
-			_this44.glyph = "@";
-			_this44.color = "black";
+			_this46.actions = [];
+			_this46.bgColor = "white";
+			_this46.glyph = "@";
+			_this46.color = "black";
 
-			_this44.stats.maxHP = 50;
-			_this44.stats.HP = 50;
-			_this44.stats.viewDistance = 8;
-			_this44.stats.moveSpeed = 10;
+			_this46.stats.maxHP = 50;
+			_this46.stats.HP = 50;
+			_this46.stats.viewDistance = 8;
+			_this46.stats.moveSpeed = 10;
 			//this.stats.inventorySize = 15;
 
-			_this44.stats = stats || _this44.stats;
+			_this46.stats = stats || _this46.stats;
 
-			_this44.equipment.head = new Armor("head", "Bronze helmet", 1);
+			_this46.equipment.head = new Armor("head", "Bronze helmet", 1);
 
-			_this44.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
+			_this46.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
 
-			_this44.lifebar = new Lifebar(_this44.id, "Hero", document.getElementById("info-container-player"), _this44.stats);
-			_this44.flavorName = "you";
-			_this44.flavor = "Hi mom!";
+			_this46.lifebar = new Lifebar(_this46.id, "Hero", document.getElementById("info-container-player"), _this46.stats);
+			_this46.flavorName = "you";
+			_this46.flavor = "Hi mom!";
 			//todo: store username here?
-			return _this44;
+			return _this46;
 		}
 
 		return Player;
@@ -2965,7 +3520,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		spacing: 1,
 		w: 40,
 		h: 20
-	}), Utils.loadGame() || Utils.DungeonGenerator.makeLevel(new Player(new Point(10, 10))));
+	}), Utils.loadGame() || DungeonGenerator.traditional.makeLevel(new Player(new Point(10, 10))));
 	//Utils.initUIButtons(game);
 
 	if (env === "dev") {
@@ -2984,6 +3539,40 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		    elemX = 0,
 		    elemY = 0;
 
+		function move(e) {
+			if (e.target.classList.contains("moveable-anchor")) {
+				e.stopPropagation();
+				//e.cancelBubble();
+				e.preventDefault();
+				var x = e.pageX;
+				var y = e.pageY;
+				if (x === undefined) {
+					x = e.touches[0].pageX;
+					y = e.touches[0].pageY;
+				}
+				elemX = x - elem.offsetLeft;
+				elemY = y - elem.offsetTop;
+				dragging = "body";
+				selected = elem;
+			}
+		}
+
+		function startr(e) {
+			e.stopPropagation();
+			//e.cancelBubble();
+			e.preventDefault();
+			dragging = "right";
+			selected = elem;
+		}
+
+		function startb(e) {
+			e.stopPropagation();
+			//e.cancelBubble();
+			e.preventDefault();
+			dragging = "bottom";
+			selected = elem;
+		}
+
 		elems.forEach(function (elem) {
 			var right = document.createElement("div"),
 			    bottom = document.createElement("div");
@@ -2994,45 +3583,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			bottom.classList.add("edge-bottom");
 
 			if (elem.classList.contains("moveable")) {
-				var move = function move(e) {
-					if (e.target.classList.contains("moveable-anchor")) {
-						e.stopPropagation();
-						//e.cancelBubble();
-						e.preventDefault();
-						var x = e.pageX;
-						var y = e.pageY;
-						if (x === undefined) {
-							x = e.touches[0].pageX;
-							y = e.touches[0].pageY;
-						}
-						elemX = x - elem.offsetLeft;
-						elemY = y - elem.offsetTop;
-						dragging = "body";
-						selected = elem;
-					}
-				};
-
 				elem.addEventListener("mousedown", move);
 				elem.addEventListener("touchstart", move);
 			}
 
 			if (elem.classList.contains("resizeable")) {
-				var startr = function startr(e) {
-					e.stopPropagation();
-					//e.cancelBubble();
-					e.preventDefault();
-					dragging = "right";
-					selected = elem;
-				};
-
-				var startb = function startb(e) {
-					e.stopPropagation();
-					//e.cancelBubble();
-					e.preventDefault();
-					dragging = "bottom";
-					selected = elem;
-				};
-
 				bottom.addEventListener("mousedown", startb);
 				bottom.addEventListener("touchstart", startb);
 				right.addEventListener("mousedown", startr);

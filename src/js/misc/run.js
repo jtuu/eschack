@@ -11,7 +11,7 @@ var game = new Game(
 		spacing: 1,
 		w: 40,
 		h: 20
-	}), Utils.loadGame() || Utils.DungeonGenerator.makeLevel(new Player(new Point(10,10)))
+	}), Utils.loadGame() || DungeonGenerator.traditional.makeLevel(new Player(new Point(10,10)))
 );
 //Utils.initUIButtons(game);
 

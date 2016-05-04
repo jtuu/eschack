@@ -40,6 +40,7 @@ const KeyHandler = class KeyHandler {
 
 				60: "up", //<
 				226: "up", //chrome...
+				83: "up",//s
 
 				0: "cheat",
 

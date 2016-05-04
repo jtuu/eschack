@@ -6,6 +6,40 @@
 		elemX = 0,
 		elemY = 0;
 
+	function move(e) {
+		if (e.target.classList.contains("moveable-anchor")) {
+			e.stopPropagation();
+			//e.cancelBubble();
+			e.preventDefault();
+			let x = e.pageX;
+			let y = e.pageY;
+			if (x === undefined) {
+				x = e.touches[0].pageX;
+				y = e.touches[0].pageY;
+			}
+			elemX = x - elem.offsetLeft;
+			elemY = y - elem.offsetTop;
+			dragging = "body";
+			selected = elem;
+		}
+	}
+
+	function startr(e) {
+		e.stopPropagation();
+		//e.cancelBubble();
+		e.preventDefault();
+		dragging = "right";
+		selected = elem;
+	}
+
+	function startb(e) {
+		e.stopPropagation();
+		//e.cancelBubble();
+		e.preventDefault();
+		dragging = "bottom";
+		selected = elem;
+	}
+
 	elems.forEach(elem => {
 		let right = document.createElement("div"),
 			bottom = document.createElement("div");
@@ -16,44 +50,11 @@
 		bottom.classList.add("edge-bottom");
 
 		if (elem.classList.contains("moveable")) {
-			function move(e) {
-				if (e.target.classList.contains("moveable-anchor")) {
-					e.stopPropagation();
-					//e.cancelBubble();
-					e.preventDefault();
-					let x = e.pageX;
-					let y = e.pageY;
-					if (x === undefined) {
-						x = e.touches[0].pageX;
-						y = e.touches[0].pageY;
-					}
-					elemX = x - elem.offsetLeft;
-					elemY = y - elem.offsetTop;
-					dragging = "body";
-					selected = elem;
-				}
-			}
 			elem.addEventListener("mousedown", move);
 			elem.addEventListener("touchstart", move);
 		}
 
 		if (elem.classList.contains("resizeable")) {
-			function startr(e) {
-				e.stopPropagation();
-				//e.cancelBubble();
-				e.preventDefault();
-				dragging = "right";
-				selected = elem;
-			}
-
-			function startb(e) {
-				e.stopPropagation();
-				//e.cancelBubble();
-				e.preventDefault();
-				dragging = "bottom";
-				selected = elem;
-			}
-
 			bottom.addEventListener("mousedown", startb);
 			bottom.addEventListener("touchstart", startb);
 			right.addEventListener("mousedown", startr);
