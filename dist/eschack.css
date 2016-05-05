@@ -73,10 +73,12 @@ canvas {
   width: 340px; }
   .info-container#info-container-player .player-stat-row {
     display: inline-block;
-    width: 50%; }
+    width: 100px; }
     .info-container#info-container-player .player-stat-row .player-stat-name {
       display: inline-block;
-      width: 70px; }
+      width: 70px;
+      border-left: 1px solid black;
+      padding-left: 5px; }
       .info-container#info-container-player .player-stat-row .player-stat-name:after {
         content: ":"; }
     .info-container#info-container-player .player-stat-row .player-stat-value {

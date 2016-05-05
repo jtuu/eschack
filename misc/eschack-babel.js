@@ -364,6 +364,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				return false;
 			};
 
+			_class3.prototype.heal = function heal(amount) {
+				if (this.stats.HP < this.stats.maxHP && this.isAlive) {
+					this.stats.HP++;
+					if (this.lifebar) this.lifebar.set(this.stats.HP);
+				}
+			};
+
 			_class3.prototype.die = function die(logger) {
 				if (logger) logger.log(this.flavorName + " died", "death");
 				if (this.lifebar && this.type !== "Player") this.lifebar.remove();
@@ -379,6 +386,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			return _class3;
 		}(Base);
 	};
+
 	/* @depends gameobject.class.js */
 	var Item = function (_GameObject) {
 		_inherits(Item, _GameObject);
@@ -1368,7 +1376,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			var playerStatCont = document.createElement("div");
 			playerStatCont.style.padding = "10px";
 			this.playerStatCont = playerStatCont;
-			this.playerWrap.appendChild(this.playerStatCont);
 
 			this.playerStatElements = {};
 
@@ -1385,13 +1392,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				value.innerHTML = _this17.playerStats[key];
 				parent.appendChild(stat);
 				parent.appendChild(value);
-				_this17.playerStatCont.appendChild(parent);
+				if (key === "XL" || key === "XP") {
+					_this17.playerWrap.appendChild(parent);
+				} else {
+					_this17.playerStatCont.appendChild(parent);
+				}
 
 				_this17.playerStatElements[key] = {
 					stat: stat,
 					value: value
 				};
 			});
+			this.playerWrap.appendChild(this.playerStatCont);
 
 			this.gameStatElements = {};
 
@@ -1857,6 +1869,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				return i === keyIndex;
 			}),
 			    item = actor.equipment[itemSlot];
+			console.log(keyIndex, itemSlot, item, this.equipmentSlot);
 
 			if (item.canDrop) {
 				actor.inventory.push(item);
@@ -1904,7 +1917,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//remove it into inventory
 			//actually this should be an unequipaction
 			if (actor.equipment[item.slot]) {
-				var action = new ItemUnequipAction(null, this.logger, this.inventorySlot);
+				var equipmentKey = Utils.alphabetMap[Object.keys(actor.equipment).indexOf(item.slot)];
+				var action = new ItemUnequipAction(null, this.logger, equipmentKey);
 				duration += action.do(actor);
 			}
 			//splice item from inventory and put it in equipment
@@ -2002,11 +2016,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		};
 
 		NullAction.prototype.do = function _do(actor) {
+			actor.heal(1);
 			return 10;
 		};
 
 		return NullAction;
 	}(Action);
+
 	/* @depends ../../abstract/action.class.js */
 	var StairAction = function (_Action8) {
 		_inherits(StairAction, _Action8);

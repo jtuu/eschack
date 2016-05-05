@@ -21,6 +21,7 @@ const ItemUnequipAction = class ItemUnequipAction extends Action {
 		let keyIndex = Utils.alphabetMap.indexOf(this.equipmentSlot),
 			itemSlot = Object.keys(actor.equipment).filter(k => actor.equipment[k] !== null).find((k, i) => i === keyIndex),
 			item = actor.equipment[itemSlot];
+		console.log(keyIndex, itemSlot, item, this.equipmentSlot);
 
 		if (item.canDrop) {
 			actor.inventory.push(item);

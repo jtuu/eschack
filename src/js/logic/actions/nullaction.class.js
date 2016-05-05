@@ -10,6 +10,7 @@ const NullAction = class NullAction extends Action {
 	}
 
 	do(actor) {
+		actor.heal(1);
 		return 10;
 	}
 };

@@ -263,16 +263,24 @@ const Hittable = Base => class extends Base{
 		}
 		return false;
 	}
-	
+
+	heal(amount){
+		if(this.stats.HP < this.stats.maxHP && this.isAlive){
+			this.stats.HP++;
+			if (this.lifebar) this.lifebar.set(this.stats.HP);
+		}
+	}
+
 	die(logger) {
 		if(logger)logger.log(this.flavorName + " died", "death");
 		if(this.lifebar && this.type !== "Player")this.lifebar.remove();
 	}
-	
+
 	get isHittable(){
 		return true;
 	}
 };
+
 /* @depends gameobject.class.js */
 const Item = class Item extends GameObject{
 	constructor(position){
@@ -1073,7 +1081,6 @@ const StatsManager = class StatsManager {
 		let playerStatCont = document.createElement("div");
 		playerStatCont.style.padding = "10px";
 		this.playerStatCont = playerStatCont;
-		this.playerWrap.appendChild(this.playerStatCont);
 
 		this.playerStatElements = {};
 
@@ -1090,13 +1097,18 @@ const StatsManager = class StatsManager {
 			value.innerHTML = this.playerStats[key];
 			parent.appendChild(stat);
 			parent.appendChild(value);
-			this.playerStatCont.appendChild(parent);
+			if(key === "XL" || key === "XP"){
+				this.playerWrap.appendChild(parent);
+			}else{
+				this.playerStatCont.appendChild(parent);
+			}
 
 			this.playerStatElements[key] = {
 				stat,
 				value
 			};
 		});
+		this.playerWrap.appendChild(this.playerStatCont);
 
 		this.gameStatElements = {};
 
@@ -1463,6 +1475,7 @@ const ItemUnequipAction = class ItemUnequipAction extends Action {
 		let keyIndex = Utils.alphabetMap.indexOf(this.equipmentSlot),
 			itemSlot = Object.keys(actor.equipment).filter(k => actor.equipment[k] !== null).find((k, i) => i === keyIndex),
 			item = actor.equipment[itemSlot];
+		console.log(keyIndex, itemSlot, item, this.equipmentSlot);
 
 		if (item.canDrop) {
 			actor.inventory.push(item);
@@ -1502,7 +1515,8 @@ const ItemEquipAction = class ItemEquipAction extends Action {
 		//remove it into inventory
 		//actually this should be an unequipaction
 		if (actor.equipment[item.slot]) {
-			let action = new ItemUnequipAction(null, this.logger, this.inventorySlot);
+			let equipmentKey = Utils.alphabetMap[Object.keys(actor.equipment).indexOf(item.slot)];
+			let action = new ItemUnequipAction(null, this.logger, equipmentKey);
 			duration += action.do(actor);
 		}
 		//splice item from inventory and put it in equipment
@@ -1576,9 +1590,11 @@ const NullAction = class NullAction extends Action {
 	}
 
 	do(actor) {
+		actor.heal(1);
 		return 10;
 	}
 };
+
 /* @depends ../../abstract/action.class.js */
 const StairAction = class StairAction extends Action {
 	constructor(context, logger){

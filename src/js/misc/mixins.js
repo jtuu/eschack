@@ -20,12 +20,19 @@ const Hittable = Base => class extends Base{
 		}
 		return false;
 	}
-	
+
+	heal(amount){
+		if(this.stats.HP < this.stats.maxHP && this.isAlive){
+			this.stats.HP++;
+			if (this.lifebar) this.lifebar.set(this.stats.HP);
+		}
+	}
+
 	die(logger) {
 		if(logger)logger.log(this.flavorName + " died", "death");
 		if(this.lifebar && this.type !== "Player")this.lifebar.remove();
 	}
-	
+
 	get isHittable(){
 		return true;
 	}

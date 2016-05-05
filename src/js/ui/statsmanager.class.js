@@ -31,7 +31,6 @@ const StatsManager = class StatsManager {
 		let playerStatCont = document.createElement("div");
 		playerStatCont.style.padding = "10px";
 		this.playerStatCont = playerStatCont;
-		this.playerWrap.appendChild(this.playerStatCont);
 
 		this.playerStatElements = {};
 
@@ -48,13 +47,18 @@ const StatsManager = class StatsManager {
 			value.innerHTML = this.playerStats[key];
 			parent.appendChild(stat);
 			parent.appendChild(value);
-			this.playerStatCont.appendChild(parent);
+			if(key === "XL" || key === "XP"){
+				this.playerWrap.appendChild(parent);
+			}else{
+				this.playerStatCont.appendChild(parent);
+			}
 
 			this.playerStatElements[key] = {
 				stat,
 				value
 			};
 		});
+		this.playerWrap.appendChild(this.playerStatCont);
 
 		this.gameStatElements = {};
 
