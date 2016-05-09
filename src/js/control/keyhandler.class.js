@@ -93,7 +93,7 @@ const KeyHandler = class KeyHandler {
 				"se": () => new Vector(1, 1),
 				"sw": () => new Vector(-1, 1),
 				"nw": () => new Vector(-1, -1),
-				"c": null,
+				"c": "rest",
 				"pickup": "pickup",
 				"up": "stair",
 				"down": "stair",
@@ -102,7 +102,6 @@ const KeyHandler = class KeyHandler {
 
 		} else if (map === "inventorydialog") {
 			this.using = "inventorydialog";
-			//this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
 			let keyCodeMap = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {}),
 				codeMap = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p["Key" + c.toUpperCase()] = c, p), {});
 			this.keyCases = Object.assign(keyCodeMap, codeMap);

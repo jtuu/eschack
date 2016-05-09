@@ -265,8 +265,9 @@ const Hittable = Base => class extends Base{
 	}
 
 	heal(amount){
-		if(this.stats.HP < this.stats.maxHP && this.isAlive){
-			this.stats.HP++;
+		let effectiveHeal = (this.stats.INT / 2) + 1 | 0;
+		if(this.stats.HP + effectiveHeal <= this.stats.maxHP && this.isAlive){
+			this.stats.HP += effectiveHeal;
 			if (this.lifebar) this.lifebar.set(this.stats.HP);
 		}
 	}
@@ -367,7 +368,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 
 		this.inventory = [];
 		this.equipment = {
-			"weapon": weapon || new Weapon("Fists"),
+			"weapon": weapon || Utils.defaults.weapon(),
 			"head": null,
 			"body": null,
 			"hands": null,
@@ -607,7 +608,7 @@ const KeyHandler = class KeyHandler {
 				"se": () => new Vector(1, 1),
 				"sw": () => new Vector(-1, 1),
 				"nw": () => new Vector(-1, -1),
-				"c": null,
+				"c": "rest",
 				"pickup": "pickup",
 				"up": "stair",
 				"down": "stair",
@@ -616,7 +617,6 @@ const KeyHandler = class KeyHandler {
 
 		} else if (map === "inventorydialog") {
 			this.using = "inventorydialog";
-			//this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
 			let keyCodeMap = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {}),
 				codeMap = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p["Key" + c.toUpperCase()] = c, p), {});
 			this.keyCases = Object.assign(keyCodeMap, codeMap);
@@ -874,14 +874,31 @@ const Utils = class Utils {
 		}
 	}
 
-	static randomWeapon() {
+	static randomWeapon(difficulty) {
 		let materials = ["Bronze", "Iron", "Steel"],
 			types = ["Dagger", "Sword", "Axe", "Pikestaff"];
 
-		let name = materials[Math.round(Math.random() * (materials.length - 1))] +
-			" " + types[Math.round(Math.random() * (types.length - 1))];
+		let name = materials[Math.floor(Math.random() * materials.length)] +
+			" " + types[Math.floor(Math.random() * types.length)];
 
-		return new Weapon(name, Math.round(Math.random() * 5 + 1), Math.round(Math.random() * 6 + 4));
+		return new Weapon(name, Math.floor(Math.random() * difficulty * 0.8) + Math.floor(Math.random() * 2) + 1, Math.floor(Math.random() * 6) + Math.max(10 - difficulty, 2));
+	}
+
+	static randomArmor(difficulty) {
+		let materials = ["Bronze", "Iron", "Steel"],
+			types = {
+				"head": ["cap", "coif", "helmet"],
+				"body": ["chainmail", "tunic", "platebody"],
+				"hands": ["gauntlets", "gloves", "mittens"],
+				"legs": ["greaves", "shin guards", "tassets"],
+				"feet": ["boots", "shoes", "sandals"]
+			};
+
+		let slot = Object.keys(types)[Math.floor(Math.random() * Object.keys(types).length)],
+			name = materials[Math.floor(Math.random() * materials.length)] +
+			" " + types[slot][Math.floor(Math.random() * types[slot].length)];
+
+		return new Armor(slot, name, Math.floor(Math.random() * difficulty * 0.5) + 1);
 	}
 
 	static get DamageCalculator() {
@@ -890,7 +907,8 @@ const Utils = class Utils {
 				return {
 					baseAC: 0.1,
 					defenderStrEffectiveness: 10,
-					attackerStatEffectiveness: 2
+					attackerStrEffectiveness: 2,
+					attackerDexEffectiveness: 1.7
 				};
 			}
 
@@ -898,7 +916,10 @@ const Utils = class Utils {
 				return {
 					melee: (attacker, defender) => {
 						let effectiveAC = (defender.stats.AC + this.constants.baseAC) * (1 + defender.stats.STR / this.constants.defenderStrEffectiveness),
-							effectiveDmg = attacker.equipment.weapon.damage + (attacker.stats.STR + attacker.stats.DEX) / 2 / this.constants.attackerStatEffectiveness;
+							effectiveDmg = attacker.equipment.weapon.damage + (
+								attacker.stats.STR / this.constants.attackerStrEffectiveness +
+								attacker.stats.DEX / this.constants.attackerDexEffectiveness
+							) / 2;
 						return Math.max(Math.floor(effectiveDmg - effectiveAC), 0);
 					}
 				};
@@ -1475,7 +1496,6 @@ const ItemUnequipAction = class ItemUnequipAction extends Action {
 		let keyIndex = Utils.alphabetMap.indexOf(this.equipmentSlot),
 			itemSlot = Object.keys(actor.equipment).filter(k => actor.equipment[k] !== null).find((k, i) => i === keyIndex),
 			item = actor.equipment[itemSlot];
-		console.log(keyIndex, itemSlot, item, this.equipmentSlot);
 
 		if (item.canDrop) {
 			actor.inventory.push(item);
@@ -1590,7 +1610,6 @@ const NullAction = class NullAction extends Action {
 	}
 
 	do(actor) {
-		actor.heal(1);
 		return 10;
 	}
 };
@@ -1639,6 +1658,7 @@ const ActionManager = class ActionManager {
 		this.proposalMap = {};
 		this.proposalMap[null] = [NullAction];
 		this.proposalMap[Vector] = [MoveAction, AttackAction, NullAction];
+		this.proposalMap["rest"] = [RestAction, NullAction];
 		this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 		this.proposalMap["drop"] = [ItemDropAction, NullAction];
 		this.proposalMap["equip"] = [ItemEquipAction, NullAction];
@@ -2266,6 +2286,24 @@ const Rect = class Rect {
 
 };
 
+/* @depends ../../abstract/action.class.js */
+const RestAction = class RestAction extends Action {
+	constructor(context, logger) {
+		super(context, logger);
+	}
+
+	try (actor, time){
+		return time % 10 === 0;
+	}
+
+	do(actor) {
+		if (actor.isHittable) {
+			actor.heal(1);
+		};
+		return 10;
+	}
+};
+
 /* @depends ../abstract/dungeonfeature.class.js */
 const Stair = class Stair extends GameObject{
 	constructor(position, direction){
@@ -2374,18 +2412,23 @@ const Redcap = class Redcap extends Enemy {
  */
 const DungeonGenerator = class DungeonGenerator {
 
-	static generateEquipment(enemy) {
+	static generateEquipment(enemy, options) {
 		if (enemy.canWield) {
-			enemy.equipment.weapon = Utils.randomWeapon();
+			if (options.difficulty / 5 > Math.random()) {
+				enemy.equipment.weapon = Utils.randomWeapon(options.difficulty);
+			}
 		}
 		if (enemy.canWear) {
-
+			if (options.difficulty / 10 > Math.random()) {
+				let armor = Utils.randomArmor(options.difficulty);
+				enemy.equipment[armor.slot] = armor;
+			}
 		}
 		return enemy;
 	}
 
 	//try to spawn some enemies within room
-	static insertEnemies(room, options) {
+	static generateEnemies(room, options) {
 		let enemyList = [Jackalope, Honeybadger, Redcap];
 		let enemies = [];
 		for (let x = room.x + room.w; x > room.x; x--) {
@@ -2393,7 +2436,7 @@ const DungeonGenerator = class DungeonGenerator {
 				if (Math.random() < options.enemies.spawnChance) {
 					let enemy = enemyList[Math.floor(Math.random() * enemyList.length)];
 					enemy = new enemy(new Point(x, y));
-					enemy = this.generateEquipment(enemy);
+					enemy = this.generateEquipment(enemy, options);
 
 					for (let i = 1; i < options.difficulty; i++) {
 						enemy.levelUp();
@@ -2405,6 +2448,23 @@ const DungeonGenerator = class DungeonGenerator {
 			}
 		}
 		return enemies;
+	}
+
+	static generateLoot(room, options) {
+		let generatorList = [Utils.randomWeapon, Utils.randomArmor];
+		let items = [];
+		for (let x = room.x + room.w; x > room.x; x--) {
+			for (let y = room.y + room.h; y > room.y; y--) {
+				if (Math.random() < options.items.spawnChance) {
+					let gen = generatorList[Math.floor(Math.random() * generatorList.length)];
+					let item = gen(options.difficulty + 1);
+					item.position = new Point(x, y);
+
+					items.push(item);
+				}
+			}
+		}
+		return items;
 	}
 
 	static get types() {
@@ -2523,7 +2583,8 @@ const DungeonGenerator = class DungeonGenerator {
 							matrix[y][x].empty();
 						}
 					}
-					objs = objs.concat(DungeonGenerator.insertEnemies(room, options));
+					objs = objs.concat(DungeonGenerator.generateEnemies(room, options));
+					objs = objs.concat(DungeonGenerator.generateLoot(room, options));
 				});
 
 				//carve out paths
@@ -2584,6 +2645,9 @@ const DungeonGenerator = class DungeonGenerator {
 					},
 					enemies: {
 						spawnChance: 0.02
+					},
+					items: {
+						spawnChance: 0.001
 					}
 				};
 			}
@@ -2791,8 +2855,6 @@ const DungeonGenerator = class DungeonGenerator {
 						});
 					});
 
-					let playerPlaced = false;
-
 					bluePrint.forEach(split => {
 						if (!split.path) return;
 
@@ -2809,12 +2871,6 @@ const DungeonGenerator = class DungeonGenerator {
 										for (let x = room.x + room.w; x > room.x; x--) {
 											for (let y = room.y + room.h; y > room.y; y--) {
 												matrix[y - 1][x - 1].empty();
-												//place player as soon as possible
-												if (!playerPlaced) {
-													player.position.set(x, y);
-													objs.push(player);
-													playerPlaced = true;
-												}
 											}
 										}
 									}
@@ -2835,6 +2891,10 @@ const DungeonGenerator = class DungeonGenerator {
 						}
 					});
 
+					//set player to first room
+					player.position.set(rooms[0].x + 1, rooms[0].y + 1);
+					objs.push(player);
+
 					if (options.stairs.up) {
 						//put an upstairs on player
 						objs.push(new Stair(new Point(...player.position.get), "up"));
@@ -2847,8 +2907,10 @@ const DungeonGenerator = class DungeonGenerator {
 					}
 
 					//spawn enemies
+					//and loot
 					rooms.forEach(room => {
-						objs = objs.concat(DungeonGenerator.insertEnemies(room, options));
+						objs = objs.concat(DungeonGenerator.generateEnemies(room, options));
+						objs = objs.concat(DungeonGenerator.generateLoot(room, options));
 					});
 
 					//get objs
@@ -2913,6 +2975,9 @@ const DungeonGenerator = class DungeonGenerator {
 					},
 					enemies: {
 						spawnChance: 0.02
+					},
+					items: {
+						spawnChance: 0.001
 					}
 				};
 			}

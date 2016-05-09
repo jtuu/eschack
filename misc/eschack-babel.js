@@ -365,8 +365,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			};
 
 			_class3.prototype.heal = function heal(amount) {
-				if (this.stats.HP < this.stats.maxHP && this.isAlive) {
-					this.stats.HP++;
+				var effectiveHeal = this.stats.INT / 2 + 1 | 0;
+				if (this.stats.HP + effectiveHeal <= this.stats.maxHP && this.isAlive) {
+					this.stats.HP += effectiveHeal;
 					if (this.lifebar) this.lifebar.set(this.stats.HP);
 				}
 			};
@@ -506,7 +507,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 			_this8.inventory = [];
 			_this8.equipment = {
-				"weapon": weapon || new Weapon("Fists"),
+				"weapon": weapon || Utils.defaults.weapon(),
 				"head": null,
 				"body": null,
 				"hands": null,
@@ -804,7 +805,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					"nw": function nw() {
 						return new Vector(-1, -1);
 					},
-					"c": null,
+					"c": "rest",
 					"pickup": "pickup",
 					"up": "stair",
 					"down": "stair",
@@ -812,7 +813,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				};
 			} else if (map === "inventorydialog") {
 				this.using = "inventorydialog";
-				//this.keyCases = "abcdefghijklmnopqrstuvwxyz".split("").reduce((p, c) => (p[c.toUpperCase().charCodeAt(0)] = c, p), {});
 				var keyCodeMap = "abcdefghijklmnopqrstuvwxyz".split("").reduce(function (p, c) {
 					return p[c.toUpperCase().charCodeAt(0)] = c, p;
 				}, {}),
@@ -1070,13 +1070,29 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			}
 		};
 
-		Utils.randomWeapon = function randomWeapon() {
+		Utils.randomWeapon = function randomWeapon(difficulty) {
 			var materials = ["Bronze", "Iron", "Steel"],
 			    types = ["Dagger", "Sword", "Axe", "Pikestaff"];
 
-			var name = materials[Math.round(Math.random() * (materials.length - 1))] + " " + types[Math.round(Math.random() * (types.length - 1))];
+			var name = materials[Math.floor(Math.random() * materials.length)] + " " + types[Math.floor(Math.random() * types.length)];
 
-			return new Weapon(name, Math.round(Math.random() * 5 + 1), Math.round(Math.random() * 6 + 4));
+			return new Weapon(name, Math.floor(Math.random() * difficulty * 0.8) + Math.floor(Math.random() * 2) + 1, Math.floor(Math.random() * 6) + Math.max(10 - difficulty, 2));
+		};
+
+		Utils.randomArmor = function randomArmor(difficulty) {
+			var materials = ["Bronze", "Iron", "Steel"],
+			    types = {
+				"head": ["cap", "coif", "helmet"],
+				"body": ["chainmail", "tunic", "platebody"],
+				"hands": ["gauntlets", "gloves", "mittens"],
+				"legs": ["greaves", "shin guards", "tassets"],
+				"feet": ["boots", "shoes", "sandals"]
+			};
+
+			var slot = Object.keys(types)[Math.floor(Math.random() * Object.keys(types).length)],
+			    name = materials[Math.floor(Math.random() * materials.length)] + " " + types[slot][Math.floor(Math.random() * types[slot].length)];
+
+			return new Armor(slot, name, Math.floor(Math.random() * difficulty * 0.5) + 1);
 		};
 
 		Utils.initUIButtons = function initUIButtons(instance) {
@@ -1140,7 +1156,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 							return {
 								baseAC: 0.1,
 								defenderStrEffectiveness: 10,
-								attackerStatEffectiveness: 2
+								attackerStrEffectiveness: 2,
+								attackerDexEffectiveness: 1.7
 							};
 						}
 					}, {
@@ -1151,7 +1168,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 							return {
 								melee: function melee(attacker, defender) {
 									var effectiveAC = (defender.stats.AC + _this13.constants.baseAC) * (1 + defender.stats.STR / _this13.constants.defenderStrEffectiveness),
-									    effectiveDmg = attacker.equipment.weapon.damage + (attacker.stats.STR + attacker.stats.DEX) / 2 / _this13.constants.attackerStatEffectiveness;
+									    effectiveDmg = attacker.equipment.weapon.damage + (attacker.stats.STR / _this13.constants.attackerStrEffectiveness + attacker.stats.DEX / _this13.constants.attackerDexEffectiveness) / 2;
 									return Math.max(Math.floor(effectiveDmg - effectiveAC), 0);
 								}
 							};
@@ -1869,7 +1886,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				return i === keyIndex;
 			}),
 			    item = actor.equipment[itemSlot];
-			console.log(keyIndex, itemSlot, item, this.equipmentSlot);
 
 			if (item.canDrop) {
 				actor.inventory.push(item);
@@ -2016,7 +2032,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		};
 
 		NullAction.prototype.do = function _do(actor) {
-			actor.heal(1);
 			return 10;
 		};
 
@@ -2079,6 +2094,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			this.proposalMap = {};
 			this.proposalMap[null] = [NullAction];
 			this.proposalMap[Vector] = [MoveAction, AttackAction, NullAction];
+			this.proposalMap["rest"] = [RestAction, NullAction];
 			this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 			this.proposalMap["drop"] = [ItemDropAction, NullAction];
 			this.proposalMap["equip"] = [ItemEquipAction, NullAction];
@@ -2741,6 +2757,30 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		return Rect;
 	}();
 
+	/* @depends ../../abstract/action.class.js */
+	var RestAction = function (_Action9) {
+		_inherits(RestAction, _Action9);
+
+		function RestAction(context, logger) {
+			_classCallCheck(this, RestAction);
+
+			return _possibleConstructorReturn(this, _Action9.call(this, context, logger));
+		}
+
+		RestAction.prototype.try = function _try(actor, time) {
+			return time % 10 === 0;
+		};
+
+		RestAction.prototype.do = function _do(actor) {
+			if (actor.isHittable) {
+				actor.heal(1);
+			};
+			return 10;
+		};
+
+		return RestAction;
+	}(Action);
+
 	/* @depends ../abstract/dungeonfeature.class.js */
 	var Stair = function (_GameObject4) {
 		_inherits(Stair, _GameObject4);
@@ -2748,19 +2788,19 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Stair(position, direction) {
 			_classCallCheck(this, Stair);
 
-			var _this39 = _possibleConstructorReturn(this, _GameObject4.call(this, position));
+			var _this40 = _possibleConstructorReturn(this, _GameObject4.call(this, position));
 
-			_this39.direction = direction;
-			_this39.bgColor = "hsl(0,0%,35%)";
+			_this40.direction = direction;
+			_this40.bgColor = "hsl(0,0%,35%)";
 
-			if (_this39.direction === "up") {
-				_this39.glyph = "<";
-			} else if (_this39.direction === "down") {
-				_this39.glyph = ">";
+			if (_this40.direction === "up") {
+				_this40.glyph = "<";
+			} else if (_this40.direction === "down") {
+				_this40.glyph = ">";
 			}
-			_this39.color = "hsl(0,0%,75%)";
-			_this39.flavorName = _this39.direction + "stair";
-			return _this39;
+			_this40.color = "hsl(0,0%,75%)";
+			_this40.flavorName = _this40.direction + "stair";
+			return _this40;
 		}
 
 		Stair.prototype.update = function update() {
@@ -2781,13 +2821,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Wall(position) {
 			_classCallCheck(this, Wall);
 
-			var _this40 = _possibleConstructorReturn(this, _VisionBlocking.call(this, position));
+			var _this41 = _possibleConstructorReturn(this, _VisionBlocking.call(this, position));
 
-			_this40.bgColor = "hsl(0,0%,15%)";
-			_this40.glyph = "▉"; //some block character
-			_this40.color = "hsl(0,0%,25%)";
-			_this40.flavorName = "wall";
-			return _this40;
+			_this41.bgColor = "hsl(0,0%,15%)";
+			_this41.glyph = "▉"; //some block character
+			_this41.color = "hsl(0,0%,25%)";
+			_this41.flavorName = "wall";
+			return _this41;
 		}
 
 		Wall.prototype.update = function update() {
@@ -2803,22 +2843,22 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Honeybadger(position) {
 			_classCallCheck(this, Honeybadger);
 
-			var _this41 = _possibleConstructorReturn(this, _Enemy.call(this, position, null, new Weapon("Claws", 4, 11)));
+			var _this42 = _possibleConstructorReturn(this, _Enemy.call(this, position, null, new Weapon("Claws", 4, 11)));
 
-			_this41.bgColor = "hsl(25, 5%, 10%)";
-			_this41.glyph = "B";
-			_this41.color = "hsl(5, 5%, 90%)";
+			_this42.bgColor = "hsl(25, 5%, 10%)";
+			_this42.glyph = "B";
+			_this42.color = "hsl(5, 5%, 90%)";
 
-			_this41.equipment.weapon.canDrop = false;
+			_this42.equipment.weapon.canDrop = false;
 
-			_this41.stats.maxHP = 10;
-			_this41.stats.HP = 10;
-			_this41.stats.viewDistance = 7;
-			_this41.stats.moveSpeed = 10;
-			_this41.flavorName = "the honeybadger";
-			_this41.flavor = "Notorious for their ferocity.";
-			_this41.createLifebar();
-			return _this41;
+			_this42.stats.maxHP = 10;
+			_this42.stats.HP = 10;
+			_this42.stats.viewDistance = 7;
+			_this42.stats.moveSpeed = 10;
+			_this42.flavorName = "the honeybadger";
+			_this42.flavor = "Notorious for their ferocity.";
+			_this42.createLifebar();
+			return _this42;
 		}
 
 		return Honeybadger;
@@ -2830,22 +2870,22 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Jackalope(position) {
 			_classCallCheck(this, Jackalope);
 
-			var _this42 = _possibleConstructorReturn(this, _Enemy2.call(this, position, null, new Weapon("Antlers", 2, 5)));
+			var _this43 = _possibleConstructorReturn(this, _Enemy2.call(this, position, null, new Weapon("Antlers", 2, 5)));
 
-			_this42.bgColor = "hsl(35, 25%, 65%)";
-			_this42.glyph = "J";
-			_this42.color = "hsl(35, 35%, 5%)";
+			_this43.bgColor = "hsl(35, 25%, 65%)";
+			_this43.glyph = "J";
+			_this43.color = "hsl(35, 35%, 5%)";
 
-			_this42.equipment.weapon.canDrop = false;
+			_this43.equipment.weapon.canDrop = false;
 
-			_this42.stats.maxHP = 6;
-			_this42.stats.HP = 6;
-			_this42.stats.viewDistance = 7;
-			_this42.stats.moveSpeed = 8;
-			_this42.flavorName = "the jackalope";
-			_this42.flavor = "A large agressive rabbit with antlers on its head.";
-			_this42.createLifebar();
-			return _this42;
+			_this43.stats.maxHP = 6;
+			_this43.stats.HP = 6;
+			_this43.stats.viewDistance = 7;
+			_this43.stats.moveSpeed = 8;
+			_this43.flavorName = "the jackalope";
+			_this43.flavor = "A large agressive rabbit with antlers on its head.";
+			_this43.createLifebar();
+			return _this43;
 		}
 
 		return Jackalope;
@@ -2857,23 +2897,23 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Redcap(position) {
 			_classCallCheck(this, Redcap);
 
-			var _this43 = _possibleConstructorReturn(this, _Enemy3.call(this, position, null, null));
+			var _this44 = _possibleConstructorReturn(this, _Enemy3.call(this, position, null, null));
 
-			_this43.bgColor = "hsl(66, 10%, 70%)";
-			_this43.glyph = "^";
-			_this43.color = "hsl(0, 80%, 60%)";
+			_this44.bgColor = "hsl(66, 10%, 70%)";
+			_this44.glyph = "^";
+			_this44.color = "hsl(0, 80%, 60%)";
 
-			_this43.stats.maxHP = 10;
-			_this43.stats.HP = 10;
-			_this43.stats.viewDistance = 7;
-			_this43.stats.moveSpeed = 10;
-			_this43.flavorName = "the redcap";
-			_this43.flavor = "A malevolent murderous dwarf-like creature.";
-			_this43.createLifebar();
+			_this44.stats.maxHP = 10;
+			_this44.stats.HP = 10;
+			_this44.stats.viewDistance = 7;
+			_this44.stats.moveSpeed = 10;
+			_this44.flavorName = "the redcap";
+			_this44.flavor = "A malevolent murderous dwarf-like creature.";
+			_this44.createLifebar();
 
-			_this43.canWield = true;
-			_this43.canWear = true;
-			return _this43;
+			_this44.canWield = true;
+			_this44.canWear = true;
+			return _this44;
 		}
 
 		return Redcap;
@@ -2892,18 +2932,25 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			_classCallCheck(this, DungeonGenerator);
 		}
 
-		DungeonGenerator.generateEquipment = function generateEquipment(enemy) {
+		DungeonGenerator.generateEquipment = function generateEquipment(enemy, options) {
 			if (enemy.canWield) {
-				enemy.equipment.weapon = Utils.randomWeapon();
+				if (options.difficulty / 5 > Math.random()) {
+					enemy.equipment.weapon = Utils.randomWeapon(options.difficulty);
+				}
 			}
-			if (enemy.canWear) {}
+			if (enemy.canWear) {
+				if (options.difficulty / 10 > Math.random()) {
+					var armor = Utils.randomArmor(options.difficulty);
+					enemy.equipment[armor.slot] = armor;
+				}
+			}
 			return enemy;
 		};
 
 		//try to spawn some enemies within room
 
 
-		DungeonGenerator.insertEnemies = function insertEnemies(room, options) {
+		DungeonGenerator.generateEnemies = function generateEnemies(room, options) {
 			var enemyList = [Jackalope, Honeybadger, Redcap];
 			var enemies = [];
 			for (var x = room.x + room.w; x > room.x; x--) {
@@ -2911,7 +2958,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					if (Math.random() < options.enemies.spawnChance) {
 						var enemy = enemyList[Math.floor(Math.random() * enemyList.length)];
 						enemy = new enemy(new Point(x, y));
-						enemy = this.generateEquipment(enemy);
+						enemy = this.generateEquipment(enemy, options);
 
 						for (var i = 1; i < options.difficulty; i++) {
 							enemy.levelUp();
@@ -2923,6 +2970,23 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				}
 			}
 			return enemies;
+		};
+
+		DungeonGenerator.generateLoot = function generateLoot(room, options) {
+			var generatorList = [Utils.randomWeapon, Utils.randomArmor];
+			var items = [];
+			for (var x = room.x + room.w; x > room.x; x--) {
+				for (var y = room.y + room.h; y > room.y; y--) {
+					if (Math.random() < options.items.spawnChance) {
+						var gen = generatorList[Math.floor(Math.random() * generatorList.length)];
+						var item = gen(options.difficulty + 1);
+						item.position = new Point(x, y);
+
+						items.push(item);
+					}
+				}
+			}
+			return items;
 		};
 
 		_createClass(DungeonGenerator, null, [{
@@ -3050,7 +3114,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 									matrix[_y][_x4].empty();
 								}
 							}
-							objs = objs.concat(DungeonGenerator.insertEnemies(room, options));
+							objs = objs.concat(DungeonGenerator.generateEnemies(room, options));
+							objs = objs.concat(DungeonGenerator.generateLoot(room, options));
 						});
 
 						//carve out paths
@@ -3113,6 +3178,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 								},
 								enemies: {
 									spawnChance: 0.02
+								},
+								items: {
+									spawnChance: 0.001
 								}
 							};
 						}
@@ -3212,7 +3280,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					};
 
 					_class6.splitChunks = function splitChunks(splits, options) {
-						var _this44 = this;
+						var _this45 = this;
 
 						var chunks = [].concat.apply([], splits.map(function (s, i) {
 							s.chunks.forEach(function (c) {
@@ -3229,7 +3297,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 								chunks: chunk.split.w()
 							});
 							for (var i = 0; i < options.chunks.splitCount; i++) {
-								var largest = _this44.findLargestRect(chunk.rooms);
+								var largest = _this45.findLargestRect(chunk.rooms);
 								if (!largest.rect || largest.rect.w < options.rooms.size.min.w || largest.rect.h < options.rooms.size.min.h) {
 									break;
 								}
@@ -3304,7 +3372,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 					};
 
 					_class6.makeLevel = function makeLevel(player, options) {
-						var _this45 = this;
+						var _this46 = this;
 
 						options = options || this.defaultOptions;
 						var base = new Rect({
@@ -3316,7 +3384,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						});
 						try {
 							var _ret3 = function () {
-								var bluePrint = _this45.carveDoors(_this45.splitChunks(_this45.splitBase(base, options), options), options),
+								var bluePrint = _this46.carveDoors(_this46.splitChunks(_this46.splitBase(base, options), options), options),
 								    rooms = [],
 								    paths = [],
 								    matrix = [],
@@ -3344,8 +3412,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 									});
 								});
 
-								var playerPlaced = false;
-
 								bluePrint.forEach(function (split) {
 									if (!split.path) return;
 
@@ -3362,12 +3428,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 													for (var _x7 = room.x + room.w; _x7 > room.x; _x7--) {
 														for (var _y4 = room.y + room.h; _y4 > room.y; _y4--) {
 															matrix[_y4 - 1][_x7 - 1].empty();
-															//place player as soon as possible
-															if (!playerPlaced) {
-																player.position.set(_x7, _y4);
-																objs.push(player);
-																playerPlaced = true;
-															}
 														}
 													}
 												}
@@ -3388,6 +3448,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 									}
 								});
 
+								//set player to first room
+								player.position.set(rooms[0].x + 1, rooms[0].y + 1);
+								objs.push(player);
+
 								if (options.stairs.up) {
 									//put an upstairs on player
 									objs.push(new Stair(new (Function.prototype.bind.apply(Point, [null].concat(player.position.get)))(), "up"));
@@ -3402,8 +3466,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 								}
 
 								//spawn enemies
+								//and loot
 								rooms.forEach(function (room) {
-									objs = objs.concat(DungeonGenerator.insertEnemies(room, options));
+									objs = objs.concat(DungeonGenerator.generateEnemies(room, options));
+									objs = objs.concat(DungeonGenerator.generateLoot(room, options));
 								});
 
 								//get objs
@@ -3475,6 +3541,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 								},
 								enemies: {
 									spawnChance: 0.02
+								},
+								items: {
+									spawnChance: 0.001
 								}
 							};
 						}
@@ -3495,30 +3564,30 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Player(position, stats) {
 			_classCallCheck(this, Player);
 
-			var _this46 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
+			var _this47 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
 
-			_this46.actions = [];
-			_this46.bgColor = "white";
-			_this46.glyph = "@";
-			_this46.color = "black";
+			_this47.actions = [];
+			_this47.bgColor = "white";
+			_this47.glyph = "@";
+			_this47.color = "black";
 
-			_this46.stats.maxHP = 50;
-			_this46.stats.HP = 50;
-			_this46.stats.viewDistance = 8;
-			_this46.stats.moveSpeed = 10;
+			_this47.stats.maxHP = 50;
+			_this47.stats.HP = 50;
+			_this47.stats.viewDistance = 8;
+			_this47.stats.moveSpeed = 10;
 			//this.stats.inventorySize = 15;
 
-			_this46.stats = stats || _this46.stats;
+			_this47.stats = stats || _this47.stats;
 
-			_this46.equipment.head = new Armor("head", "Bronze helmet", 1);
+			_this47.equipment.head = new Armor("head", "Bronze helmet", 1);
 
-			_this46.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
+			_this47.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
 
-			_this46.lifebar = new Lifebar(_this46.id, "Hero", document.getElementById("info-container-player"), _this46.stats);
-			_this46.flavorName = "you";
-			_this46.flavor = "Hi mom!";
+			_this47.lifebar = new Lifebar(_this47.id, "Hero", document.getElementById("info-container-player"), _this47.stats);
+			_this47.flavorName = "you";
+			_this47.flavor = "Hi mom!";
 			//todo: store username here?
-			return _this46;
+			return _this47;
 		}
 
 		return Player;

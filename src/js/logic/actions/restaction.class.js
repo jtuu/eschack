@@ -1,15 +1,17 @@
 /* @depends ../../abstract/action.class.js */
-//doesnt do anything
-const NullAction = class NullAction extends Action {
+const RestAction = class RestAction extends Action {
 	constructor(context, logger) {
 		super(context, logger);
 	}
 
-	try (actor, time) {
+	try (actor, time){
 		return time % 10 === 0;
 	}
 
 	do(actor) {
+		if (actor.isHittable) {
+			actor.heal(1);
+		};
 		return 10;
 	}
 };

@@ -231,14 +231,31 @@ const Utils = class Utils {
 		}
 	}
 
-	static randomWeapon() {
+	static randomWeapon(difficulty) {
 		let materials = ["Bronze", "Iron", "Steel"],
 			types = ["Dagger", "Sword", "Axe", "Pikestaff"];
 
-		let name = materials[Math.round(Math.random() * (materials.length - 1))] +
-			" " + types[Math.round(Math.random() * (types.length - 1))];
+		let name = materials[Math.floor(Math.random() * materials.length)] +
+			" " + types[Math.floor(Math.random() * types.length)];
 
-		return new Weapon(name, Math.round(Math.random() * 5 + 1), Math.round(Math.random() * 6 + 4));
+		return new Weapon(name, Math.floor(Math.random() * difficulty * 0.8) + Math.floor(Math.random() * 2) + 1, Math.floor(Math.random() * 6) + Math.max(10 - difficulty, 2));
+	}
+
+	static randomArmor(difficulty) {
+		let materials = ["Bronze", "Iron", "Steel"],
+			types = {
+				"head": ["cap", "coif", "helmet"],
+				"body": ["chainmail", "tunic", "platebody"],
+				"hands": ["gauntlets", "gloves", "mittens"],
+				"legs": ["greaves", "shin guards", "tassets"],
+				"feet": ["boots", "shoes", "sandals"]
+			};
+
+		let slot = Object.keys(types)[Math.floor(Math.random() * Object.keys(types).length)],
+			name = materials[Math.floor(Math.random() * materials.length)] +
+			" " + types[slot][Math.floor(Math.random() * types[slot].length)];
+
+		return new Armor(slot, name, Math.floor(Math.random() * difficulty * 0.5) + 1);
 	}
 
 	static get DamageCalculator() {
@@ -247,7 +264,8 @@ const Utils = class Utils {
 				return {
 					baseAC: 0.1,
 					defenderStrEffectiveness: 10,
-					attackerStatEffectiveness: 2
+					attackerStrEffectiveness: 2,
+					attackerDexEffectiveness: 1.7
 				};
 			}
 
@@ -255,7 +273,10 @@ const Utils = class Utils {
 				return {
 					melee: (attacker, defender) => {
 						let effectiveAC = (defender.stats.AC + this.constants.baseAC) * (1 + defender.stats.STR / this.constants.defenderStrEffectiveness),
-							effectiveDmg = attacker.equipment.weapon.damage + (attacker.stats.STR + attacker.stats.DEX) / 2 / this.constants.attackerStatEffectiveness;
+							effectiveDmg = attacker.equipment.weapon.damage + (
+								attacker.stats.STR / this.constants.attackerStrEffectiveness +
+								attacker.stats.DEX / this.constants.attackerDexEffectiveness
+							) / 2;
 						return Math.max(Math.floor(effectiveDmg - effectiveAC), 0);
 					}
 				};

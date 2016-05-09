@@ -9,18 +9,23 @@
  */
 const DungeonGenerator = class DungeonGenerator {
 
-	static generateEquipment(enemy) {
+	static generateEquipment(enemy, options) {
 		if (enemy.canWield) {
-			enemy.equipment.weapon = Utils.randomWeapon();
+			if (options.difficulty / 5 > Math.random()) {
+				enemy.equipment.weapon = Utils.randomWeapon(options.difficulty);
+			}
 		}
 		if (enemy.canWear) {
-
+			if (options.difficulty / 10 > Math.random()) {
+				let armor = Utils.randomArmor(options.difficulty);
+				enemy.equipment[armor.slot] = armor;
+			}
 		}
 		return enemy;
 	}
 
 	//try to spawn some enemies within room
-	static insertEnemies(room, options) {
+	static generateEnemies(room, options) {
 		let enemyList = [Jackalope, Honeybadger, Redcap];
 		let enemies = [];
 		for (let x = room.x + room.w; x > room.x; x--) {
@@ -28,7 +33,7 @@ const DungeonGenerator = class DungeonGenerator {
 				if (Math.random() < options.enemies.spawnChance) {
 					let enemy = enemyList[Math.floor(Math.random() * enemyList.length)];
 					enemy = new enemy(new Point(x, y));
-					enemy = this.generateEquipment(enemy);
+					enemy = this.generateEquipment(enemy, options);
 
 					for (let i = 1; i < options.difficulty; i++) {
 						enemy.levelUp();
@@ -40,6 +45,23 @@ const DungeonGenerator = class DungeonGenerator {
 			}
 		}
 		return enemies;
+	}
+
+	static generateLoot(room, options) {
+		let generatorList = [Utils.randomWeapon, Utils.randomArmor];
+		let items = [];
+		for (let x = room.x + room.w; x > room.x; x--) {
+			for (let y = room.y + room.h; y > room.y; y--) {
+				if (Math.random() < options.items.spawnChance) {
+					let gen = generatorList[Math.floor(Math.random() * generatorList.length)];
+					let item = gen(options.difficulty + 1);
+					item.position = new Point(x, y);
+
+					items.push(item);
+				}
+			}
+		}
+		return items;
 	}
 
 	static get types() {
@@ -158,7 +180,8 @@ const DungeonGenerator = class DungeonGenerator {
 							matrix[y][x].empty();
 						}
 					}
-					objs = objs.concat(DungeonGenerator.insertEnemies(room, options));
+					objs = objs.concat(DungeonGenerator.generateEnemies(room, options));
+					objs = objs.concat(DungeonGenerator.generateLoot(room, options));
 				});
 
 				//carve out paths
@@ -219,6 +242,9 @@ const DungeonGenerator = class DungeonGenerator {
 					},
 					enemies: {
 						spawnChance: 0.02
+					},
+					items: {
+						spawnChance: 0.001
 					}
 				};
 			}
@@ -426,8 +452,6 @@ const DungeonGenerator = class DungeonGenerator {
 						});
 					});
 
-					let playerPlaced = false;
-
 					bluePrint.forEach(split => {
 						if (!split.path) return;
 
@@ -444,12 +468,6 @@ const DungeonGenerator = class DungeonGenerator {
 										for (let x = room.x + room.w; x > room.x; x--) {
 											for (let y = room.y + room.h; y > room.y; y--) {
 												matrix[y - 1][x - 1].empty();
-												//place player as soon as possible
-												if (!playerPlaced) {
-													player.position.set(x, y);
-													objs.push(player);
-													playerPlaced = true;
-												}
 											}
 										}
 									}
@@ -470,6 +488,10 @@ const DungeonGenerator = class DungeonGenerator {
 						}
 					});
 
+					//set player to first room
+					player.position.set(rooms[0].x + 1, rooms[0].y + 1);
+					objs.push(player);
+
 					if (options.stairs.up) {
 						//put an upstairs on player
 						objs.push(new Stair(new Point(...player.position.get), "up"));
@@ -482,8 +504,10 @@ const DungeonGenerator = class DungeonGenerator {
 					}
 
 					//spawn enemies
+					//and loot
 					rooms.forEach(room => {
-						objs = objs.concat(DungeonGenerator.insertEnemies(room, options));
+						objs = objs.concat(DungeonGenerator.generateEnemies(room, options));
+						objs = objs.concat(DungeonGenerator.generateLoot(room, options));
 					});
 
 					//get objs
@@ -548,6 +572,9 @@ const DungeonGenerator = class DungeonGenerator {
 					},
 					enemies: {
 						spawnChance: 0.02
+					},
+					items: {
+						spawnChance: 0.001
 					}
 				};
 			}

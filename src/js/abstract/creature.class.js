@@ -34,7 +34,7 @@ const Creature = class Creature extends Hittable(MoveBlocking(GameObject)) {
 
 		this.inventory = [];
 		this.equipment = {
-			"weapon": weapon || new Weapon("Fists"),
+			"weapon": weapon || Utils.defaults.weapon(),
 			"head": null,
 			"body": null,
 			"hands": null,

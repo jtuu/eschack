@@ -22,8 +22,9 @@ const Hittable = Base => class extends Base{
 	}
 
 	heal(amount){
-		if(this.stats.HP < this.stats.maxHP && this.isAlive){
-			this.stats.HP++;
+		let effectiveHeal = (this.stats.INT / 2) + 1 | 0;
+		if(this.stats.HP + effectiveHeal <= this.stats.maxHP && this.isAlive){
+			this.stats.HP += effectiveHeal;
 			if (this.lifebar) this.lifebar.set(this.stats.HP);
 		}
 	}

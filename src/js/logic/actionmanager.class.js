@@ -19,6 +19,7 @@ const ActionManager = class ActionManager {
 		this.proposalMap = {};
 		this.proposalMap[null] = [NullAction];
 		this.proposalMap[Vector] = [MoveAction, AttackAction, NullAction];
+		this.proposalMap["rest"] = [RestAction, NullAction];
 		this.proposalMap["pickup"] = [ItemPickupAction, NullAction];
 		this.proposalMap["drop"] = [ItemDropAction, NullAction];
 		this.proposalMap["equip"] = [ItemEquipAction, NullAction];
