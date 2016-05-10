@@ -9,7 +9,9 @@ body {
   vertical-align: top; }
 
 canvas {
-  display: block; }
+  display: block;
+  max-width: 1040px;
+  width: 98vw; }
   canvas#canvas-second {
     position: absolute;
     top: 0;
@@ -19,12 +21,14 @@ canvas {
 
 #canvas-container {
   position: relative;
-  width: 1040px;
+  max-width: 1040px;
+  width: 98vw;
   height: 520px; }
 
 #logbox {
   box-sizing: border-box;
-  width: 1040px;
+  max-width: 1040px;
+  width: 98vw;
   height: 200px;
   background: #e6e6e6;
   color: black; }
@@ -69,10 +73,12 @@ canvas {
   width: 340px; }
   .info-container#info-container-player .player-stat-row {
     display: inline-block;
-    width: 50%; }
+    width: 100px; }
     .info-container#info-container-player .player-stat-row .player-stat-name {
       display: inline-block;
-      width: 70px; }
+      width: 70px;
+      border-left: 1px solid black;
+      padding-left: 5px; }
       .info-container#info-container-player .player-stat-row .player-stat-name:after {
         content: ":"; }
     .info-container#info-container-player .player-stat-row .player-stat-value {
@@ -145,6 +151,10 @@ canvas {
     .info-container#info-container-equipment .equipment-row .equipment-item:before {
       content: ": "; }
 
+#column-right {
+  height: 790px;
+  width: 530px; }
+
 .menu-title {
   background: black;
   color: darkgrey;
@@ -155,16 +165,12 @@ canvas {
   margin: 10px;
   padding: 10px;
   border: 1px solid black;
-  vertical-align: top;
-  width: 45%; }
+  vertical-align: top; }
   #bottom-row > div > h3 {
     margin: 0; }
   #bottom-row > div .content {
     height: 150px;
     overflow-y: auto; }
-
-#bottom-row #settings {
-  min-width: 200px; }
 
 label {
   display: inline-block;
