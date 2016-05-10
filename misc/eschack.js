@@ -3285,7 +3285,7 @@ game.start();
 		elemX = 0,
 		elemY = 0;
 
-	function move(e) {
+	function move(e, elem) {
 		if (e.target.classList.contains("moveable-anchor")) {
 			e.stopPropagation();
 			//e.cancelBubble();
@@ -3303,7 +3303,7 @@ game.start();
 		}
 	}
 
-	function startr(e) {
+	function startr(e, elem) {
 		e.stopPropagation();
 		//e.cancelBubble();
 		e.preventDefault();
@@ -3311,7 +3311,7 @@ game.start();
 		selected = elem;
 	}
 
-	function startb(e) {
+	function startb(e, elem) {
 		e.stopPropagation();
 		//e.cancelBubble();
 		e.preventDefault();
@@ -3329,15 +3329,15 @@ game.start();
 		bottom.classList.add("edge-bottom");
 
 		if (elem.classList.contains("moveable")) {
-			elem.addEventListener("mousedown", move);
-			elem.addEventListener("touchstart", move);
+			elem.addEventListener("mousedown", e => move(e, elem));
+			elem.addEventListener("touchstart", e => move(e, elem));
 		}
 
 		if (elem.classList.contains("resizeable")) {
-			bottom.addEventListener("mousedown", startb);
-			bottom.addEventListener("touchstart", startb);
-			right.addEventListener("mousedown", startr);
-			right.addEventListener("touchstart", startr);
+			bottom.addEventListener("mousedown", e => startb(e, elem));
+			bottom.addEventListener("touchstart", e => startb(e, elem));
+			right.addEventListener("mousedown", e => startr(e, elem));
+			right.addEventListener("touchstart", e => startr(e, elem));
 
 			elem.appendChild(right);
 			elem.appendChild(bottom);

@@ -3900,7 +3900,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		    elemX = 0,
 		    elemY = 0;
 
-		function move(e) {
+		function move(e, elem) {
 			if (e.target.classList.contains("moveable-anchor")) {
 				e.stopPropagation();
 				//e.cancelBubble();
@@ -3918,7 +3918,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			}
 		}
 
-		function startr(e) {
+		function startr(e, elem) {
 			e.stopPropagation();
 			//e.cancelBubble();
 			e.preventDefault();
@@ -3926,7 +3926,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			selected = elem;
 		}
 
-		function startb(e) {
+		function startb(e, elem) {
 			e.stopPropagation();
 			//e.cancelBubble();
 			e.preventDefault();
@@ -3944,15 +3944,27 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			bottom.classList.add("edge-bottom");
 
 			if (elem.classList.contains("moveable")) {
-				elem.addEventListener("mousedown", move);
-				elem.addEventListener("touchstart", move);
+				elem.addEventListener("mousedown", function (e) {
+					return move(e, elem);
+				});
+				elem.addEventListener("touchstart", function (e) {
+					return move(e, elem);
+				});
 			}
 
 			if (elem.classList.contains("resizeable")) {
-				bottom.addEventListener("mousedown", startb);
-				bottom.addEventListener("touchstart", startb);
-				right.addEventListener("mousedown", startr);
-				right.addEventListener("touchstart", startr);
+				bottom.addEventListener("mousedown", function (e) {
+					return startb(e, elem);
+				});
+				bottom.addEventListener("touchstart", function (e) {
+					return startb(e, elem);
+				});
+				right.addEventListener("mousedown", function (e) {
+					return startr(e, elem);
+				});
+				right.addEventListener("touchstart", function (e) {
+					return startr(e, elem);
+				});
 
 				elem.appendChild(right);
 				elem.appendChild(bottom);
