@@ -814,7 +814,7 @@ const DungeonGenerator = class DungeonGenerator {
 						spawnChance: 0.015
 					},
 					items: {
-						spawnChance: 0.05
+						spawnChance: 0.001
 					}
 				};
 			}
