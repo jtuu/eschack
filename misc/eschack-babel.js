@@ -365,9 +365,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			};
 
 			_class3.prototype.heal = function heal(amount) {
-				var effectiveHeal = this.stats.INT / 2 + 1 | 0;
-				if (this.stats.HP + effectiveHeal <= this.stats.maxHP && this.isAlive) {
+				if (this.stats.HP < this.stats.maxHP && this.isAlive) {
+					var effectiveHeal = this.stats.INT / 2 + 1 | 0;
 					this.stats.HP += effectiveHeal;
+					if (this.stats.HP > this.stats.maxHP) this.stats.HP = this.stats.maxHP;
 					if (this.lifebar) this.lifebar.set(this.stats.HP);
 				}
 			};
@@ -1933,7 +1934,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			//remove it into inventory
 			//actually this should be an unequipaction
 			if (actor.equipment[item.slot]) {
-				var equipmentKey = Utils.alphabetMap[Object.keys(actor.equipment).indexOf(item.slot)];
+				var equipmentKey = Utils.alphabetMap[Object.keys(actor.equipment).filter(function (key) {
+					return actor.equipment[key];
+				}).indexOf(item.slot)];
 				var action = new ItemUnequipAction(null, this.logger, equipmentKey);
 				duration += action.do(actor);
 			}
@@ -2232,8 +2235,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 								this.logger.log("Which item to unequip? [a-z]");
 								return false;
 							case "cheat":
-								actor.cheatMode = true;
-								this.logger.log("Cheat mode activated", "hilight");
+								actor.cheatMode = actor.cheatMode ? false : true;
+								this.logger.log("Cheat mode " + (!actor.cheatMode ? "de" : "") + "activated", "hilight");
 								return false;
 							default:
 								break;
@@ -2265,16 +2268,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 	}();
 
 	/*
- @depends globals.js
- @depends ../ui/equipmentmanager.class.js
- @depends ../ui/inventorymanager.class.js
- @depends ../ui/logboxmanager.class.js
- @depends ../ui/statsmanager.class.js
- @depends ../misc/utils.class.js
- @depends ../logic/actionmanager.class.js
- @depends ../control/keyhandler.class.js
- @depends ../controls/mousehandler.class.js
-  */
+ 	@depends globals.js
+ 	@depends ../ui/equipmentmanager.class.js
+ 	@depends ../ui/inventorymanager.class.js
+ 	@depends ../ui/logboxmanager.class.js
+ 	@depends ../ui/statsmanager.class.js
+ 	@depends ../misc/utils.class.js
+ 	@depends ../logic/actionmanager.class.js
+ 	@depends ../control/keyhandler.class.js
+ 	@depends ../controls/mousehandler.class.js
+ 	 */
 	//the game
 	var Game = function () {
 		function Game(board, dungeon) {
@@ -2387,12 +2390,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			var rooms = dungeon.rooms;
 			var paths = dungeon.paths;
 			var objs = dungeon.objs;
+			var stairs = dungeon.stairs;
 			var img = new Image();
 			img.src = secondCanvas.toDataURL();
 			this.dungeonLevels[this.stats.currentDungeonLevel] = {
 				objs: [],
 				rooms: rooms,
 				paths: paths,
+				stairs: stairs,
 				map: img
 			};
 			objs.forEach(function (obj) {
@@ -2405,7 +2410,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 			this.saveDungeonLevel(this.dungeonLevels[this.stats.currentDungeonLevel]);
 			var dir = level > this.stats.currentDungeonLevel ? "down" : "up";
-
 			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach(function (obj, k) {
 				if (k === 0) {
 					return;
@@ -2427,12 +2431,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 			if (this.dungeonLevels[level]) {
 				objs = this.dungeonLevels[level].objs;
 				secondCtx.drawImage(this.dungeonLevels[level].map, 0, 0);
-				//put player in the last room if we're going up
+				//put player on downstairs if we're going up
 				if (dir === "up") {
-					this.player.position.set(this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].x + 1, this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].y + 1);
+					var _player$position;
+
+					(_player$position = this.player.position).set.apply(_player$position, this.dungeonLevels[level].stairs.down.get);
 				} else {
-					//or in the first room
-					this.player.position.set(this.dungeonLevels[level].rooms[0].x + 1, this.dungeonLevels[level].rooms[0].y + 1);
+					var _player$position2;
+
+					//or upstairs
+					(_player$position2 = this.player.position).set.apply(_player$position2, this.dungeonLevels[level].stairs.up.get);
 				}
 			} else {
 				var levelType = DungeonGenerator.types[Math.floor(Math.random() * DungeonGenerator.types.length)];
@@ -2444,7 +2452,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 				this.dungeonLevels[level] = {
 					objs: [],
 					rooms: dungeon.rooms,
-					paths: dungeon.paths
+					paths: dungeon.paths,
+					stairs: dungeon.stairs
 				};
 			}
 
@@ -2992,7 +3001,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		_createClass(DungeonGenerator, null, [{
 			key: "types",
 			get: function get() {
-				return ["traditional", "city"];
+				return ["traditional", "city", "cave"];
 			}
 		}, {
 			key: "traditional",
@@ -3078,14 +3087,20 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						player.position.set(rooms[0].x + 1, rooms[0].y + 1);
 						objs.push(player);
 
+						var stairs = {};
+
 						if (options.stairs.up) {
 							//put an upstairs on player
-							objs.push(new Stair(new Point(rooms[0].x + 1, rooms[0].y + 1), "up"));
+							var pos = new Point(rooms[0].x + 1, rooms[0].y + 1);
+							objs.push(new Stair(pos, "up"));
+							stairs.up = pos;
 						}
 
 						if (options.stairs.down) {
 							//put a downstairs in "last" room
-							objs.push(new Stair(new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1), "down"));
+							var _pos = new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1);
+							objs.push(new Stair(_pos, "down"));
+							stairs.down = _pos;
 						}
 
 						//get midpoints
@@ -3140,7 +3155,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 						return {
 							rooms: rooms,
 							paths: paths,
-							objs: objs
+							objs: objs,
+							stairs: stairs
 						};
 					};
 
@@ -3448,21 +3464,28 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 									}
 								});
 
+								var stairs = {};
+
 								//set player to first room
-								player.position.set(rooms[0].x + 1, rooms[0].y + 1);
+								player.position.set(rooms[0].x + 1, rooms[0].y + 2);
 								objs.push(player);
+								matrix[player.position.y][player.position.x].empty();
 
 								if (options.stairs.up) {
 									//put an upstairs on player
-									objs.push(new Stair(new (Function.prototype.bind.apply(Point, [null].concat(player.position.get)))(), "up"));
+									var pos = new (Function.prototype.bind.apply(Point, [null].concat(player.position.get)))();
+									objs.push(new Stair(pos, "up"));
+									stairs.up = pos;
 								}
 
 								if (options.stairs.down) {
 									//put a downstairs in largest room
 									var largest = rooms.reduce(function (p, c) {
 										return p.w * p.h > c.w * c.h ? p : c;
-									});
-									objs.push(new Stair(new Point(largest.x + 1, largest.y + 1), "down"));
+									}),
+									    _pos2 = new Point(largest.x + largest.w - 1, largest.y + largest.h - 1);
+									objs.push(new Stair(_pos2, "down"));
+									stairs.down = _pos2;
 								}
 
 								//spawn enemies
@@ -3484,7 +3507,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 									v: {
 										rooms: rooms,
 										paths: paths,
-										objs: objs
+										objs: objs,
+										stairs: stairs
 									}
 								};
 							}();
@@ -3543,13 +3567,265 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 									spawnChance: 0.02
 								},
 								items: {
-									spawnChance: 0.001
+									spawnChance: 0.009
 								}
 							};
 						}
 					}]);
 
 					return _class6;
+				}();
+			}
+		}, {
+			key: "cave",
+			get: function get() {
+				return function () {
+					function _class7() {
+						_classCallCheck(this, _class7);
+					}
+
+					_class7.border = function border(matrix) {
+						for (var x = 0; x < matrix[0].length; x++) {
+							matrix[0][x].empty();
+							matrix[0][x].add(new Wall(new Point(x, 0)));
+							matrix[matrix.length - 1][x].empty();
+							matrix[matrix.length - 1][x].add(new Wall(new Point(x, matrix.length - 1)));
+						}
+						for (var y = 0; y < matrix.length; y++) {
+							matrix[y][0].empty();
+							matrix[y][0].add(new Wall(new Point(0, y)));
+							matrix[y][matrix[0].length - 1].empty();
+							matrix[y][matrix[0].length - 1].add(new Wall(new Point(matrix[0].length - 1, y)));
+						}
+
+						return matrix;
+					};
+
+					_class7.neighbors = function neighbors(matrix, x, y, radius) {
+						var neighbors = [];
+
+						for (var x0 = x - radius; x0 <= x + radius; x0++) {
+							for (var y0 = y - radius; y0 <= y + radius; y0++) {
+								if (x0 === x && y0 === y || !matrix[y0]) {
+									continue;
+								}
+								neighbors.push(matrix[y0][x0]);
+							}
+						}
+
+						return neighbors.filter(function (v) {
+							return v;
+						});
+					};
+
+					_class7.updateState = function updateState(matrix, x, y, options) {
+						var neighbors1 = this.neighbors(matrix, x, y, 1),
+						    type = matrix[y][x].top ? "wall" : "floor";
+
+						if (neighbors1.filter(function (nT) {
+							return nT.top && nT.top.constructor === Wall;
+						}).length >= options.nearCap) {
+							return {
+								type: Wall,
+								changed: type !== "wall",
+								pos: new Point(x, y)
+							};
+						}
+
+						var neighbors2 = this.neighbors(matrix, x, y, 2);
+						if (neighbors2.filter(function (nT) {
+							return nT.top && nT.top.constructor === Wall;
+						}).length <= options.farCap) {
+							return {
+								type: Wall,
+								changed: type !== "wall",
+								pos: new Point(x, y)
+							};
+						}
+
+						return {
+							type: null,
+							changed: type !== "floor",
+							pos: new Point(x, y)
+						};
+					};
+
+					_class7.makeLevel = function makeLevel(player, options) {
+						var _this47 = this;
+
+						options = options || this.defaultOptions;
+
+						var matrix = [],
+						    objs = [];
+
+						//make matrix and fill it randomly with walls
+						for (var y = 0; y < options.size.h; y++) {
+							matrix[y] = [];
+							for (var x = 0; x < options.size.w; x++) {
+								matrix[y][x] = new Tile(new Point(x, y));
+								if (Math.random() < options.distribution) {} else {
+									matrix[y][x].add(new Wall(new Point(x, y)));
+								}
+							}
+						}
+
+						//clear some rows in the middle to help with gaps in the map
+						if (options.horizontalBlank) {
+							var offset = ~ ~(options.size.h / 2),
+							    end = ~ ~(options.size.h / 2) - offset + options.horizontalBlank;
+							for (var _y7 = ~ ~(options.size.h / 2) - offset; _y7 < end; _y7++) {
+								matrix[_y7].forEach(function (tile) {
+									return tile.empty();
+								});
+							}
+						}
+
+						var _loop = function _loop(i) {
+							var newStates = [];
+
+							//compute all states
+							matrix.forEach(function (row, y) {
+								return row.forEach(function (tile, x) {
+									newStates.push(_this47.updateState(matrix, x, y, options));
+								});
+							});
+
+							//then update matrix
+							newStates.forEach(function (state) {
+								if (state.changed) {
+									if (state.type) {
+										matrix[state.pos.y][state.pos.x].add(new state.type(state.pos));
+									} else {
+										matrix[state.pos.y][state.pos.x].empty();
+									}
+								}
+							});
+
+							if (options.border) {
+								matrix = _this47.border(matrix);
+							}
+
+							if (i > options.smoothCap) {
+								options.farCap = -1;
+							}
+						};
+
+						for (var i = 0; i < options.iterationCount; i++) {
+							_loop(i);
+						}
+
+						var stairs = {};
+
+						if (options.stairs.up) {
+							var _player$position3;
+
+							var pos = new Point(Math.floor(Math.random() * options.size.w), Math.floor(Math.random() * options.size.h));
+
+							while (true) {
+								if (matrix[pos.y] && matrix[pos.y][pos.x] && matrix[pos.y][pos.x].isEmpty) {
+									break;
+								} else {
+									pos.set(Math.floor(Math.random() * options.size.w), Math.floor(Math.random() * options.size.h));
+								}
+							}
+
+							(_player$position3 = player.position).set.apply(_player$position3, pos.get);
+							objs.push(player);
+
+							objs.push(new Stair(pos, "up"));
+							stairs.up = pos;
+						}
+
+						if (options.stairs.down) {
+							var _pos3 = new Point(Math.floor(Math.random() * options.size.w, Math.floor(Math.random() * options.size.h)));
+
+							while (true) {
+								if (matrix[_pos3.y] && matrix[_pos3.y][_pos3.x] && matrix[_pos3.y][_pos3.x].isEmpty) {
+									break;
+								} else {
+									_pos3.set(Math.floor(Math.random() * options.size.w), Math.floor(Math.random() * options.size.h));
+								}
+							}
+
+							objs.push(new Stair(_pos3, "down"));
+							stairs.down = _pos3;
+						}
+
+						//spawn some enemies using the entire map as the room
+						//filter out the ones spawned in walls
+						var enemies = DungeonGenerator.generateEnemies({
+							x: 0,
+							y: 0,
+							w: options.size.w - 1,
+							h: options.size.h - 1
+						}, options).filter(function (e) {
+							if (matrix[e.position.y][e.position.x].isEmpty) {
+								return true;
+							} else {
+								e.lifebar.remove();
+								return false;
+							}
+						});
+
+						objs = objs.concat(enemies);
+
+						var loot = DungeonGenerator.generateLoot({
+							x: 0,
+							y: 0,
+							w: options.size.w - 1,
+							h: options.size.h - 1
+						}, options).filter(function (i) {
+							return matrix[i.position.y][i.position.x].isEmpty;
+						});
+
+						objs = objs.concat(loot);
+
+						//get objs
+						for (var _y8 = 0; _y8 < options.size.h; _y8++) {
+							for (var _x10 = 0; _x10 < options.size.w; _x10++) {
+								if (!matrix[_y8][_x10].isEmpty) {
+									objs.push(matrix[_y8][_x10].top);
+								}
+							}
+						}
+						return {
+							objs: objs,
+							paths: [],
+							rooms: [],
+							stairs: stairs
+						};
+					};
+
+					_createClass(_class7, null, [{
+						key: "defaultOptions",
+						get: function get() {
+							return {
+								size: {
+									w: 40,
+									h: 20
+								},
+								stairs: {
+									up: false,
+									down: true
+								},
+								iterationCount: 7,
+								distribution: 0.46,
+								border: true,
+								nearCap: 5,
+								farCap: 1,
+								smoothCap: 5,
+								horizontalBlank: 1,
+								enemies: {
+									spawnChance: 0.015
+								},
+								items: {
+									spawnChance: 0.05
+								}
+							};
+						}
+					}]);
+
+					return _class7;
 				}();
 			}
 		}]);
@@ -3564,30 +3840,30 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 		function Player(position, stats) {
 			_classCallCheck(this, Player);
 
-			var _this47 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
+			var _this48 = _possibleConstructorReturn(this, _Creature2.call(this, position, stats));
 
-			_this47.actions = [];
-			_this47.bgColor = "white";
-			_this47.glyph = "@";
-			_this47.color = "black";
+			_this48.actions = [];
+			_this48.bgColor = "white";
+			_this48.glyph = "@";
+			_this48.color = "black";
 
-			_this47.stats.maxHP = 50;
-			_this47.stats.HP = 50;
-			_this47.stats.viewDistance = 8;
-			_this47.stats.moveSpeed = 10;
+			_this48.stats.maxHP = 50;
+			_this48.stats.HP = 50;
+			_this48.stats.viewDistance = 8;
+			_this48.stats.moveSpeed = 10;
 			//this.stats.inventorySize = 15;
 
-			_this47.stats = stats || _this47.stats;
+			_this48.stats = stats || _this48.stats;
 
-			_this47.equipment.head = new Armor("head", "Bronze helmet", 1);
+			_this48.equipment.head = new Armor("head", "Bronze helmet", 1);
 
-			_this47.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
+			_this48.equipment.weapon = new Weapon("Blunt Dagger", 1, 5);
 
-			_this47.lifebar = new Lifebar(_this47.id, "Hero", document.getElementById("info-container-player"), _this47.stats);
-			_this47.flavorName = "you";
-			_this47.flavor = "Hi mom!";
+			_this48.lifebar = new Lifebar(_this48.id, "Hero", document.getElementById("info-container-player"), _this48.stats);
+			_this48.flavorName = "you";
+			_this48.flavor = "Hi mom!";
 			//todo: store username here?
-			return _this47;
+			return _this48;
 		}
 
 		return Player;

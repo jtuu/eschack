@@ -242,18 +242,18 @@ const Lifebar = class Lifebar {
 };
 
 /* @depends ../ui/lifebar.class.js */
-const MoveBlocking = Base => class extends Base{
-	get isMoveBlocking(){
+const MoveBlocking = Base => class extends Base {
+	get isMoveBlocking() {
 		return true;
 	}
 };
-const VisionBlocking = Base => class extends Base{
-	get isVisionBlocking(){
+const VisionBlocking = Base => class extends Base {
+	get isVisionBlocking() {
 		return true;
 	}
 };
 
-const Hittable = Base => class extends Base{
+const Hittable = Base => class extends Base {
 	takeDamage(damage, logger) {
 		this.stats.HP -= damage;
 		if (this.lifebar) this.lifebar.set(this.stats.HP);
@@ -264,20 +264,21 @@ const Hittable = Base => class extends Base{
 		return false;
 	}
 
-	heal(amount){
-		let effectiveHeal = (this.stats.INT / 2) + 1 | 0;
-		if(this.stats.HP + effectiveHeal <= this.stats.maxHP && this.isAlive){
+	heal(amount) {
+		if (this.stats.HP < this.stats.maxHP && this.isAlive) {
+			let effectiveHeal = (this.stats.INT / 2) + 1 | 0;
 			this.stats.HP += effectiveHeal;
+			if (this.stats.HP > this.stats.maxHP) this.stats.HP = this.stats.maxHP;
 			if (this.lifebar) this.lifebar.set(this.stats.HP);
 		}
 	}
 
 	die(logger) {
-		if(logger)logger.log(this.flavorName + " died", "death");
-		if(this.lifebar && this.type !== "Player")this.lifebar.remove();
+		if (logger) logger.log(this.flavorName + " died", "death");
+		if (this.lifebar && this.type !== "Player") this.lifebar.remove();
 	}
 
-	get isHittable(){
+	get isHittable() {
 		return true;
 	}
 };
@@ -1535,7 +1536,7 @@ const ItemEquipAction = class ItemEquipAction extends Action {
 		//remove it into inventory
 		//actually this should be an unequipaction
 		if (actor.equipment[item.slot]) {
-			let equipmentKey = Utils.alphabetMap[Object.keys(actor.equipment).indexOf(item.slot)];
+			let equipmentKey = Utils.alphabetMap[Object.keys(actor.equipment).filter(key => actor.equipment[key]).indexOf(item.slot)];
 			let action = new ItemUnequipAction(null, this.logger, equipmentKey);
 			duration += action.do(actor);
 		}
@@ -1768,8 +1769,8 @@ const ActionManager = class ActionManager {
 							this.logger.log("Which item to unequip? [a-z]");
 							return false;
 						case "cheat":
-							actor.cheatMode = true;
-							this.logger.log("Cheat mode activated", "hilight");
+							actor.cheatMode = actor.cheatMode ? false : true;
+							this.logger.log("Cheat mode " + (!actor.cheatMode ? "de" : "") + "activated", "hilight");
 							return false;
 						default:
 							break;
@@ -1793,16 +1794,16 @@ const ActionManager = class ActionManager {
 };
 
 	/*
-	@depends globals.js
-	@depends ../ui/equipmentmanager.class.js
-	@depends ../ui/inventorymanager.class.js
-	@depends ../ui/logboxmanager.class.js
-	@depends ../ui/statsmanager.class.js
-	@depends ../misc/utils.class.js
-	@depends ../logic/actionmanager.class.js
-	@depends ../control/keyhandler.class.js
-	@depends ../controls/mousehandler.class.js
-	 */
+		@depends globals.js
+		@depends ../ui/equipmentmanager.class.js
+		@depends ../ui/inventorymanager.class.js
+		@depends ../ui/logboxmanager.class.js
+		@depends ../ui/statsmanager.class.js
+		@depends ../misc/utils.class.js
+		@depends ../logic/actionmanager.class.js
+		@depends ../control/keyhandler.class.js
+		@depends ../controls/mousehandler.class.js
+		 */
 	//the game
 	const Game = class Game {
 		constructor(board, dungeon) {
@@ -1927,7 +1928,8 @@ const ActionManager = class ActionManager {
 			let {
 				rooms,
 				paths,
-				objs
+				objs,
+				stairs
 			} = dungeon,
 			img = new Image();
 			img.src = secondCanvas.toDataURL();
@@ -1935,6 +1937,7 @@ const ActionManager = class ActionManager {
 				objs: [],
 				rooms: rooms,
 				paths: paths,
+				stairs: stairs,
 				map: img
 			};
 			objs.forEach(obj => this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id] = obj);
@@ -1943,7 +1946,6 @@ const ActionManager = class ActionManager {
 		changeDungeonLevel(level) {
 			this.saveDungeonLevel(this.dungeonLevels[this.stats.currentDungeonLevel]);
 			let dir = level > this.stats.currentDungeonLevel ? "down" : "up";
-
 			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach((obj, k) => {
 				if (k === 0) {
 					return;
@@ -1965,18 +1967,12 @@ const ActionManager = class ActionManager {
 			if (this.dungeonLevels[level]) {
 				objs = this.dungeonLevels[level].objs;
 				secondCtx.drawImage(this.dungeonLevels[level].map, 0, 0);
-				//put player in the last room if we're going up
+				//put player on downstairs if we're going up
 				if (dir === "up") {
-					this.player.position.set(
-						this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].x + 1,
-						this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].y + 1
-					);
+					this.player.position.set(...this.dungeonLevels[level].stairs.down.get);
 				} else {
-					//or in the first room
-					this.player.position.set(
-						this.dungeonLevels[level].rooms[0].x + 1,
-						this.dungeonLevels[level].rooms[0].y + 1
-					);
+					//or upstairs
+					this.player.position.set(...this.dungeonLevels[level].stairs.up.get);
 				}
 			} else {
 				let levelType = DungeonGenerator.types[Math.floor(Math.random() * DungeonGenerator.types.length)];
@@ -1988,7 +1984,8 @@ const ActionManager = class ActionManager {
 				this.dungeonLevels[level] = {
 					objs: [],
 					rooms: dungeon.rooms,
-					paths: dungeon.paths
+					paths: dungeon.paths,
+					stairs: dungeon.stairs
 				};
 			}
 
@@ -2468,7 +2465,7 @@ const DungeonGenerator = class DungeonGenerator {
 	}
 
 	static get types() {
-		return ["traditional", "city"];
+		return ["traditional", "city", "cave"];
 	}
 
 	static get traditional() {
@@ -2547,14 +2544,20 @@ const DungeonGenerator = class DungeonGenerator {
 				player.position.set(rooms[0].x + 1, rooms[0].y + 1);
 				objs.push(player);
 
+				let stairs = {};
+
 				if (options.stairs.up) {
 					//put an upstairs on player
-					objs.push(new Stair(new Point(rooms[0].x + 1, rooms[0].y + 1), "up"));
+					let pos = new Point(rooms[0].x + 1, rooms[0].y + 1);
+					objs.push(new Stair(pos, "up"));
+					stairs.up = pos;
 				}
 
 				if (options.stairs.down) {
 					//put a downstairs in "last" room
-					objs.push(new Stair(new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1), "down"));
+					let pos = new Point(rooms[options.rooms.count - 1].x + 1, rooms[options.rooms.count - 1].y + 1);
+					objs.push(new Stair(pos, "down"));
+					stairs.down = pos;
 				}
 
 				//get midpoints
@@ -2609,7 +2612,8 @@ const DungeonGenerator = class DungeonGenerator {
 				return {
 					rooms,
 					paths,
-					objs
+					objs,
+					stairs
 				};
 			}
 
@@ -2891,19 +2895,26 @@ const DungeonGenerator = class DungeonGenerator {
 						}
 					});
 
+					let stairs = {};
+
 					//set player to first room
-					player.position.set(rooms[0].x + 1, rooms[0].y + 1);
+					player.position.set(rooms[0].x + 1, rooms[0].y + 2);
 					objs.push(player);
+					matrix[player.position.y][player.position.x].empty();
 
 					if (options.stairs.up) {
 						//put an upstairs on player
-						objs.push(new Stair(new Point(...player.position.get), "up"));
+						let pos = new Point(...player.position.get);
+						objs.push(new Stair(pos, "up"));
+						stairs.up = pos;
 					}
 
 					if (options.stairs.down) {
 						//put a downstairs in largest room
-						let largest = rooms.reduce((p, c) => p.w * p.h > c.w * c.h ? p : c);
-						objs.push(new Stair(new Point(largest.x + 1, largest.y + 1), "down"));
+						let largest = rooms.reduce((p, c) => p.w * p.h > c.w * c.h ? p : c),
+							pos = new Point(largest.x + largest.w - 1, largest.y + largest.h - 1);
+						objs.push(new Stair(pos, "down"));
+						stairs.down = pos;
 					}
 
 					//spawn enemies
@@ -2924,7 +2935,8 @@ const DungeonGenerator = class DungeonGenerator {
 					return {
 						rooms,
 						paths,
-						objs
+						objs,
+						stairs
 					};
 				} catch (err) {
 					throw err;
@@ -2977,7 +2989,232 @@ const DungeonGenerator = class DungeonGenerator {
 						spawnChance: 0.02
 					},
 					items: {
-						spawnChance: 0.001
+						spawnChance: 0.009
+					}
+				};
+			}
+		};
+	}
+
+	static get cave() {
+		return class {
+
+			static border(matrix) {
+				for (let x = 0; x < matrix[0].length; x++) {
+					matrix[0][x].empty();
+					matrix[0][x].add(new Wall(new Point(x, 0)));
+					matrix[matrix.length - 1][x].empty();
+					matrix[matrix.length - 1][x].add(new Wall(new Point(x, matrix.length - 1)));
+				}
+				for (let y = 0; y < matrix.length; y++) {
+					matrix[y][0].empty();
+					matrix[y][0].add(new Wall(new Point(0, y)));
+					matrix[y][matrix[0].length - 1].empty();
+					matrix[y][matrix[0].length - 1].add(new Wall(new Point(matrix[0].length - 1, y)));
+				}
+
+				return matrix;
+			}
+
+			static neighbors(matrix, x, y, radius) {
+				let neighbors = [];
+
+				for (let x0 = x - radius; x0 <= x + radius; x0++) {
+					for (let y0 = y - radius; y0 <= y + radius; y0++) {
+						if ((x0 === x && y0 === y) || !matrix[y0]) {
+							continue;
+						}
+						neighbors.push(matrix[y0][x0]);
+					}
+				}
+
+				return neighbors.filter(v => v);
+			}
+
+			static updateState(matrix, x, y, options) {
+				let neighbors1 = this.neighbors(matrix, x, y, 1),
+					type = matrix[y][x].top ? "wall" : "floor";
+
+				if (neighbors1.filter(nT => nT.top && nT.top.constructor === Wall).length >= options.nearCap) {
+					return {
+						type: Wall,
+						changed: type !== "wall",
+						pos: new Point(x, y)
+					};
+				}
+
+				let neighbors2 = this.neighbors(matrix, x, y, 2);
+				if (neighbors2.filter(nT => nT.top && nT.top.constructor === Wall).length <= options.farCap) {
+					return {
+						type: Wall,
+						changed: type !== "wall",
+						pos: new Point(x, y)
+					};
+				}
+
+				return {
+					type: null,
+					changed: type !== "floor",
+					pos: new Point(x, y)
+				};
+			}
+
+			static makeLevel(player, options) {
+				options = options || this.defaultOptions;
+
+				let matrix = [],
+					objs = [];
+
+				//make matrix and fill it randomly with walls
+				for (let y = 0; y < options.size.h; y++) {
+					matrix[y] = [];
+					for (let x = 0; x < options.size.w; x++) {
+						matrix[y][x] = new Tile(new Point(x, y));
+						if (Math.random() < options.distribution) {
+
+						} else {
+							matrix[y][x].add(new Wall(new Point(x, y)));
+						}
+					}
+				}
+
+				//clear some rows in the middle to help with gaps in the map
+				if (options.horizontalBlank) {
+					let offset = ~~(options.size.h / 2),
+						end = ~~(options.size.h / 2) - offset + options.horizontalBlank;
+					for (let y = ~~(options.size.h / 2) - offset; y < end; y++) {
+						matrix[y].forEach(tile => tile.empty());
+					}
+				}
+
+				for (let i = 0; i < options.iterationCount; i++) {
+					let newStates = [];
+
+					//compute all states
+					matrix.forEach((row, y) => row.forEach((tile, x) => {
+						newStates.push(this.updateState(matrix, x, y, options));
+					}));
+
+					//then update matrix
+					newStates.forEach(state => {
+						if (state.changed) {
+							if (state.type) {
+								matrix[state.pos.y][state.pos.x].add(new state.type(state.pos));
+							} else {
+								matrix[state.pos.y][state.pos.x].empty();
+							}
+						}
+					});
+
+					if (options.border) {
+						matrix = this.border(matrix);
+					}
+
+					if (i > options.smoothCap) {
+						options.farCap = -1;
+					}
+				}
+
+				let stairs = {};
+
+				if (options.stairs.up) {
+					let pos = new Point(Math.floor(Math.random() * options.size.w), Math.floor(Math.random() * options.size.h));
+
+					while (true) {
+						if (matrix[pos.y] && matrix[pos.y][pos.x] && matrix[pos.y][pos.x].isEmpty) {
+							break;
+						} else {
+							pos.set(Math.floor(Math.random() * options.size.w), Math.floor(Math.random() * options.size.h));
+						}
+					}
+
+					player.position.set(...pos.get);
+					objs.push(player);
+
+					objs.push(new Stair(pos, "up"));
+					stairs.up = pos;
+				}
+
+				if (options.stairs.down) {
+					let pos = new Point(Math.floor(Math.random() * options.size.w, Math.floor(Math.random() * options.size.h)));
+
+					while (true) {
+						if (matrix[pos.y] && matrix[pos.y][pos.x] && matrix[pos.y][pos.x].isEmpty) {
+							break;
+						} else {
+							pos.set(Math.floor(Math.random() * options.size.w), Math.floor(Math.random() * options.size.h));
+						}
+					}
+
+					objs.push(new Stair(pos, "down"));
+					stairs.down = pos;
+				}
+
+				//spawn some enemies using the entire map as the room
+				//filter out the ones spawned in walls
+				let enemies = DungeonGenerator.generateEnemies({
+					x: 0,
+					y: 0,
+					w: options.size.w - 1,
+					h: options.size.h - 1
+				}, options).filter(e => {
+					if(matrix[e.position.y][e.position.x].isEmpty){
+						return true;
+					}else{
+						e.lifebar.remove();
+						return false;
+					}
+				});
+
+				objs = objs.concat(enemies);
+
+				let loot = DungeonGenerator.generateLoot({
+					x: 0,
+					y: 0,
+					w: options.size.w - 1,
+					h: options.size.h - 1
+				}, options).filter(i => matrix[i.position.y][i.position.x].isEmpty);
+
+				objs = objs.concat(loot);
+
+				//get objs
+				for (let y = 0; y < options.size.h; y++) {
+					for (let x = 0; x < options.size.w; x++) {
+						if (!matrix[y][x].isEmpty) {
+							objs.push(matrix[y][x].top);
+						}
+					}
+				}
+				return {
+					objs: objs,
+					paths: [],
+					rooms: [],
+					stairs: stairs
+				};
+			}
+
+			static get defaultOptions() {
+				return {
+					size: {
+						w: 40,
+						h: 20
+					},
+					stairs: {
+						up: false,
+						down: true
+					},
+					iterationCount: 7,
+					distribution: 0.46,
+					border: true,
+					nearCap: 5,
+					farCap: 1,
+					smoothCap: 5,
+					horizontalBlank: 1,
+					enemies: {
+						spawnChance: 0.015
+					},
+					items: {
+						spawnChance: 0.05
 					}
 				};
 			}

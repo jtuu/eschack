@@ -1,14 +1,14 @@
 	/*
-	@depends globals.js
-	@depends ../ui/equipmentmanager.class.js
-	@depends ../ui/inventorymanager.class.js
-	@depends ../ui/logboxmanager.class.js
-	@depends ../ui/statsmanager.class.js
-	@depends ../misc/utils.class.js
-	@depends ../logic/actionmanager.class.js
-	@depends ../control/keyhandler.class.js
-	@depends ../controls/mousehandler.class.js
-	 */
+		@depends globals.js
+		@depends ../ui/equipmentmanager.class.js
+		@depends ../ui/inventorymanager.class.js
+		@depends ../ui/logboxmanager.class.js
+		@depends ../ui/statsmanager.class.js
+		@depends ../misc/utils.class.js
+		@depends ../logic/actionmanager.class.js
+		@depends ../control/keyhandler.class.js
+		@depends ../controls/mousehandler.class.js
+		 */
 	//the game
 	const Game = class Game {
 		constructor(board, dungeon) {
@@ -133,7 +133,8 @@
 			let {
 				rooms,
 				paths,
-				objs
+				objs,
+				stairs
 			} = dungeon,
 			img = new Image();
 			img.src = secondCanvas.toDataURL();
@@ -141,6 +142,7 @@
 				objs: [],
 				rooms: rooms,
 				paths: paths,
+				stairs: stairs,
 				map: img
 			};
 			objs.forEach(obj => this.dungeonLevels[this.stats.currentDungeonLevel].objs[obj.id] = obj);
@@ -149,7 +151,6 @@
 		changeDungeonLevel(level) {
 			this.saveDungeonLevel(this.dungeonLevels[this.stats.currentDungeonLevel]);
 			let dir = level > this.stats.currentDungeonLevel ? "down" : "up";
-
 			this.dungeonLevels[this.stats.currentDungeonLevel].objs.forEach((obj, k) => {
 				if (k === 0) {
 					return;
@@ -171,18 +172,12 @@
 			if (this.dungeonLevels[level]) {
 				objs = this.dungeonLevels[level].objs;
 				secondCtx.drawImage(this.dungeonLevels[level].map, 0, 0);
-				//put player in the last room if we're going up
+				//put player on downstairs if we're going up
 				if (dir === "up") {
-					this.player.position.set(
-						this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].x + 1,
-						this.dungeonLevels[level].rooms[this.dungeonLevels[level].rooms.length - 1].y + 1
-					);
+					this.player.position.set(...this.dungeonLevels[level].stairs.down.get);
 				} else {
-					//or in the first room
-					this.player.position.set(
-						this.dungeonLevels[level].rooms[0].x + 1,
-						this.dungeonLevels[level].rooms[0].y + 1
-					);
+					//or upstairs
+					this.player.position.set(...this.dungeonLevels[level].stairs.up.get);
 				}
 			} else {
 				let levelType = DungeonGenerator.types[Math.floor(Math.random() * DungeonGenerator.types.length)];
@@ -194,7 +189,8 @@
 				this.dungeonLevels[level] = {
 					objs: [],
 					rooms: dungeon.rooms,
-					paths: dungeon.paths
+					paths: dungeon.paths,
+					stairs: dungeon.stairs
 				};
 			}
 

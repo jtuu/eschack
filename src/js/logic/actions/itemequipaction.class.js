@@ -26,7 +26,7 @@ const ItemEquipAction = class ItemEquipAction extends Action {
 		//remove it into inventory
 		//actually this should be an unequipaction
 		if (actor.equipment[item.slot]) {
-			let equipmentKey = Utils.alphabetMap[Object.keys(actor.equipment).indexOf(item.slot)];
+			let equipmentKey = Utils.alphabetMap[Object.keys(actor.equipment).filter(key => actor.equipment[key]).indexOf(item.slot)];
 			let action = new ItemUnequipAction(null, this.logger, equipmentKey);
 			duration += action.do(actor);
 		}
